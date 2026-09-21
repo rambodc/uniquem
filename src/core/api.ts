@@ -7,3 +7,4 @@ export const submitContactInquiry = (data: Record<string, string>) => invoke("su
 export const listContactInquiries = (data: { archived: boolean; query?: string; cursor?: number }) => invoke<typeof data, InquiryList>("listContactInquiries", data);
 export const archiveContactInquiry = (inquiryId: string) => invoke("archiveContactInquiry", { inquiryId });
 export const restoreContactInquiry = (inquiryId: string) => invoke("restoreContactInquiry", { inquiryId });
+export const healthCheck = () => invoke<void, { ok: boolean; projectId: string; service: string; serverTime: string }>("healthCheck");

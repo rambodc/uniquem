@@ -1,3 +1,5 @@
 .logo { gap: 10px; letter-spacing: .16em; font-size: 15px; font-weight: 800; }
 .logo img { width: 34px; height: 34px; object-fit: contain; }
 footer .logo img { width: 30px; }
+.connection-test { display: block; width: 100%; margin-top: 12px; border: 1px solid var(--line); border-radius: 999px; background: transparent; color: #a9bdc9; padding: 10px 14px; font-size: 12px; }
+.connection-test:hover { border-color: var(--teal); color: #dffcf7; }
