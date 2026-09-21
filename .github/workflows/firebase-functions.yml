@@ -29,3 +29,5 @@ jobs:
       - run: npm test --prefix functions
       - run: npm install --global firebase-tools@14.15.2
       - run: firebase deploy --token "${{ steps.auth.outputs.access_token }}" --only functions --project uniquem-4366e --non-interactive --force --message "CI functions deploy"
+      - name: Remove retired health-check function
+        run: firebase functions:delete healthCheck --region us-central1 --project uniquem-4366e --token "${{ steps.auth.outputs.access_token }}" --force || true
