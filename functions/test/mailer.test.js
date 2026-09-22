@@ -1,6 +1,11 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { EMAIL_FROM, EMAIL_TO, sendInquiryNotification } from "../mailer.js";
+import { EMAIL_FROM, EMAIL_TO, formatMountainTimestamp, sendInquiryNotification } from "../mailer.js";
+
+test("formats timestamps in Alberta daylight and standard Mountain Time", () => {
+  assert.match(formatMountainTimestamp("2026-09-22T17:00:00.000Z"), /MDT/);
+  assert.match(formatMountainTimestamp("2026-01-15T18:00:00.000Z"), /MST/);
+});
 
 test("formats a product inquiry for the notification recipient", async () => {
   let message;
@@ -18,7 +23,7 @@ test("formats a product inquiry for the notification recipient", async () => {
   assert.equal(message.replyTo, "customer@example.com");
   assert.match(message.subject, /Friction Reducer/);
   assert.match(message.text, /Example Oilfield/);
-  assert.match(message.text, /2026-09-22/);
+  assert.match(message.text, /Sep 22, 2026, 11:00 AM MDT/);
 });
 
 test("surfaces transport failures without changing the inquiry record", async () => {

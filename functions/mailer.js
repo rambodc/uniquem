@@ -3,6 +3,19 @@ import nodemailer from "nodemailer";
 export const EMAIL_FROM = "rambodc@irobotx.io";
 export const EMAIL_TO = "rambodr@uniquem.ca";
 
+export function formatMountainTimestamp(value = new Date()) {
+  return new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Edmonton",
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+    timeZoneName: "short",
+  }).format(new Date(value));
+}
+
 export function createMailer(password) {
   return nodemailer.createTransport({
     host: "smtp.gmail.com",
@@ -16,7 +29,7 @@ export function formatInquiryEmail(inquiry) {
   const product = inquiry.productName ? `Product: ${inquiry.productName}\n` : "";
   const company = inquiry.company ? `Company: ${inquiry.company}\n` : "";
   const phone = inquiry.phone ? `Phone: ${inquiry.phone}\n` : "";
-  const timestamp = inquiry.notificationTimestamp || new Date().toISOString();
+  const timestamp = formatMountainTimestamp(inquiry.notificationTimestamp || new Date());
   return [
     "New Uniquem website inquiry",
     "",

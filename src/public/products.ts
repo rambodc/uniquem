@@ -321,6 +321,15 @@ export const publicProducts: readonly PublicProduct[] = [
   },
 ];
 
+const cataloguePriority = ["elixir", "corrosion-inhibitor", "friction-reducer"];
+
+export const catalogueProducts: readonly PublicProduct[] = [
+  ...cataloguePriority
+    .map((slug) => publicProducts.find((product) => product.slug === slug))
+    .filter((product): product is PublicProduct => Boolean(product)),
+  ...publicProducts.filter((product) => !cataloguePriority.includes(product.slug)),
+];
+
 export const publicProductPaths = new Set(publicProducts.map((product) => product.path));
 
 export function findPublicProduct(path: string) {
