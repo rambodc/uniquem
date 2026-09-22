@@ -277,6 +277,48 @@ export const publicProducts: readonly PublicProduct[] = [
     image: "/images/products/kaolok-tote.webp",
     alt: "Green Uniquem KaoloK formation-treatment tote in a galvanized cage",
   },
+  {
+    slug: "corrosion-inhibitor",
+    path: "/chemicals/corrosion-inhibitor",
+    name: "Corrosion Inhibitor",
+    category: "Oilfield and pipeline corrosion inhibitor",
+    eyebrow: "Protection shaped around the application",
+    teaser:
+      "A corrosion-control treatment for compatible oilfield, pipeline, production and related industrial applications.",
+    description:
+      "Corrosion Inhibitor can be evaluated as part of a corrosion-control program for oilfield, pipeline, production and related industrial applications. Uniquem can discuss formulation, blending and packaging around the client’s application, operating conditions and delivery requirements.",
+    benefits: [
+      "Supports corrosion-control program planning",
+      "Can be considered for oilfield and pipeline applications",
+      "Formulation can be customized around the application",
+      "Packaging options can be discussed for operational needs",
+    ],
+    packaging: "Custom packaging options available by application",
+    image: "/images/products/corrosion-inhibitor-tote.webp",
+    alt: "White corrosion inhibitor chemical tote on a wood pallet in an industrial warehouse",
+    applications: ["Oilfield", "Pipeline", "Production", "Industrial applications"],
+  },
+  {
+    slug: "friction-reducer",
+    path: "/chemicals/friction-reducer",
+    name: "Friction Reducer",
+    category: "Oilfield and pipeline friction-reduction treatment",
+    eyebrow: "Fluid movement, considered carefully",
+    teaser:
+      "A friction-reduction treatment for compatible oilfield, pipeline, production and fluid-handling applications.",
+    description:
+      "Friction Reducer can be considered for compatible oilfield, pipeline, production and fluid-handling applications where fluid movement is part of the operating challenge. The formulation can be custom blended and packaged around client requirements and the intended application.",
+    benefits: [
+      "Supports friction-reduction treatment planning",
+      "Can be considered for oilfield and pipeline applications",
+      "Formulation can be custom blended for the application",
+      "Packaging options can be discussed around client requirements",
+    ],
+    packaging: "Custom packaging options available by application",
+    image: "/images/products/friction-reducer-tote.webp",
+    alt: "White friction reducer chemical tote on a wood pallet in an industrial warehouse",
+    applications: ["Oilfield", "Pipeline", "Production", "Fluid handling"],
+  },
 ];
 
 export const publicProductPaths = new Set(publicProducts.map((product) => product.path));
