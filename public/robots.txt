@@ -3,4 +3,4 @@ Allow: /
 Disallow: /signin
 Disallow: /contact-inbox
 
-Sitemap: https://www.uniquem.ca/sitemap.xml
+Sitemap: https://uniquem.ca/sitemap.xml

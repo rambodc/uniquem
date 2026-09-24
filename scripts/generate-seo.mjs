@@ -1,7 +1,9 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 
-const origin = "https://www.uniquem.ca";
+// The live site redirects www.uniquem.ca to the apex domain. Keep every
+// canonical URL, JSON-LD URL, and sitemap entry on the preferred host.
+const origin = "https://uniquem.ca";
 const products = [
   ["elixir", "Elixir Water-Based Drilling Fluid Lubricant | Uniquem", "Elixir is a concentrated biodegradable lubricant designed to improve water-based drilling fluid lubricity and help manage torque, drag and sticking tendency.", "/images/products/elixir-pallet.webp", "Elixir water-based drilling fluid lubricant"],
   ["fusion", "Fusion Rheology & Filtration Polymer | Uniquem", "Fusion is a dispersible polymer blend supporting rheology, suspension, hole cleaning and filtrate control in water-based drilling fluids.", "/images/products/fusion-pallet.webp", "Fusion rheology and filtration polymer blend"],
