@@ -278,6 +278,26 @@ export const publicProducts: readonly PublicProduct[] = [
     alt: "Green Uniquem KaoloK formation-treatment tote in a galvanized cage",
   },
   {
+    slug: "sandweb",
+    path: "/chemicals/sandweb",
+    name: "SandWeb",
+    category: "Sand consolidation chemistry",
+    eyebrow: "Sand control for fracture treatments",
+    teaser:
+      "Sand consolidation chemistry for hydraulic fracturing, designed as a cost-effective alternative to resin-coated sand.",
+    description:
+      "SandWeb is a specialized sand consolidation chemistry designed for fracturing operations. It helps consolidate sand particles and supports reliable sand control and fracture-treatment stability. As an alternative to traditional resin-coated sand, it is designed to improve sand management while reducing treatment costs.",
+    benefits: [
+      "Helps consolidate sand particles",
+      "Supports sand control during hydraulic fracturing",
+      "Supports fracture-treatment stability",
+      "Provides a cost-effective alternative to resin-coated sand",
+    ],
+    packaging: "Available in 1000 L totes",
+    image: "/images/products/sandweb-tote.webp",
+    alt: "Yellow Uniquem SandWeb sand-consolidation tote in a galvanized cage",
+  },
+  {
     slug: "corrosion-inhibitor",
     path: "/chemicals/corrosion-inhibitor",
     name: "Corrosion Inhibitor",

@@ -22,6 +22,8 @@ describe("public SEO", () => {
     const catalogue = document.createElement("div");
     catalogue.innerHTML = renderPage("/chemicals");
     expect(routes).toHaveLength(publicProducts.length + 5);
+    const cards = [...catalogue.querySelectorAll(".catalogue-card a")].map((node) => node.getAttribute("href"));
+    expect(cards[cards.indexOf("/chemicals/kaolok") + 1]).toBe("/chemicals/sandweb");
     for (const product of publicProducts) {
       expect(catalogue.querySelector(`a[href="${product.path}"]`)).not.toBeNull();
       const page = document.createElement("div");
@@ -48,8 +50,8 @@ describe("public SEO", () => {
     document.body.append(node);
     document.head.innerHTML = head(routes[0]) + '<meta name="google-site-verification" content="preserved">';
     root = createRoot(node);
-    await act(async () => root!.render(<MemoryRouter><SeoMetadata /><Link to="/chemicals/elixir">Product</Link><Link to="/contact-us">Contact</Link><Link to="/signin">Private</Link><Link to="/">Home</Link></MemoryRouter>));
-    for (const pathname of ["/chemicals/elixir", "/contact-us", "/signin", "/"]) {
+    await act(async () => root!.render(<MemoryRouter><SeoMetadata /><Link to="/chemicals/elixir">Product</Link><Link to="/chemicals/sandweb">SandWeb</Link><Link to="/contact-us">Contact</Link><Link to="/signin">Private</Link><Link to="/">Home</Link></MemoryRouter>));
+    for (const pathname of ["/chemicals/elixir", "/chemicals/sandweb", "/contact-us", "/signin", "/"]) {
       const anchor = node.querySelector(`a[href="${pathname}"]`)!;
       await act(async () => anchor.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, button: 0 })));
       const route = routes.find((item) => item.path === pathname);

@@ -21,7 +21,7 @@ async function read(route) {
 }
 const sitemap = new JSDOM((await read("/sitemap.xml")).html, { contentType: "text/xml" }).window.document;
 const urls = [...sitemap.querySelectorAll("loc")].map((node) => node.textContent);
-assert.equal(urls.length, 20, "public sitemap count");
+assert.equal(urls.length, 21, "public sitemap count");
 assert.equal(new Set(urls).size, urls.length, "duplicate sitemap URLs");
 for (const url of urls) {
   const pathname = new URL(url).pathname;
