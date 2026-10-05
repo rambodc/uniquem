@@ -1,6 +1,4 @@
 User-agent: *
 Allow: /
-Disallow: /signin
-Disallow: /contact-inbox
 
 Sitemap: https://uniquem.ca/sitemap.xml
