@@ -2,7 +2,9 @@ name: Pull request checks
 on:
   pull_request:
     paths: ["src/**", "public/**", "scripts/**", "functions/**", "index.html", "package.json", "package-lock.json", "firebase.json", "firestore.rules", "storage.rules", "firestore.indexes.json", ".github/workflows/pull-request.yml"]
-concurrency: { group: uniquem-pr-${{ github.event.pull_request.number }}, cancel-in-progress: true }
+concurrency:
+  group: uniquem-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 jobs:
   frontend:
     runs-on: ubuntu-latest
