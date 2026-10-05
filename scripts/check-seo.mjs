@@ -4,6 +4,12 @@ import { JSDOM } from "jsdom";
 
 // Run against build output, the Hosting emulator, or production after deployment.
 const base = process.argv[2]?.replace(/\/$/, "");
+const checkedAssets = new Set();
+async function fetchStatus(url) {
+  const response = await fetch(url);
+  await response.body?.cancel();
+  return response.status;
+}
 async function read(route) {
   if (base) {
     const response = await fetch(`${base}${route}`);
@@ -32,8 +38,12 @@ for (const url of urls) {
   JSON.parse(doc.querySelector("script[data-seo-jsonld]").textContent);
   for (const asset of doc.querySelectorAll('script[src], link[rel="stylesheet"]')) {
     const source = asset.getAttribute("src") || asset.getAttribute("href");
-    if (base) assert.equal((await fetch(`${base}${source}`)).status, 200, `${pathname}: asset ${source}`);
-    else await readFile(`dist${source}`);
+    if (base) {
+      if (!checkedAssets.has(source)) {
+        assert.equal(await fetchStatus(`${base}${source}`), 200, `${pathname}: asset ${source}`);
+        checkedAssets.add(source);
+      }
+    } else await readFile(`dist${source}`);
   }
   if (pathname === "/chemicals") {
     for (const product of urls.filter((item) => new URL(item).pathname.startsWith("/chemicals/"))) {
@@ -54,9 +64,10 @@ for (const redirect of config.hosting.redirects) {
   assert.ok(urls.includes(`https://uniquem.ca${redirect.destination}`), `${redirect.source}: relevant live target`);
   if (base) {
     const response = await fetch(`${base}${redirect.source}`, { redirect: "manual" });
+    await response.body?.cancel();
     assert.equal(response.status, 301, `${redirect.source}: permanent redirect`);
     assert.equal(new URL(response.headers.get("location"), base).pathname, redirect.destination, `${redirect.source}: destination`);
   }
 }
-if (base) assert.equal((await fetch(`${base}/does-not-exist-seo-check`)).status, 404, "unknown URLs stay 404");
+if (base) assert.equal(await fetchStatus(`${base}/does-not-exist-seo-check`), 404, "unknown URLs stay 404");
 console.log(`SEO checks passed: ${urls.length} public pages, 2 private pages, ${config.hosting.redirects.length} legacy redirects${base ? ` at ${base}` : " in build output"}.`);
