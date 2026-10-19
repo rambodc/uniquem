@@ -33,7 +33,15 @@ describe("public SEO", () => {
       expect(page.querySelectorAll("h1")).toHaveLength(1);
       const route = routes.find((item) => item.path === product.path)!;
       const graph = JSON.parse(jsonLd(route))["@graph"];
-      expect(graph.find((item: { "@type": string }) => item["@type"] === "Product").name).toBe(product.name);
+      // No schema.org/Product: there are no prices or reviews, so a Product item
+      // would be flagged as an invalid product snippet by Search Console.
+      expect(JSON.stringify(graph)).not.toMatch(/"@type":"(Product|Offer|AggregateRating|Review)"/);
+      const itemPage = graph.find((item: { "@type": string }) => item["@type"] === "ItemPage");
+      const substance = graph.find((item: { "@type": string }) => item["@type"] === "ChemicalSubstance");
+      expect(substance.name).toBe(product.name);
+      expect(itemPage.mainEntity["@id"]).toBe(substance["@id"]);
+      const crumbs = graph.find((item: { "@type": string }) => item["@type"] === "BreadcrumbList").itemListElement;
+      expect(crumbs.map((item: { name: string }) => item.name)).toEqual(["Home", "Chemicals", product.name]);
     }
     for (const route of routes) {
       const page = document.createElement("div");
@@ -42,6 +50,16 @@ describe("public SEO", () => {
       expect(page.querySelectorAll("h1")).toHaveLength(1);
     }
     expect(renderPage("/about-us")).toContain("custom chemical formulation and blending");
+    const sandweb = document.createElement("div");
+    sandweb.innerHTML = renderPage("/chemicals/sandweb");
+    expect(sandweb.querySelector("h1")?.textContent).toContain("sand consolidation chemistry");
+    expect(sandweb.textContent).toContain("SandWeb vs resin-coated sand");
+    expect(sandweb.textContent).toContain("Example figures, for illustration only");
+    expect(sandweb.querySelector('a[href="/contact-us"]')).not.toBeNull();
+    const sandwebRoute = routes.find((item) => item.path === "/chemicals/sandweb")!;
+    const faqPage = JSON.parse(jsonLd(sandwebRoute))["@graph"].find((item: { "@type": string }) => item["@type"] === "FAQPage");
+    expect(faqPage.mainEntity.length).toBeGreaterThan(3);
+    for (const question of faqPage.mainEntity) expect(sandweb.textContent).toContain(question.acceptedAnswer.text);
     expect(renderPage("/")).toContain("Environmental responsibility");
   });
 

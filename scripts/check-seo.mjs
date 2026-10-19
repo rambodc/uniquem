@@ -35,7 +35,9 @@ for (const url of urls) {
   assert.ok(doc.querySelector('meta[name="google-site-verification"]'), `${pathname}: verification preserved`);
   assert.ok(doc.querySelector('a[href="/contact-us"]'), `${pathname}: real navigation`);
   assert.ok(doc.querySelector("main").textContent.length > 350, `${pathname}: complete content`);
-  JSON.parse(doc.querySelector("script[data-seo-jsonld]").textContent);
+  const structured = JSON.parse(doc.querySelector("script[data-seo-jsonld]").textContent);
+  // Product snippets need offers/review/rating, which Uniquem does not publish.
+  assert.ok(!structured["@graph"].some((item) => [item["@type"]].flat().includes("Product")), `${pathname}: no schema.org Product item`);
   for (const asset of doc.querySelectorAll('script[src], link[rel="stylesheet"]')) {
     const source = asset.getAttribute("src") || asset.getAttribute("href");
     if (base) {

@@ -282,15 +282,15 @@ export const publicProducts: readonly PublicProduct[] = [
     path: "/chemicals/sandweb",
     name: "SandWeb",
     category: "Sand consolidation chemistry",
-    eyebrow: "Sand control for fracture treatments",
+    eyebrow: "Sand control for fracturing and well stimulation",
     teaser:
-      "Sand consolidation chemistry for hydraulic fracturing, designed as a cost-effective alternative to resin-coated sand.",
+      "Sand consolidation chemistry for hydraulic fracturing and well stimulation, designed as a cost-effective alternative to resin-coated sand.",
     description:
-      "SandWeb is a specialized sand consolidation chemistry designed for fracturing operations. It helps consolidate sand particles and supports reliable sand control and fracture-treatment stability. As an alternative to traditional resin-coated sand, it is designed to improve sand management while reducing treatment costs.",
+      "SandWeb is a specialized sand consolidation chemistry for hydraulic fracturing, well stimulation and remedial sand control treatments. It binds proppant and formation sand grains into a stable, permeable web that supports reliable sand flowback control and fracture-treatment stability. As an alternative to traditional resin-coated sand, it is designed to improve sand management while reducing treatment and maintenance costs.",
     benefits: [
-      "Helps consolidate sand particles",
-      "Supports sand control during hydraulic fracturing",
-      "Supports fracture-treatment stability",
+      "Helps consolidate proppant and formation sand",
+      "Supports sand flowback control in fracturing and stimulation",
+      "Helps protect pumps, chokes and surface equipment",
       "Provides a cost-effective alternative to resin-coated sand",
     ],
     packaging: "Available in 1000 L totes",
