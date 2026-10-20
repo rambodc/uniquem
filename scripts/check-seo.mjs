@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { readFile, readdir } from "node:fs/promises";
+import { join } from "node:path";
 import { JSDOM } from "jsdom";
 
 // Run against build output, the Hosting emulator, or production after deployment.
@@ -18,6 +19,32 @@ async function read(route) {
   }
   const file = route === "/" ? "dist/index.html" : route === "/sitemap.xml" ? "dist/sitemap.xml" : `dist${route}/index.html`;
   return { html: await readFile(file, "utf8"), headers: null };
+}
+// SandWeb email/phone may appear ONLY in the presentation's "I'll reach out" panel
+// (client-only, src/public/sandweb/presentation/Ending.tsx), never in crawlable HTML,
+// JSON-LD, FAQ, footer or any other source file.
+const sandwebContact = /sandweb@uniquem|390[-\s.]?0067|3900067/i;
+const allowedContactFile = "src/public/sandweb/presentation/Ending.tsx";
+async function walk(dir) {
+  const out = [];
+  for (const entry of await readdir(dir, { withFileTypes: true }).catch(() => [])) {
+    if (["node_modules", ".firebase"].includes(entry.name)) continue;
+    const path = join(dir, entry.name);
+    if (entry.isDirectory()) out.push(...await walk(path));
+    else if (/\.(tsx?|jsx?|mjs|css|html|json|xml|txt|md)$/.test(entry.name)) out.push(path);
+  }
+  return out;
+}
+if (!base) {
+  for (const file of [...await walk("src"), ...await walk("scripts"), ...await walk("public"), ...await walk("functions")]) {
+    if (file === allowedContactFile || file === "scripts/check-seo.mjs" || /\.test\.[jt]sx?$/.test(file)) continue;
+    assert.ok(!sandwebContact.test(await readFile(file, "utf8")), `${file}: SandWeb contact details are only allowed in the "I'll reach out" panel`);
+  }
+  const allowed = (await readFile(allowedContactFile, "utf8")).split("\n").filter((line) => sandwebContact.test(line));
+  assert.equal(allowed.length, 1, `${allowedContactFile}: SandWeb contact details defined once, for the "I'll reach out" panel only`);
+  for (const file of (await walk("dist")).filter((item) => /\.(html|xml|json|txt)$/.test(item))) {
+    assert.ok(!sandwebContact.test(await readFile(file, "utf8")), `${file}: SandWeb contact details in generated output`);
+  }
 }
 const sitemap = new JSDOM((await read("/sitemap.xml")).html, { contentType: "text/xml" }).window.document;
 const urls = [...sitemap.querySelectorAll("loc")].map((node) => node.textContent);
@@ -47,6 +74,8 @@ for (const url of urls) {
       }
     } else await readFile(`dist${source}`);
   }
+  assert.ok(!sandwebContact.test(html), `${pathname}: SandWeb contact details only in the "I'll reach out" panel`);
+  if (pathname === "/") assert.ok(doc.querySelector('a[href="/chemicals/sandweb"]'), "homepage links to the featured SandWeb page");
   if (pathname === "/chemicals") {
     for (const product of urls.filter((item) => new URL(item).pathname.startsWith("/chemicals/"))) {
       assert.ok(doc.querySelector(`a[href="${new URL(product).pathname}"]`), `catalogue links to ${product}`);

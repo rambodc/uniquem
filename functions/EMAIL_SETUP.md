@@ -1,7 +1,24 @@
 # Inquiry email notifications
 
-The `submitContactInquiry` callable saves the inquiry to Firestore before attempting notification delivery. It reads the Gmail application password from the Google Secret Manager secret named `GMAIL_APP_PASSWORD`.
+The `submitContactInquiry` callable validates the inquiry, saves it to Firestore (`contactInquiries`) first, and then sends a notification email through the [Resend](https://resend.com) HTTP API (`POST https://api.resend.com/emails`).
 
-Provision the secret directly in Google Cloud Secret Manager for project `uniquem-4366e` before deploying Functions. Do not commit the value or place it in a GitHub secret, frontend environment variable, log, or chat message.
+- From: `Uniquem Website <website@irobotx.io>` (the `irobotx.io` domain must stay verified in the Resend account that owns the API key)
+- To: `rambodr@uniquem.ca`
+- Reply-To: the visitor's email, only when they provided one. Call-back leads (SandWeb "Call me") may have a phone number and no email.
+- Idempotency key: `contact-inquiry/<Firestore inquiry id>`, so a retried send never duplicates.
 
-The runtime uses Gmail SMTP for `rambodc@irobotx.io` and sends notifications to the configured internal recipient. If the secret is absent or SMTP delivery fails, the inquiry remains saved in Firestore and the function returns success with `notificationSent: false`.
+Validation: `name` and `message` are required, and at least one of `email` or `phone` must be given. An email, when present, must be valid.
+
+## Secret
+
+The Resend API key is read from the Google Secret Manager secret `RESEND_API_KEY` (declared with `defineSecret` in `index.js`). Provision it for project `uniquem-4366e` before deploying Functions, for example:
+
+```sh
+npx -y firebase-tools@latest functions:secrets:set RESEND_API_KEY --project uniquem-4366e
+```
+
+Do not commit the value or place it in a GitHub secret, frontend environment variable, log, or chat message. The old `GMAIL_APP_PASSWORD` secret is no longer used and can be destroyed once the Resend version is live.
+
+## Failure behaviour
+
+If the secret is missing, Resend rejects the request (for example 403 for an unverified `from` domain), or the network fails, the inquiry remains saved in Firestore and the function returns success with `notificationSent: false`. The error message (never the key) is logged.

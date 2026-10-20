@@ -1,6 +1,8 @@
-import nodemailer from "nodemailer";
-
-export const EMAIL_FROM = "rambodc@irobotx.io";
+// Inquiry notifications are sent through Resend's HTTP API from the verified
+// irobotx.io domain to the Uniquem inbox. The API key comes from the Secret
+// Manager secret RESEND_API_KEY and is never logged.
+export const RESEND_ENDPOINT = "https://api.resend.com/emails";
+export const EMAIL_FROM = "Uniquem Website <website@irobotx.io>";
 export const EMAIL_TO = "rambodr@uniquem.ca";
 
 export function formatMountainTimestamp(value = new Date()) {
@@ -16,28 +18,16 @@ export function formatMountainTimestamp(value = new Date()) {
   }).format(new Date(value));
 }
 
-export function createMailer(password) {
-  return nodemailer.createTransport({
-    host: "smtp.gmail.com",
-    port: 465,
-    secure: true,
-    auth: { user: EMAIL_FROM, pass: password },
-  });
-}
-
 export function formatInquiryEmail(inquiry) {
-  const product = inquiry.productName ? `Product: ${inquiry.productName}\n` : "";
-  const company = inquiry.company ? `Company: ${inquiry.company}\n` : "";
-  const phone = inquiry.phone ? `Phone: ${inquiry.phone}\n` : "";
   const timestamp = formatMountainTimestamp(inquiry.notificationTimestamp || new Date());
   return [
     "New Uniquem website inquiry",
     "",
-    product.trimEnd(),
+    inquiry.productName ? `Product: ${inquiry.productName}` : "",
     `Name: ${inquiry.name}`,
-    `Email: ${inquiry.email}`,
-    company.trimEnd(),
-    phone.trimEnd(),
+    `Email: ${inquiry.email || "Not provided"}`,
+    inquiry.company ? `Company: ${inquiry.company}` : "",
+    inquiry.phone ? `Phone: ${inquiry.phone}` : "",
     `Submitted: ${timestamp}`,
     "",
     "Message:",
@@ -45,17 +35,29 @@ export function formatInquiryEmail(inquiry) {
   ].filter(Boolean).join("\n");
 }
 
-export async function sendInquiryNotification(inquiry, password, transportFactory = createMailer) {
-  if (!password) throw new Error("GMAIL_APP_PASSWORD is not configured");
-  const transport = transportFactory(password);
+export function buildInquiryEmail(inquiry) {
   const subject = inquiry.productName
     ? `Uniquem product inquiry: ${inquiry.productName}`
     : "New Uniquem website inquiry";
-  return transport.sendMail({
-    from: `Uniquem Website <${EMAIL_FROM}>`,
-    to: EMAIL_TO,
-    replyTo: inquiry.email,
-    subject,
-    text: formatInquiryEmail(inquiry),
-  });
+  const message = { from: EMAIL_FROM, to: [EMAIL_TO], subject, text: formatInquiryEmail(inquiry) };
+  // Reply goes straight to the visitor, but only when they gave an email.
+  if (inquiry.email) message.reply_to = inquiry.email;
+  return message;
+}
+
+/**
+ * Sends the notification. `inquiryId` makes the Resend idempotency key so a
+ * retried call never sends a duplicate. Throws on any non-2xx response.
+ */
+export async function sendInquiryNotification(inquiry, apiKey, { inquiryId, fetchImpl = globalThis.fetch } = {}) {
+  if (!apiKey) throw new Error("RESEND_API_KEY is not configured");
+  const headers = { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" };
+  if (inquiryId) headers["Idempotency-Key"] = `contact-inquiry/${inquiryId}`;
+  const response = await fetchImpl(RESEND_ENDPOINT, { method: "POST", headers, body: JSON.stringify(buildInquiryEmail(inquiry)) });
+  if (!response.ok) {
+    let detail = "";
+    try { const body = await response.json(); detail = body?.message ? `: ${body.message}` : ""; } catch { /* ignore non-JSON bodies */ }
+    throw new Error(`Resend responded ${response.status}${detail}`);
+  }
+  return response.json();
 }

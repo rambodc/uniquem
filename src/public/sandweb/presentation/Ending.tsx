@@ -3,7 +3,9 @@ import { ArrowLeft, ArrowUpRight, Check, Mail, MessageSquare, Phone, RotateCcw }
 
 type Method = "call" | "email" | "self";
 type Form = { name: string; phone: string; email: string; company: string; website: string };
-export const PHONE_DISPLAY = "1 (403) 390-0067", PHONE_TEL = "tel:+14033900067", SANDWEB_EMAIL = "sandweb@uniquem.ca";
+// SandWeb contact details: shown ONLY in the "I'll reach out" panel below.
+// scripts/check-seo.mjs fails the build if they appear anywhere else.
+const PHONE_DISPLAY = "1 (403) 390-0067", PHONE_TEL = "tel:+14033900067", SANDWEB_EMAIL = "sandweb@uniquem.ca";
 
 async function submit(data: Record<string, string>) { return (await import("../../../core/api")).submitContactInquiry(data); }
 export function isPreviewHost() { if (typeof window === "undefined") return false; const h = window.location.hostname; return h !== "uniquem.ca" && h !== "www.uniquem.ca"; }
@@ -19,11 +21,11 @@ export function phoneOk(v: string) {
 export function leadPayload(method: "call" | "email", f: Form, preview: boolean) {
   const label = method === "call" ? "Call back requested" : "Email follow-up requested";
   const lines = [`${preview ? "[PREVIEW TEST - not a real lead] " : ""}${label}`, "Source: SandWeb narrated presentation", `Preferred contact: ${method === "call" ? "phone call" : "email"}`, `Name: ${f.name.trim()}`];
-  if (method === "call") lines.push(`Phone: ${f.phone.trim()}`, `No email provided. The contact form requires an email, so ${SANDWEB_EMAIL} was used as a placeholder. Please call back.`);
+  if (method === "call") lines.push(`Phone: ${f.phone.trim()}`, "No email provided. Please call back.");
   else lines.push(`Email: ${f.email.trim()}`);
   lines.push(`Company: ${f.company.trim() || "Not provided"}`);
-  const data: Record<string, string> = { inquiryType: "product", productName: "SandWeb", name: f.name.trim(), email: method === "call" ? SANDWEB_EMAIL : f.email.trim(), message: lines.join("\n"), website: f.website };
-  if (method === "call") data.phone = f.phone.trim();
+  const data: Record<string, string> = { inquiryType: "product", productName: "SandWeb", name: f.name.trim(), message: lines.join("\n"), website: f.website };
+  if (method === "call") data.phone = f.phone.trim(); else data.email = f.email.trim();
   if (f.company.trim()) data.company = f.company.trim();
   return data;
 }
@@ -45,7 +47,7 @@ export default function EndingChoices({ showChoices, onReplay, onPanel }: { show
     setErrors(next); if (Object.keys(next).length) return;
     setBusy(true);
     try { await submit(leadPayload(method, form, preview)); setDone(true); }
-    catch { setErrors({ submit: `We couldn't send that just now. Please call ${PHONE_DISPLAY} or email ${SANDWEB_EMAIL}.` }); }
+    catch { setErrors({ submit: "We couldn't send that just now. Please try again, or go back and choose \u201cI'll reach out\u201d." }); }
     finally { setBusy(false); }
   }
 

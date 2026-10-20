@@ -3,15 +3,15 @@ import { defineSecret } from "firebase-functions/params";
 import { db, callable, requireAllowed, validateInquiry, text } from "./core.js";
 import { sendInquiryNotification } from "./mailer.js";
 
-const gmailAppPassword = defineSecret("GMAIL_APP_PASSWORD");
+const resendApiKey = defineSecret("RESEND_API_KEY");
 
-export const submitContactInquiry = onCall({ ...callable, secrets: [gmailAppPassword] }, async (request) => {
+export const submitContactInquiry = onCall({ ...callable, secrets: [resendApiKey] }, async (request) => {
   const inquiry = validateInquiry(request.data);
   const ref = db.collection("contactInquiries").doc();
   await ref.set(inquiry);
   let notificationSent = false;
   try {
-    await sendInquiryNotification({ ...inquiry, notificationTimestamp: new Date().toISOString() }, gmailAppPassword.value());
+    await sendInquiryNotification({ ...inquiry, notificationTimestamp: new Date().toISOString() }, resendApiKey.value(), { inquiryId: ref.id });
     notificationSent = true;
   } catch (error) {
     globalThis.console.error("Inquiry email notification failed", error instanceof Error ? error.message : error);

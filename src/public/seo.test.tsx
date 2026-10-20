@@ -55,9 +55,10 @@ describe("public SEO", () => {
     sandweb.innerHTML = renderPage("/chemicals/sandweb");
     expect(sandweb.querySelector("h1")?.textContent).toBe("SandWeb sand consolidation chemical");
     expect(sandweb.textContent).toContain("SandWeb vs resin-coated sand");
-    expect(sandweb.textContent).toContain("Presentation transcript");
+    expect(sandweb.textContent).toContain("Presentation summary");
     expect(sandweb.textContent).toContain("Reported in field frac treatments");
-    expect(sandweb.textContent).toContain("sandweb@uniquem.ca");
+    // SandWeb email/phone live only in the client-only "I'll reach out" panel.
+    expect(sandweb.innerHTML).not.toMatch(/sandweb@uniquem|390[-\s]?0067|3900067/);
     // The SandWeb page is the presentation: no site header, footer or back link until the ending.
     expect(sandweb.querySelector(".site-header, footer, .swp-leave, .swp-back")).toBeNull();
     expect(sandweb.textContent).not.toMatch(/only product|Western Canada|Kemko|SandWeb R\b/i);
@@ -69,14 +70,14 @@ describe("public SEO", () => {
     expect(renderPage("/")).toContain("Environmental responsibility");
     const home = document.createElement("div");
     home.innerHTML = renderPage("/");
-    expect(home.querySelector("h1")?.textContent).toContain("Oilfield chemical solutions");
-    expect(home.querySelector('a[href="/chemicals/sandweb"]')?.textContent).toContain("Watch the SandWeb demo");
-    for (const product of publicProducts) expect(home.querySelector(`a[href="${product.path}"]`)).not.toBeNull();
+    expect(home.querySelector("h1")?.textContent).toBe("Chemical solutionswith purpose."); // original markup: "Chemical solutions<br />with purpose."
+    expect(home.querySelector('a.home-new-product[href="/chemicals/sandweb"]')?.textContent).toContain("New productSandWeb");
     expect(home.innerHTML).not.toContain("uniquem-logo-light");
     const homeGraph = JSON.parse(jsonLd(routes[0]))["@graph"];
     const org = homeGraph.find((item: { "@id": string }) => item["@id"] === "https://uniquem.ca/#organization");
     expect(org["@type"]).toContain("LocalBusiness");
-    expect(org.contactPoint.some((c: { email?: string; telephone: string }) => c.email === "sandweb@uniquem.ca" && c.telephone === "+1-403-390-0067")).toBe(true);
+    expect(JSON.stringify(homeGraph)).not.toMatch(/sandweb@uniquem|390-0067/);
+    expect(routes[0].title).toBe("Advanced Oilfield Chemical Solutions | Uniquem");
   });
 
   it("updates metadata across client navigation and removes public tags on private routes", async () => {
