@@ -101,15 +101,15 @@ export default function WellWorld({ mode, progress, compact }: Props) {
     const FULL = compact ? FULL_MOBILE : FULL_DESKTOP;
     const WIDE = compact ? [8, 22, 122, 28, -18] : [-14, 18, 66, 26, -17], PERF = compact ? [36, -26, 40, 40, -35.5] : [30, -27, 24, 40, -35.5];
     if (mode === "treat") {
-      // The well view lasts ~12 s (timeline cut 0.56 of 21.9 s). 1) Glide slowly
-      //    down the vertical wellbore with the SandWeb front to the heel over
-      //    ~10 s (about 2x longer than before, with a much lower peak speed).
-      //    2) Ease back until the whole horizontal well and every fracture is in
-      //    frame, then hold there briefly before the cut.
-      const d = easeSine(ramp(p, 0, 0.82)), k = easeInOut(ramp(p, 0.66, 0.95));
+      // The well view lasts ~12.3 s (timeline cut 0.56 of 21.9 s). 1) Glide
+      //    slowly down the vertical wellbore with the SandWeb front to the heel
+      //    over ~9 s (was 4.8 s; sine ease, so peak speed is ~3.5x lower).
+      //    2) Ease back (6.9-10.6 s) until the whole horizontal well and every
+      //    fracture is in frame, then hold that framing until the cut.
+      const d = easeSine(ramp(p, 0, 0.74)), k = easeInOut(ramp(p, 0.56, 0.86));
       sampleUp(0.9 * (1 - HEEL * d), v);
       // Keep the treatment front centred (tighter offset on phones).
-      const near = compact ? [v.x + 4, v.y + 4, 46, v.x + 1, v.y - 1, -1] : [v.x + 9, v.y + 5, 32, v.x + 3, v.y - 1, -1];
+      const near = compact ? [v.x + 2, v.y + 3, 46, v.x, v.y - 1, -1] : [v.x + 9, v.y + 5, 32, v.x + 3, v.y - 1, -1];
       const lerp = (i: number) => THREE.MathUtils.lerp(near[i], FULL[i], k);
       camera.position.set(lerp(0) + Math.sin(t * 0.2) * 0.5, lerp(1), lerp(2)); camera.lookAt(lerp(3), lerp(4), lerp(5));
       return;
