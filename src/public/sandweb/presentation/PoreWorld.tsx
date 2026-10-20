@@ -6,7 +6,7 @@ import { buildPack, clamp01, collide, dotTexture, flowVelocity, glyphTexture, ma
 export type Mode = "sand" | "treat" | "clean";
 type Props = { mode: Mode; progress: { current: number }; compact: boolean };
 
-const GOLD = new THREE.Color("#ffcf4a"), REPEL = new THREE.Color("#ff6a4a"), FINES = new THREE.Color("#6d6152");
+const GOLD = new THREE.Color("#2dff7a"), REPEL = new THREE.Color("#ff6a4a"), FINES = new THREE.Color("#6d6152");
 const up = new THREE.Vector3(0, 1, 0);
 
 // Pore-scale macro view: real-looking quartz grains, fines on grain surfaces,
@@ -127,15 +127,15 @@ export default function PoreWorld({ mode, progress, compact }: Props) {
     <hemisphereLight args={["#fff1dc", "#2a1c10", 0.6]} />
     <directionalLight position={[-8, 12, 10]} intensity={2.4} color="#fff0d8" />
     <directionalLight position={[10, -4, -10]} intensity={0.9} color="#8fb0d8" />
-    <pointLight position={[13, 0, 2]} color={mode === "treat" ? "#ffd23a" : "#ffb070"} intensity={30} distance={22} />
+    <pointLight position={[13, 0, 2]} color={mode === "treat" ? "#3dff7a" : "#ffb070"} intensity={30} distance={22} />
     {geos.map((geo, v) => <instancedMesh key={v} ref={(mesh) => { meshes.current[v] = mesh; }} args={[geo, undefined, ids[v].length]} frustumCulled={false}><meshStandardMaterial color="#ffffff" vertexColors roughness={0.86} metalness={0.02} /></instancedMesh>)}
     <instancedMesh ref={fines} args={[undefined, undefined, fineCount]} frustumCulled={false}><boxGeometry args={[1, 1, 1]} /><meshStandardMaterial color="#ffffff" roughness={1} /></instancedMesh>
     <instancedMesh ref={halo} args={[undefined, undefined, pack.count]} frustumCulled={false}><planeGeometry args={[1, 1]} /><meshBasicMaterial map={textures.ring} transparent depthWrite={false} blending={THREE.AdditiveBlending} toneMapped={false} /></instancedMesh>
     <instancedMesh ref={minus} args={[undefined, undefined, minusCount]} frustumCulled={false}><planeGeometry args={[1, 1]} /><meshBasicMaterial map={textures.minus} color="#ff8a6a" transparent depthWrite={false} toneMapped={false} /></instancedMesh>
     <lineSegments ref={oil} frustumCulled={false}><bufferGeometry><bufferAttribute attach="attributes-position" args={[tracers.line, 3]} /><bufferAttribute attach="attributes-color" args={[tracers.colors, 3]} /></bufferGeometry><lineBasicMaterial vertexColors transparent opacity={0.9} toneMapped={false} /></lineSegments>
     <points ref={drops} frustumCulled={false}><bufferGeometry><bufferAttribute attach="attributes-position" args={[tracers.line, 3]} /><bufferAttribute attach="attributes-color" args={[tracers.colors, 3]} /></bufferGeometry><pointsMaterial map={textures.dot} vertexColors size={compact ? 0.2 : 0.16} transparent opacity={0.85} depthWrite={false} blending={THREE.AdditiveBlending} toneMapped={false} /></points>
-    <lineSegments ref={web} frustumCulled={false}><bufferGeometry><bufferAttribute attach="attributes-position" args={[sim.webPos, 3]} /></bufferGeometry><lineBasicMaterial color="#ffd86a" transparent opacity={0.3} depthTest={false} blending={THREE.AdditiveBlending} toneMapped={false} /></lineSegments>
-    <points ref={contactGlow} frustumCulled={false}><bufferGeometry><bufferAttribute attach="attributes-position" args={[sim.contactPos, 3]} /></bufferGeometry><pointsMaterial map={textures.dot} color="#ffd86a" size={0.32} transparent depthWrite={false} blending={THREE.AdditiveBlending} toneMapped={false} /></points>
+    <lineSegments ref={web} frustumCulled={false}><bufferGeometry><bufferAttribute attach="attributes-position" args={[sim.webPos, 3]} /></bufferGeometry><lineBasicMaterial color="#5dffa0" transparent opacity={0.3} depthTest={false} blending={THREE.AdditiveBlending} toneMapped={false} /></lineSegments>
+    <points ref={contactGlow} frustumCulled={false}><bufferGeometry><bufferAttribute attach="attributes-position" args={[sim.contactPos, 3]} /></bufferGeometry><pointsMaterial map={textures.dot} color="#7dffb4" size={0.32} transparent depthWrite={false} blending={THREE.AdditiveBlending} toneMapped={false} /></points>
     {/* Casing wall with a perforation tunnel the fluid converges on. */}
     <mesh position={[14.2, 0, 0]}><boxGeometry args={[1, 18, 14]} /><meshStandardMaterial color="#6f7b84" metalness={0.85} roughness={0.38} /></mesh>
     <mesh position={[13.68, 0, 0]} rotation={[0, -Math.PI / 2, 0]}><circleGeometry args={[1.7, 40]} /><meshBasicMaterial color="#050403" /></mesh>

@@ -2,17 +2,18 @@ import { useFrame } from "@react-three/fiber";
 import { useMemo, useRef } from "react";
 import * as THREE from "three";
 import type { Mode } from "./PoreWorld";
-import { dotTexture, ramp, rockTexture, seeded, smooth } from "./world3d";
+import { dotTexture, ramp, rockTexture, seeded, skyTexture, smooth } from "./world3d";
 
 type Props = { mode: Mode; progress: { current: number }; compact: boolean };
 const RES_Y = -36, PERFS = [22, 34, 46, 58], Z = 0.7;
 const STRATA = [
-  { top: 0, bottom: -6, color: "#4a3a2b", seed: 1 },
-  { top: -6, bottom: -15, color: "#5b4a3a", seed: 2 },
-  { top: -15, bottom: -23, color: "#3d4246", seed: 3 },
-  { top: -23, bottom: -31, color: "#4f4134", seed: 4 },
-  { top: -31, bottom: -41, color: "#9b7a52", seed: 5, reservoir: true },
-  { top: -41, bottom: -52, color: "#34353a", seed: 6 },
+  { top: 0, bottom: -5, color: "#6a5538", seed: 1 },       // glacial till
+  { top: -5, bottom: -13, color: "#8c4b36", seed: 2 },     // red-bed siltstone
+  { top: -13, bottom: -20, color: "#4d5d6b", seed: 3 },    // blue-grey shale
+  { top: -20, bottom: -21.5, color: "#262320", seed: 4 },  // thin coal seam
+  { top: -21.5, bottom: -31, color: "#9c7942", seed: 5 },  // ochre siltstone
+  { top: -31, bottom: -41, color: "#c39b64", seed: 6, reservoir: true }, // reservoir sandstone
+  { top: -41, bottom: -52, color: "#3f514e", seed: 7 },    // grey-green shale
 ];
 const v3 = (x: number, y: number, z = Z) => new THREE.Vector3(x, y, z);
 
@@ -32,7 +33,7 @@ export default function WellWorld({ mode, progress, compact }: Props) {
   const core = useMemo(() => new THREE.TubeGeometry(path, 240, 0.3, 10, false), [path]);
   const pts = useMemo(() => path.getSpacedPoints(800), [path]);
   const surface = useMemo(() => [v3(0, 1.6), v3(12, 1.6)], []);
-  const textures = useMemo(() => ({ strata: STRATA.map((s) => { const t = rockTexture(s.color, s.seed, true); t.repeat.set(6, 1); return t; }), dot: dotTexture(), ground: (() => { const g = rockTexture("#4a4636", 11, false); g.repeat.set(10, 3); return g; })() }), []);
+  const textures = useMemo(() => ({ strata: STRATA.map((s) => { const t = rockTexture(s.color, s.seed, true); t.repeat.set(6, 1); return t; }), dot: dotTexture(), sky: skyTexture(), ground: (() => { const g = rockTexture("#4a6236", 11, false); g.repeat.set(10, 3); return g; })() }), []);
   const flowCount = compact ? 180 : 420, sandCount = compact ? 90 : 220, migCount = compact ? 120 : 260;
   const data = useMemo(() => {
     const r = seeded(5);
@@ -65,7 +66,7 @@ export default function WellWorld({ mode, progress, compact }: Props) {
         data.flowPos.set([v.x + dy, v.y + dz, v.z + dz], i * 3);
       });
       fl.geometry.attributes.position.needsUpdate = true;
-      (fl.material as THREE.PointsMaterial).setValues({ color: new THREE.Color(mode === "treat" ? "#ffcf2e" : "#e08a2a"), size: mode === "treat" ? 0.75 : 0.65, opacity: mode === "clean" ? 0.95 : 0.85 });
+      (fl.material as THREE.PointsMaterial).setValues({ color: new THREE.Color(mode === "treat" ? "#3dff6e" : "#e08a2a"), size: mode === "treat" ? 0.75 : 0.65, opacity: mode === "clean" ? 0.95 : 0.85 });
     }
     const sd = sand.current;
     if (sd) {
@@ -81,11 +82,11 @@ export default function WellWorld({ mode, progress, compact }: Props) {
         mg.geometry.attributes.position.needsUpdate = true;
       }
     }
-    coreMat.current?.emissive.set(mode === "treat" ? "#a87a00" : "#3a1e06");
+    coreMat.current?.emissive.set(mode === "treat" ? "#0a8a2a" : "#3a1e06");
     const wear = mode === "sand" ? ramp(p, 0.2, 0.7) : 0;
     chokeMat.current?.emissive.setRGB(0.9 * wear * (0.6 + 0.4 * Math.sin(t * 5)), 0.12 * wear, 0.05 * wear);
     pile.current?.scale.setScalar(Math.max(0.001, mode === "sand" ? 0.3 + 0.9 * ramp(p, 0.1, 0.9) : 0.001));
-    status.current?.color.set(mode === "clean" ? "#3df07a" : mode === "sand" ? "#ff4a2a" : "#ffcf2e");
+    status.current?.color.set(mode === "clean" ? "#3df07a" : mode === "sand" ? "#ff4a2a" : "#36e0d0");
     const zoneScale = mode === "treat" ? 0.2 + 5.5 * ramp(p, 0.45, 1) : mode === "clean" ? 5.5 : 0.001;
     zones.current.forEach((z) => { z?.scale.set(zoneScale * 0.38, zoneScale * 0.95, 1); });
     // Camera moves: wide → perforations (sand, treat); perforations → wide (clean).
@@ -104,18 +105,20 @@ export default function WellWorld({ mode, progress, compact }: Props) {
 
   const W0 = -40, W1 = 90;
   return <group>
-    <color attach="background" args={["#07090c"]} />
-    <fog attach="fog" args={["#07090c", 60, 220]} />
-    <hemisphereLight args={["#cfe3ff", "#3a2a1a", 0.75]} />
-    <directionalLight position={[30, 50, 60]} intensity={1.8} color="#fff2df" />
-    <pointLight position={[40, RES_Y, 10]} color={mode === "treat" ? "#ffcf2e" : "#ffb070"} intensity={mode === "sand" ? 40 : 90} distance={40} />
+    <color attach="background" args={["#0b1714"]} />
+    <fog attach="fog" args={["#0f1d19", 90, 260]} />
+    <mesh scale={400}><sphereGeometry args={[1, 32, 16]} /><meshBasicMaterial map={textures.sky} side={THREE.BackSide} fog={false} depthWrite={false} /></mesh>
+    <hemisphereLight args={["#cdeedd", "#4a3424", 0.8]} />
+    <directionalLight position={[30, 50, 60]} intensity={1.9} color="#ffeccc" />
+    <directionalLight position={[-60, 20, -40]} intensity={0.7} color="#7fd8ff" />
+    <pointLight position={[40, RES_Y, 10]} color={mode === "treat" ? "#3dff7a" : "#ffb070"} intensity={mode === "sand" ? 40 : 90} distance={40} />
     {/* Strata cutaway */}
     {STRATA.map((s, i) => <mesh key={s.top} position={[(W0 + W1) / 2, (s.top + s.bottom) / 2, -15]}><boxGeometry args={[W1 - W0, s.top - s.bottom, 30]} /><meshStandardMaterial map={textures.strata[i]} color="#ffffff" roughness={0.95} /></mesh>)}
     <mesh position={[(W0 + W1) / 2, 0.03, -15]} rotation={[-Math.PI / 2, 0, 0]}><planeGeometry args={[W1 - W0, 30]} /><meshStandardMaterial map={textures.ground} color="#ffffff" roughness={1} /></mesh>
     {/* Fractures with fine proppant specks, and treated zones */}
     {PERFS.map((x, i) => <group key={x}>
       <mesh position={[x, RES_Y, 0.02]} scale={[0.32, 4.6, 1]}><circleGeometry args={[1, 32]} /><meshStandardMaterial color="#7a5f3c" roughness={1} /></mesh>
-      <mesh ref={(m) => { zones.current[i] = m; }} position={[x, RES_Y, Z - 0.05]}><circleGeometry args={[1, 40]} /><meshBasicMaterial color="#ffc21f" transparent opacity={mode === "clean" ? 0.07 : 0.12} blending={THREE.AdditiveBlending} depthWrite={false} toneMapped={false} /></mesh>
+      <mesh ref={(m) => { zones.current[i] = m; }} position={[x, RES_Y, Z - 0.05]}><circleGeometry args={[1, 40]} /><meshBasicMaterial color="#2dff6a" transparent opacity={mode === "clean" ? 0.07 : 0.12} blending={THREE.AdditiveBlending} depthWrite={false} toneMapped={false} /></mesh>
       <mesh position={[x, RES_Y, Z]} rotation={[0, Math.PI / 2, 0]}><torusGeometry args={[0.62, 0.07, 8, 24]} /><meshStandardMaterial color="#9aa6ae" metalness={0.9} roughness={0.3} /></mesh>
     </group>)}
     <points><bufferGeometry><bufferAttribute attach="attributes-position" args={[data.speck, 3]} /></bufferGeometry><pointsMaterial map={textures.dot} color="#d8c29a" size={0.16} transparent depthWrite={false} /></points>
@@ -134,7 +137,7 @@ export default function WellWorld({ mode, progress, compact }: Props) {
       <mesh position={[6, 1.6, 0]} rotation={[0, 0, Math.PI / 2]}><cylinderGeometry args={[0.14, 0.14, 12, 10]} /><meshStandardMaterial color="#5f6b73" metalness={0.7} roughness={0.4} /></mesh>
       <mesh position={[5, 1.6, 0]} rotation={[0, 0, Math.PI / 2]}><cylinderGeometry args={[0.4, 0.4, 1.1, 16]} /><meshStandardMaterial ref={chokeMat} color="#8d98a0" metalness={0.7} roughness={0.35} /></mesh>
       <mesh position={[14, 1.5, 0]} rotation={[0, 0, Math.PI / 2]}><cylinderGeometry args={[1.2, 1.2, 4.5, 24]} /><meshStandardMaterial color="#a7b0b5" metalness={0.6} roughness={0.4} /></mesh>
-      <mesh position={[14, 3, 0.9]}><sphereGeometry args={[0.18, 12, 10]} /><meshBasicMaterial ref={status} color="#ffcf2e" toneMapped={false} /></mesh>
+      <mesh position={[14, 3, 0.9]}><sphereGeometry args={[0.18, 12, 10]} /><meshBasicMaterial ref={status} color="#36e0d0" toneMapped={false} /></mesh>
       <mesh ref={pile} position={[11.2, 0.05, 1.5]}><coneGeometry args={[1, 0.7, 18]} /><meshStandardMaterial color="#cdb68e" roughness={1} /></mesh>
     </group>
   </group>;

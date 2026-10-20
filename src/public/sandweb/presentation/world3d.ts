@@ -12,7 +12,7 @@ export function seeded(seed: number) { let x = Math.max(1, Math.floor(seed) % 21
 // Quartz sand palette: tan, beige, buff, a few darker lithic grains.
 export const SAND_PALETTE = ["#d9c4a0", "#cdb48d", "#e4d5ba", "#bfa37c", "#c8ae86", "#a98f6c", "#ddcaa8", "#8f7a5f"].map((c) => new THREE.Color(c));
 export const OIL_HEAD = new THREE.Color("#c87a24"), OIL_TAIL = new THREE.Color("#1a0c04");
-export const WEB_HEAD = new THREE.Color("#ffd23a"), WEB_TAIL = new THREE.Color("#2c2000");
+export const WEB_HEAD = new THREE.Color("#3dff6e"), WEB_TAIL = new THREE.Color("#00240a");
 
 function hashNoise(x: number, y: number, z: number, seed: number) {
   // Smooth-ish value noise from a few sines; good enough for grain lumps.
@@ -56,6 +56,15 @@ export function rockTexture(base: string, seed: number, bedding = true) {
   });
   texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
   return texture;
+}
+
+/** Vertical dusk gradient for a sky dome (deep teal-green overhead, soft horizon glow). */
+export function skyTexture() {
+  return canvasTexture(256, (ctx, s) => {
+    const g = ctx.createLinearGradient(0, 0, 0, s);
+    g.addColorStop(0, "#06140f"); g.addColorStop(0.32, "#0d2a24"); g.addColorStop(0.47, "#3c6a58"); g.addColorStop(0.5, "#6f8f6a"); g.addColorStop(0.53, "#1a1f1b"); g.addColorStop(1, "#070908");
+    ctx.fillStyle = g; ctx.fillRect(0, 0, s, s);
+  });
 }
 
 export function ringTexture() {

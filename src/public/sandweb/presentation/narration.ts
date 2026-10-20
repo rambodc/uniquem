@@ -1,12 +1,13 @@
-// Narration v3: approved script, OpenAI gpt-4o-mini-tts voice "ash", one
-// continuous take per clip, professional delivery. "Uniquem" is sent to the
-// TTS as "Uni-kem" so it is pronounced "UniKem" (YOO-nee-kem); captions keep
-// the real spelling. Caption times come from faster-whisper word timestamps
-// on the final audio (which starts with 0.5 s of silence).
+// Narration v4: OpenAI gpt-4o-mini-tts voice "ash", one continuous take per
+// clip. Scenes use a professional delivery; the ending uses a warm, upbeat
+// delivery (best of 8 takes, long pauses tightened to 0.42 s, +4% tempo).
+// "Uniquem" is sent to the TTS as "Uni-kem" so it is pronounced "UniKem";
+// captions keep the real spelling. Caption times are aligned to
+// faster-whisper word timestamps (first words of each caption chunk).
 export type Caption = { start: number; end: number; text: string };
 export type SceneId = "problem" | "sandweb" | "result";
 export type NarratedScene = { id: SceneId; title: string; audio: string; duration: number; captions: readonly Caption[] };
-export type NarratedClip = Omit<NarratedScene, "id"> & { id: "close" };
+export type NarratedClip = Omit<NarratedScene, "id"> & { id: "ending" };
 
 export const narratedScenes: readonly NarratedScene[] = [
   {
@@ -22,8 +23,13 @@ export const narratedScenes: readonly NarratedScene[] = [
       },
       {
         "start": 4.32,
+        "end": 6.2,
+        "text": "As fluid flows toward the wellbore,"
+      },
+      {
+        "start": 6.7,
         "end": 9.78,
-        "text": "As fluid flows toward the wellbore, it pulls sand and fines along with it."
+        "text": "it pulls sand and fines along with it."
       },
       {
         "start": 10.3,
@@ -32,13 +38,18 @@ export const narratedScenes: readonly NarratedScene[] = [
       },
       {
         "start": 14.36,
-        "end": 19.26,
-        "text": "plug the formation, and travel to surface, wearing down pumps and chokes,"
+        "end": 17.02,
+        "text": "plug the formation, and travel to surface,"
       },
       {
-        "start": 19.7,
+        "start": 17.56,
+        "end": 20.62,
+        "text": "wearing down pumps and chokes, forcing cleanouts,"
+      },
+      {
+        "start": 21.24,
         "end": 23.02,
-        "text": "forcing cleanouts, and quietly cutting into production."
+        "text": "and quietly cutting into production."
       }
     ]
   },
@@ -83,58 +94,73 @@ export const narratedScenes: readonly NarratedScene[] = [
   {
     "id": "result",
     "title": "Sand stays down. Oil flows.",
-    "audio": "/audio/sandweb/scene-result-v3.mp3",
-    "duration": 24.38,
+    "audio": "/audio/sandweb/scene-result-v4.mp3",
+    "duration": 22.42,
     "captions": [
       {
         "start": 0.5,
-        "end": 3.02,
+        "end": 3.0,
         "text": "Now the well produces the way it should."
       },
       {
-        "start": 3.74,
-        "end": 6.7,
+        "start": 3.7,
+        "end": 7.08,
         "text": "Oil flows freely and at higher rates through a stable,"
       },
       {
-        "start": 6.7,
-        "end": 10.2,
+        "start": 7.16,
+        "end": 10.56,
         "text": "connected sand pack, and the sand stays downhole."
       },
       {
-        "start": 10.2,
-        "end": 16.3,
-        "text": "In Western Canada, operators have seen up to ninety percent less sand flowback."
+        "start": 11.34,
+        "end": 14.8,
+        "text": "Operators have seen up to ninety percent less sand flowback."
       },
       {
-        "start": 16.92,
-        "end": 20.08,
+        "start": 15.32,
+        "end": 18.52,
         "text": "That means less wear on equipment, fewer cleanouts,"
       },
       {
-        "start": 20.52,
-        "end": 23.24,
+        "start": 18.96,
+        "end": 21.62,
         "text": "and more production from the wells you already have."
       }
     ]
   }
 ];
 
-export const closingClip: NarratedClip = {
-  "id": "close",
+export const endingClip: NarratedClip = {
+  "id": "ending",
   "title": "",
-  "audio": "/audio/sandweb/scene-close-v3.mp3",
-  "duration": 7.18,
+  "audio": "/audio/sandweb/scene-ending-v4.mp3",
+  "duration": 12.79,
   "captions": [
     {
       "start": 0.5,
-      "end": 3.84,
-      "text": "Want to know what SandWeb could do for your wells?"
+      "end": 2.6,
+      "text": "Imagine your wells producing more,"
     },
     {
-      "start": 4.76,
-      "end": 6.36,
-      "text": "Answer a few quick questions."
+      "start": 2.87,
+      "end": 6.25,
+      "text": "with less sand, less downtime, and lower costs."
+    },
+    {
+      "start": 6.81,
+      "end": 8.75,
+      "text": "That's what SandWeb was built to do."
+    },
+    {
+      "start": 9.05,
+      "end": 10.47,
+      "text": "So let's talk about your wells."
+    },
+    {
+      "start": 11.1,
+      "end": 12.25,
+      "text": "How would you like to hear from us?"
     }
   ]
 };

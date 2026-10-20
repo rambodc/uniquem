@@ -2,11 +2,11 @@ import type { SceneId } from "./narration";
 
 // Each narrated scene cuts between two scales: the well/formation view and the
 // pore-scale macro view. `cut` is the fraction of the scene at which it cuts.
-export type View = "well" | "pore";
+export type View = "well" | "pore" | "flow";
 const PLAN: Record<SceneId, { first: View; second: View; cut: number }> = {
   problem: { first: "well", second: "pore", cut: 0.42 },
   sandweb: { first: "well", second: "pore", cut: 0.36 },
-  result: { first: "pore", second: "well", cut: 0.4 },
+  result: { first: "flow", second: "well", cut: 0.46 },
 };
 export const FADE = 0.45;
 
