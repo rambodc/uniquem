@@ -31,18 +31,26 @@ test("sends a product inquiry through Resend from website@irobotx.io to the Uniq
   assert.deepEqual(body.to, [EMAIL_TO]);
   assert.equal(EMAIL_TO, "rambodr@uniquem.ca");
   assert.equal(body.reply_to, "customer@example.com");
-  assert.match(body.subject, /Friction Reducer/);
+  assert.equal(body.subject, "New Uniquem website inquiry (Friction Reducer) - Sep 22, 2026, 11:00 AM MDT");
   assert.match(body.text, /Example Oilfield/);
   assert.match(body.text, /Sep 22, 2026, 11:00 AM MDT/);
 });
 
-test("omits reply_to for a phone-only call-back lead", async () => {
+test("formats a phone-only SandWeb call-back lead like a contact-page inquiry", async () => {
   const calls = [];
-  await sendInquiryNotification({ name: "Caller", phone: "+1 403 555 0100", productName: "SandWeb", message: "Call back requested" }, "re_test_key", { fetchImpl: okFetch(calls) });
-  assert.equal("reply_to" in calls[0].body, false);
-  assert.match(calls[0].body.text, /Email: Not provided/);
-  assert.match(calls[0].body.text, /Phone: \+1 403 555 0100/);
+  await sendInquiryNotification({ name: "Caller", phone: "+1 403 555 0100", company: "Acme", productName: "SandWeb", message: "Please call me about SandWeb.", notificationTimestamp: "2026-10-20T19:00:00.000Z" }, "re_test_key", { fetchImpl: okFetch(calls) });
+  const { body } = calls[0];
+  assert.equal(body.reply_to, EMAIL_TO);
+  assert.equal(body.subject, "New Uniquem website inquiry (SandWeb) - Oct 20, 2026, 1:00 PM MDT");
+  assert.equal(body.text, "New Uniquem website inquiry\nProduct: SandWeb\nName: Caller\nCompany: Acme\nPhone: +1 403 555 0100\nSubmitted: Oct 20, 2026, 1:00 PM MDT\nMessage:\nPlease call me about SandWeb.");
   assert.equal("Idempotency-Key" in calls[0].init.headers, false);
+});
+
+test("uses the generic subject for contact-page inquiries", async () => {
+  const calls = [];
+  await sendInquiryNotification({ name: "C", email: "c@example.com", message: "A general question.", notificationTimestamp: "2026-01-15T18:00:00.000Z" }, "re_test_key", { fetchImpl: okFetch(calls) });
+  assert.equal(calls[0].body.subject, "New Uniquem website inquiry - Jan 15, 2026, 11:00 AM MST");
+  assert.equal(calls[0].body.reply_to, "c@example.com");
 });
 
 test("refuses to send without an API key", async () => {

@@ -4,7 +4,9 @@ The `submitContactInquiry` callable validates the inquiry, saves it to Firestore
 
 - From: `Uniquem Website <website@irobotx.io>` (the `irobotx.io` domain must stay verified in the Resend account that owns the API key)
 - To: `rambodr@uniquem.ca`
-- Reply-To: the visitor's email, only when they provided one. Call-back leads (SandWeb "Call me") may have a phone number and no email.
+- Subject: `New Uniquem website inquiry - <Mountain time>`, or `New Uniquem website inquiry (<product>) - <Mountain time>` for product inquiries, e.g. `New Uniquem website inquiry (SandWeb) - Oct 20, 2026, 1:48 PM MDT`. The timestamp keeps every subject unique.
+- Reply-To: the visitor's email when provided; otherwise `rambodr@uniquem.ca` (SandWeb "Call me" leads have a phone number and no email).
+- Body: one line per field (Product, Name, Email, Company, Phone, Submitted) followed by the visitor's message; SandWeb leads send a short message such as "Please call me about SandWeb."
 - Idempotency key: `contact-inquiry/<Firestore inquiry id>`, so a retried send never duplicates.
 
 Validation: `name` and `message` are required, and at least one of `email` or `phone` must be given. An email, when present, must be valid.

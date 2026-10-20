@@ -8,13 +8,16 @@ describe("SandWeb lead payload", () => {
     expect(data.phone).toBe("403 555 0100");
     expect("email" in data).toBe(false);
     expect(JSON.stringify(data)).not.toMatch(/sandweb@uniquem|390-0067/);
-    expect(data.message).toContain("Call back requested");
+    expect(data.message).toBe("Please call me about SandWeb.");
+    expect(data.productName).toBe("SandWeb");
   });
   it("sends an email lead with the visitor's email", () => {
     const data = leadPayload("email", { ...base, email: "pat@example.com", company: "Acme" }, true);
     expect(data.email).toBe("pat@example.com");
     expect("phone" in data).toBe(false);
     expect(data.company).toBe("Acme");
-    expect(data.message.startsWith("[PREVIEW TEST")).toBe(true);
+    expect(data.message).toBe("Please email me about SandWeb. (Preview test)");
+    expect(data.message.length).toBeGreaterThanOrEqual(10);
+    expect(data.message).not.toMatch(/Source:|Name:|Company:|Email:/);
   });
 });
