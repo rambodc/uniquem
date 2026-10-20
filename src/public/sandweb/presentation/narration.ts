@@ -10,7 +10,7 @@ export const narratedScenes: readonly NarratedScene[] = [
   {
     "id": "problem",
     "title": "The problem: sand on the move",
-    "audio": "/audio/sandweb/scene-problem.mp3",
+    "audio": "/audio/sandweb/scene-problem-v2.mp3",
     "duration": 23.28,
     "captions": [
       {
@@ -48,7 +48,7 @@ export const narratedScenes: readonly NarratedScene[] = [
   {
     "id": "sandweb",
     "title": "SandWeb: sand consolidation chemistry",
-    "audio": "/audio/sandweb/scene-sandweb.mp3",
+    "audio": "/audio/sandweb/scene-sandweb-v2.mp3",
     "duration": 26.06,
     "captions": [
       {
@@ -86,7 +86,7 @@ export const narratedScenes: readonly NarratedScene[] = [
   {
     "id": "result",
     "title": "The result: sand locked, oil flowing",
-    "audio": "/audio/sandweb/scene-result.mp3",
+    "audio": "/audio/sandweb/scene-result-v2.mp3",
     "duration": 24.31,
     "captions": [
       {
