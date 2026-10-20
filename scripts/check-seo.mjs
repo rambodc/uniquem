@@ -82,7 +82,7 @@ for (const url of urls) {
     }
   }
 }
-for (const pathname of ["/signin", "/contact-inbox", "/test/logo-3d"]) {
+for (const pathname of ["/signin", "/contact-inbox", "/test/logo-3d", "/test/logo-3d-front"]) {
   const { html, headers } = await read(pathname);
   const doc = new JSDOM(html).window.document;
   assert.equal(doc.querySelector('meta[name="robots"]').content, "noindex, nofollow");
@@ -101,4 +101,4 @@ for (const redirect of config.hosting.redirects) {
   }
 }
 if (base) assert.equal(await fetchStatus(`${base}/does-not-exist-seo-check`), 404, "unknown URLs stay 404");
-console.log(`SEO checks passed: ${urls.length} public pages, 3 private pages, ${config.hosting.redirects.length} legacy redirects${base ? ` at ${base}` : " in build output"}.`);
+console.log(`SEO checks passed: ${urls.length} public pages, 4 private pages, ${config.hosting.redirects.length} legacy redirects${base ? ` at ${base}` : " in build output"}.`);
