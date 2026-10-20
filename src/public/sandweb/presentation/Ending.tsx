@@ -18,13 +18,11 @@ export function phoneOk(v: string) {
   return digits.length === 10 || (digits.length === 11 && digits.startsWith("1"));
 }
 
+// Keep the lead a plain inquiry, like the contact page: each field is sent once
+// and the notification email lists them. No extra "Source:" or repeated lines.
 export function leadPayload(method: "call" | "email", f: Form, preview: boolean) {
-  const label = method === "call" ? "Call back requested" : "Email follow-up requested";
-  const lines = [`${preview ? "[PREVIEW TEST - not a real lead] " : ""}${label}`, "Source: SandWeb narrated presentation", `Preferred contact: ${method === "call" ? "phone call" : "email"}`, `Name: ${f.name.trim()}`];
-  if (method === "call") lines.push(`Phone: ${f.phone.trim()}`, "No email provided. Please call back.");
-  else lines.push(`Email: ${f.email.trim()}`);
-  lines.push(`Company: ${f.company.trim() || "Not provided"}`);
-  const data: Record<string, string> = { inquiryType: "product", productName: "SandWeb", name: f.name.trim(), message: lines.join("\n"), website: f.website };
+  const message = `Please ${method === "call" ? "call" : "email"} me about SandWeb.${preview ? " (Preview test)" : ""}`;
+  const data: Record<string, string> = { inquiryType: "product", productName: "SandWeb", name: f.name.trim(), message, website: f.website };
   if (method === "call") data.phone = f.phone.trim(); else data.email = f.email.trim();
   if (f.company.trim()) data.company = f.company.trim();
   return data;

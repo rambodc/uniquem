@@ -25,7 +25,7 @@ export function formatInquiryEmail(inquiry) {
     "",
     inquiry.productName ? `Product: ${inquiry.productName}` : "",
     `Name: ${inquiry.name}`,
-    `Email: ${inquiry.email || "Not provided"}`,
+    inquiry.email ? `Email: ${inquiry.email}` : "",
     inquiry.company ? `Company: ${inquiry.company}` : "",
     inquiry.phone ? `Phone: ${inquiry.phone}` : "",
     `Submitted: ${timestamp}`,
@@ -36,13 +36,11 @@ export function formatInquiryEmail(inquiry) {
 }
 
 export function buildInquiryEmail(inquiry) {
-  const subject = inquiry.productName
-    ? `Uniquem product inquiry: ${inquiry.productName}`
-    : "New Uniquem website inquiry";
-  const message = { from: EMAIL_FROM, to: [EMAIL_TO], subject, text: formatInquiryEmail(inquiry) };
-  // Reply goes straight to the visitor, but only when they gave an email.
-  if (inquiry.email) message.reply_to = inquiry.email;
-  return message;
+  // A unique, dated subject per submission so Gmail never threads leads together.
+  const stamp = formatMountainTimestamp(inquiry.notificationTimestamp || new Date());
+  const subject = `New Uniquem website inquiry${inquiry.productName ? ` (${inquiry.productName})` : ""} - ${stamp}`;
+  // Reply goes straight to the visitor; phone-only leads reply to the inbox itself.
+  return { from: EMAIL_FROM, to: [EMAIL_TO], reply_to: inquiry.email || EMAIL_TO, subject, text: formatInquiryEmail(inquiry) };
 }
 
 /**
