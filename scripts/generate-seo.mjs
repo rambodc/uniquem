@@ -21,6 +21,9 @@ for (const route of ["signin", "contact-inbox"]) {
   await mkdir(`dist/${route}`, { recursive: true });
   await writeFile(`dist/${route}/index.html`, cleanShell.replace("</head>", '<title>Uniquem | Private page</title><meta name="robots" content="noindex, nofollow"></head>'));
 }
+// Test concept: narrated SandWeb presentation, client-rendered and not indexed yet.
+await mkdir("dist/chemicals/sandweb/presentation", { recursive: true });
+await writeFile("dist/chemicals/sandweb/presentation/index.html", cleanShell.replace("</head>", '<title>SandWeb narrated 3D demo | Uniquem</title><meta name="robots" content="noindex, nofollow"></head>'));
 await writeFile("dist/sitemap.xml", `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${routes.map((route) => `  <url><loc>https://uniquem.ca${route.path}</loc></url>`).join("\n")}\n</urlset>\n`);
 await rm(".seo-build", { recursive: true, force: true });
 console.log(`Generated complete public HTML for ${routes.length} routes and noindex shells for private routes.`);

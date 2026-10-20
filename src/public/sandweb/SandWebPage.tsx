@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useRef, useState, type ReactNode } from "react";
-import { ArrowUpRight, ChevronDown, Globe2, Layers, ShieldCheck, Wrench, TrendingUp, BadgeDollarSign, FlaskConical } from "lucide-react";
+import { ArrowUpRight, ChevronDown, Play, Globe2, Layers, ShieldCheck, Wrench, TrendingUp, BadgeDollarSign, FlaskConical } from "lucide-react";
 import { Link } from "react-router-dom";
 import type { PublicProduct } from "../products";
 import { applications, benefits, comparison, faqs, storySteps } from "./content";
@@ -72,6 +72,7 @@ export default function SandWebPage({ product, inquiry }: { product: PublicProdu
             {index === 0 ? <><h1>SandWeb <span>sand consolidation chemistry</span></h1><p className="sw-lede">{item.title}.</p></> : <h2>{item.title}</h2>}
             <p>{item.copy}</p>
             {index === 0 && <div className="sw-actions"><Link className="sw-button" to="/contact-us">Request a quote <ArrowUpRight size={17} /></Link><a className="sw-button ghost" href="#savings-calculator">Estimate savings</a></div>}
+            {index === 0 && <Link className="sw-watch" to="/chemicals/sandweb/presentation"><Play size={15} fill="currentColor" /> Watch the narrated demo</Link>}
             {index === 4 && <div className="sw-modes"><span>Hydraulic fracturing</span><span>Stimulation &amp; remedial</span></div>}
           </div>
         </article>)}

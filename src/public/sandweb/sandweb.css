@@ -100,3 +100,34 @@
   .sw-section{padding-top:80px}
 }
 @media (prefers-reduced-motion:reduce){.sw-scroll-cue{animation:none}.sw-hud-bar b,.sw-button{transition:none}}
+
+/* Narrated presentation (/chemicals/sandweb/presentation) */
+.swp{position:fixed;inset:0;z-index:30;background:#05070b;color:#eef3f7;overflow:hidden;font-family:inherit}
+.swp-stage{position:absolute;inset:0}.swp-stage canvas{position:absolute!important;inset:0}
+.swp-fade{position:absolute;inset:0;background:#05070b;pointer-events:none;animation:swp-fade 1.1s ease forwards}
+@keyframes swp-fade{to{opacity:0}}
+.swp-fallback{position:absolute;inset:0;display:grid;place-items:center;background:radial-gradient(circle at 50% 45%,rgba(255,210,31,.16),transparent 60%)}.swp-fallback img{width:min(44vw,420px);opacity:.9}
+.swp-back{position:absolute;top:22px;left:24px;z-index:3;display:inline-flex;align-items:center;gap:8px;padding:9px 14px;border:1px solid rgba(255,255,255,.16);border-radius:999px;background:rgba(5,7,11,.6);font-size:13px;color:#c9d3da}
+.swp-start,.swp-end{position:absolute;inset:0;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;background:radial-gradient(circle at 50% 50%,rgba(5,7,11,.35),rgba(5,7,11,.92) 70%)}
+.swp-start h1,.swp-end h2{margin:16px 0 14px;font-size:clamp(44px,7vw,92px);line-height:.95;letter-spacing:-.05em}
+.swp-start h1 span,.swp-end h2 span{display:block;margin-top:10px;font-size:.42em;letter-spacing:-.02em;background:linear-gradient(90deg,#ffd21f,#ffb547);-webkit-background-clip:text;background-clip:text;color:transparent}
+.swp-end h2{font-size:clamp(34px,5vw,64px)}.swp-end h2 span{font-size:.75em}
+.swp-start p,.swp-end p{max-width:560px;color:#b8c4cd;font-size:17px;line-height:1.6}
+.swp-end .sw-actions{justify-content:center}
+.swp-play{display:grid;place-items:center;width:112px;height:112px;margin-top:28px;border:0;border-radius:50%;background:#ffd21f;color:#151100;box-shadow:0 0 0 14px rgba(255,210,31,.15),0 0 80px rgba(255,210,31,.45);animation:swp-pulse 2.2s ease-in-out infinite;cursor:pointer}
+.swp-play svg{margin-left:6px}
+@keyframes swp-pulse{50%{box-shadow:0 0 0 26px rgba(255,210,31,.06),0 0 110px rgba(255,210,31,.55)}}
+.swp-title{position:absolute;z-index:2;top:80px;left:max(24px,4vw);max-width:560px;animation:swp-in .8s ease both}
+.swp-title span{color:#ffd21f;font-size:12px;font-weight:700;letter-spacing:.16em}
+.swp-title h2{margin:8px 0 12px;font-size:clamp(26px,3.4vw,44px);line-height:1.05;letter-spacing:-.03em;text-shadow:0 4px 30px rgba(0,0,0,.6)}
+.swp-chips{display:flex;flex-wrap:wrap;gap:8px}.swp-chips i{padding:6px 11px;border:1px solid rgba(255,210,31,.4);border-radius:999px;color:#ffd21f;font-size:12px;font-style:normal;font-weight:650;background:rgba(5,7,11,.45)}
+.swp-caption{position:absolute;z-index:2;left:50%;bottom:110px;transform:translateX(-50%);width:min(860px,calc(100% - 32px));margin:0;padding:14px 22px;border-radius:14px;background:rgba(5,7,11,.72);backdrop-filter:blur(8px);text-align:center;font-size:clamp(17px,2vw,24px);line-height:1.4;font-weight:550;animation:swp-in .45s ease both}
+.swp-caption:empty{display:none}
+@keyframes swp-in{from{opacity:0;transform:translate(var(--tx,0),10px)}to{opacity:1;transform:translate(var(--tx,0),0)}}
+.swp-caption{--tx:-50%}
+.swp-controls{position:absolute;z-index:3;left:50%;bottom:28px;transform:translateX(-50%);display:flex;align-items:center;gap:6px;padding:8px;border:1px solid rgba(255,255,255,.14);border-radius:999px;background:rgba(5,7,11,.75);backdrop-filter:blur(10px)}
+.swp-controls button{display:grid;place-items:center;width:42px;height:42px;border:0;border-radius:50%;background:transparent;color:#eef3f7;cursor:pointer}.swp-controls button:hover{background:rgba(255,255,255,.08)}.swp-controls button:disabled{opacity:.3;cursor:default}
+.swp-progress{display:flex;gap:6px;width:min(220px,30vw);padding:0 8px}.swp-progress span{flex:1;height:5px;border-radius:9px;background:rgba(255,255,255,.15);overflow:hidden;cursor:pointer}.swp-progress b{display:block;height:100%;background:#ffd21f}
+.sw-watch{display:inline-flex;align-items:center;gap:8px;margin-top:14px;color:#ffd21f;font-weight:650;font-size:14px}
+@media (max-width:760px){.swp-title{top:70px;left:16px;right:16px}.swp-caption{bottom:96px;font-size:16px}.swp-controls{bottom:18px;gap:2px}.swp-controls button{width:38px;height:38px}.swp-progress{width:24vw;padding:0 4px}.swp-play{width:92px;height:92px}}
+@media (prefers-reduced-motion:reduce){.swp-play{animation:none}}
