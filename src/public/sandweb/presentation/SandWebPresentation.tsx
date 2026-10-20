@@ -1,100 +1,114 @@
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
-import { ArrowLeft, ArrowUpRight, Pause, Play, RotateCcw, SkipBack, SkipForward, Volume2, VolumeX } from "lucide-react";
+import { ArrowLeft, ArrowRight, Pause, Play, RotateCcw, SkipBack, SkipForward, Volume2, VolumeX } from "lucide-react";
 import { Link } from "react-router-dom";
-import { narratedScenes } from "./narration";
-import type { ClockRef } from "./PresentationScenes";
+import { closingClip, narratedScenes, type Caption } from "./narration";
+import type { ClockRef } from "./Stage3";
+import { viewAt } from "./timeline";
 
-const PresentationScenes = lazy(() => import("./PresentationScenes"));
-const chips: Record<string, string[]> = { problem: ["Sand flowback", "Equipment erosion"], sandweb: ["Hydraulic fracturing", "Well stimulation", "Remedial treatments"], result: ["Sand locked", "Oil & gas flowing", "Available worldwide"] };
+const Stage3 = lazy(() => import("./Stage3"));
+const Questionnaire = lazy(() => import("./Questionnaire"));
+const chips: Record<string, string[]> = { problem: ["Sand & fines migration", "Equipment wear"], sandweb: ["Existing wells", "Pumped with the frac", "No resin coating"], result: ["Sand stays downhole", "Up to 90% less flowback*"] };
 const GAP_AFTER_SCENE = 1.1;
+type Phase = "start" | "scenes" | "close" | "quiz";
 
 function canRenderWebGL() { try { const c = document.createElement("canvas"); return Boolean(c.getContext("webgl2") || c.getContext("webgl")); } catch { return false; } }
+const captionAt = (captions: readonly Caption[], t: number) => captions.find((c, i) => t >= c.start - 0.1 && t < (captions[i + 1]?.start ?? c.end + 1.2));
 
 export default function SandWebPresentation() {
-  const audio = useRef<HTMLAudioElement>(null), clock = useRef(0) as ClockRef;
-  const [started, setStarted] = useState(false), [index, setIndex] = useState(0), [playing, setPlaying] = useState(false), [muted, setMuted] = useState(false), [ended, setEnded] = useState(false);
-  const [time, setTime] = useState(0), [webgl] = useState(canRenderWebGL), [compact, setCompact] = useState(() => matchMedia("(max-width: 760px)").matches);
-  const scene = narratedScenes[index];
+  const audio = useRef<HTMLAudioElement>(null), clock = useRef(0) as ClockRef, closeClock = useRef(0);
+  const [phase, setPhase] = useState<Phase>("start"), [index, setIndex] = useState(0), [playing, setPlaying] = useState(false), [muted, setMuted] = useState(false);
+  const [time, setTime] = useState(0), [closeTime, setCloseTime] = useState(0), [webgl] = useState(canRenderWebGL), [compact, setCompact] = useState(() => matchMedia("(max-width: 760px)").matches);
+  const scene = narratedScenes[index], started = phase !== "start";
 
   useEffect(() => { const mq = matchMedia("(max-width: 760px)"); const sync = () => setCompact(mq.matches); mq.addEventListener("change", sync); return () => mq.removeEventListener("change", sync); }, []);
 
+  const playSrc = useCallback((src: string) => { const el = audio.current; if (!el) return; el.src = src; el.currentTime = 0; el.play().catch(() => undefined); }, []);
+
+  const finish = useCallback(() => { clock.current = narratedScenes[narratedScenes.length - 1].duration; closeClock.current = 0; setPlaying(true); setPhase("close"); playSrc(closingClip.audio); }, [clock, playSrc]);
+
   // Narration time drives the 3D animation and captions. If audio cannot play
-  // (blocked, failed to load), a wall clock keeps the presentation moving.
+  // (blocked or failed to load), a wall clock keeps the presentation moving.
   useEffect(() => {
-    let frame = 0, last = performance.now(), advanceAt = 0;
+    if (phase !== "scenes" && phase !== "close") return;
+    let frame = 0, last = performance.now(), advanced = false;
     const tick = (now: number) => {
       const dt = (now - last) / 1000; last = now;
-      const el = audio.current;
+      const el = audio.current, audioOk = Boolean(el && !el.error && el.readyState >= 2 && !el.ended);
       if (playing && el) {
-        const audioOk = !el.error && el.readyState >= 2;
-        clock.current = audioOk && !el.ended ? el.currentTime : clock.current + dt;
-        if (clock.current >= scene.duration + GAP_AFTER_SCENE && !advanceAt) {
-          advanceAt = now;
-          if (index < narratedScenes.length - 1) setIndex(index + 1); else { setEnded(true); setPlaying(false); }
-        }
+        if (phase === "scenes") {
+          clock.current = audioOk ? el.currentTime : clock.current + dt;
+          if (clock.current >= scene.duration + GAP_AFTER_SCENE && !advanced) {
+            advanced = true;
+            if (index < narratedScenes.length - 1) setIndex(index + 1);
+            else finish();
+          }
+        } else closeClock.current = audioOk ? el.currentTime : Math.min(closingClip.duration + 5, closeClock.current + dt);
       }
-      setTime(clock.current);
+      setTime(clock.current); setCloseTime(closeClock.current);
       frame = requestAnimationFrame(tick);
     };
     frame = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(frame);
-  }, [playing, index, scene.duration, clock]);
+  }, [phase, playing, index, scene.duration, clock, finish]);
 
-  // Load and play the active scene's narration.
+  // Load the active scene's narration whenever the scene changes.
   useEffect(() => {
-    const el = audio.current; if (!el || !started) return;
+    if (phase !== "scenes") return;
     clock.current = 0;
-    el.src = scene.audio; el.currentTime = 0;
-    if (playing) el.play().catch(() => undefined);
+    if (playing) playSrc(narratedScenes[index].audio); else if (audio.current) { audio.current.src = narratedScenes[index].audio; audio.current.currentTime = 0; }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [index, started]);
+  }, [index, phase === "scenes"]);
 
-  useEffect(() => { const el = audio.current; if (!el || !started) return; if (playing) el.play().catch(() => undefined); else el.pause(); }, [playing, started]);
+  useEffect(() => { const el = audio.current; if (!el || !started || !el.src) return; if (playing && phase !== "quiz") el.play().catch(() => undefined); else el.pause(); }, [playing, started, phase]);
   useEffect(() => { if (audio.current) audio.current.muted = muted; }, [muted]);
 
-  const go = useCallback((next: number) => { setEnded(false); setPlaying(true); setIndex(Math.max(0, Math.min(narratedScenes.length - 1, next))); }, []);
-  const start = () => { setStarted(true); setPlaying(true); const el = audio.current; if (el) { el.src = narratedScenes[0].audio; el.play().catch(() => undefined); } };
-  const replay = () => { setEnded(false); setPlaying(true); if (index === 0) { clock.current = 0; if (audio.current) { audio.current.currentTime = 0; audio.current.play().catch(() => undefined); } } else setIndex(0); };
+  const go = useCallback((next: number) => { clock.current = 0; setPhase("scenes"); setPlaying(true); setIndex(Math.max(0, Math.min(narratedScenes.length - 1, next))); }, [clock]);
+  const start = () => { setPhase("scenes"); setPlaying(true); };
+  const replay = () => { clock.current = 0; setIndex(0); setPhase("scenes"); setPlaying(true); if (index === 0) playSrc(narratedScenes[0].audio); };
+  const openQuiz = () => { audio.current?.pause(); setPlaying(false); setPhase("quiz"); };
 
   useEffect(() => {
-    const onKey = (event: KeyboardEvent) => { if (!started) return; if (event.key === " ") { event.preventDefault(); setPlaying((p) => !p); } if (event.key === "ArrowRight") go(index + 1); if (event.key === "ArrowLeft") go(index - 1); if (event.key === "m") setMuted((m) => !m); };
+    const onKey = (event: KeyboardEvent) => { if (phase !== "scenes" && phase !== "close") return; if (event.key === " ") { event.preventDefault(); setPlaying((p) => !p); } if (event.key === "ArrowRight" && phase === "scenes") go(index + 1); if (event.key === "ArrowLeft") go(phase === "close" ? narratedScenes.length - 1 : index - 1); if (event.key === "m") setMuted((m) => !m); };
     window.addEventListener("keydown", onKey); return () => window.removeEventListener("keydown", onKey);
-  }, [started, index, go]);
+  }, [phase, index, go]);
 
-  const caption = scene.captions.find((c, i) => time >= c.start - 0.1 && time < (scene.captions[i + 1]?.start ?? c.end + 1.2));
-  const progress = Math.min(1, time / scene.duration);
+  const view = viewAt(scene.id, phase === "close" ? scene.duration : time, scene.duration);
+  const caption = phase === "close" ? captionAt(closingClip.captions, closeTime) : captionAt(scene.captions, time);
+  const progress = Math.min(1, time / scene.duration), ended = phase === "close";
 
-  return <main className="swp">
+  if (phase === "quiz") return <main className="swp swp-quiz"><audio ref={audio} preload="none" /><Link className="swp-back" to="/chemicals/sandweb"><ArrowLeft size={16} /> SandWeb</Link><Suspense fallback={null}><Questionnaire webgl={webgl} compact={compact} onReplay={replay} /></Suspense></main>;
+
+  return <main className={`swp ${ended ? "is-ended" : ""}`}>
     <audio ref={audio} preload="auto" />
     <div className="swp-stage" aria-hidden="true">
-      {started && webgl ? <Suspense fallback={null}><PresentationScenes scene={scene.id} duration={scene.duration} clock={clock} compact={compact} active /></Suspense> : <div className="swp-fallback"><img src="/images/products/sandweb-tote.webp" alt="" /></div>}
+      {started && webgl ? <Suspense fallback={null}><Stage3 scene={scene.id} view={view.view} clock={clock} duration={scene.duration} compact={compact} active /></Suspense> : <div className="swp-fallback"><img src="/images/products/sandweb-tote.webp" alt="" /></div>}
       <div className="swp-fade" key={`${index}-${started}`} />
+      <div className="swp-cut" style={{ opacity: started ? view.fade : 0 }} />
     </div>
     <Link className="swp-back" to="/chemicals/sandweb"><ArrowLeft size={16} /> SandWeb</Link>
 
     {!started && <section className="swp-start">
-      <span className="sw-kicker">Narrated 3D demo · about 1 minute</span>
-      <h1>SandWeb <span>sand consolidation chemistry</span></h1>
-      <p>See how SandWeb stops sand flowback, in three short scenes. Turn your sound on.</p>
+      <span className="sw-kicker">Narrated 3D demo · about 80 seconds</span>
+      <h1>SandWeb <span>sand and fines control chemistry</span></h1>
+      <p>See how SandWeb holds sand and fines in place, in three short scenes. Turn your sound on.</p>
       <button className="swp-play" onClick={start} aria-label="Play the narrated SandWeb demo"><Play size={34} fill="currentColor" /></button>
     </section>}
 
-    {started && !ended && <>
-      <header className="swp-title" key={scene.id}><span>{String(index + 1).padStart(2, "0")} / {String(narratedScenes.length).padStart(2, "0")}</span><h2>{scene.title}</h2><div className="swp-chips">{chips[scene.id].map((c) => <i key={c}>{c}</i>)}</div></header>
-      <p className="swp-caption" aria-live="polite" key={caption?.text ?? "none"}>{caption?.text}</p>
-    </>}
+    {phase === "scenes" && <header className="swp-title" key={scene.id}><span>{String(index + 1).padStart(2, "0")} / {String(narratedScenes.length).padStart(2, "0")} · {view.view === "pore" ? "Pore scale" : "Well scale"}</span><h2>{scene.title}</h2><div className="swp-chips">{chips[scene.id].map((c) => <i key={c}>{c}</i>)}</div></header>}
+    {started && caption && <p className="swp-caption" aria-live="polite" key={caption.text}>{caption.text}</p>}
+    {phase === "scenes" && scene.id === "result" && <p className="swp-footnote">*Reported in frac treatments in Western Canada (Ostracod, Cardium, Glauconite and Spirit River).</p>}
 
     {ended && <section className="swp-end">
       <span className="sw-kicker">SandWeb by Uniquem</span>
-      <h2>Sand consolidation chemistry.<br /><span>Available worldwide.</span></h2>
-      <p>For hydraulic fracturing, well stimulation and remedial sand control. Shipped in 1000 L totes.</p>
-      <div className="sw-actions"><Link className="sw-button" to="/contact-us">Request a quote <ArrowUpRight size={17} /></Link><button className="sw-button ghost" onClick={replay}><RotateCcw size={16} /> Replay</button></div>
+      <h2>What could SandWeb do<br /><span>for your wells?</span></h2>
+      <p>Four quick questions, then we'll send pricing and next steps.</p>
+      <div className="sw-actions"><button className="sw-button" onClick={openQuiz}>Answer 4 quick questions <ArrowRight size={17} /></button><button className="sw-button ghost" onClick={replay}><RotateCcw size={16} /> Replay</button></div>
     </section>}
 
     {started && <nav className="swp-controls" aria-label="Presentation controls">
-      <button onClick={() => go(index - 1)} disabled={index === 0} aria-label="Previous scene"><SkipBack size={18} /></button>
-      <button onClick={() => (ended ? replay() : setPlaying((p) => !p))} aria-label={playing ? "Pause" : "Play"}>{playing ? <Pause size={18} /> : <Play size={18} />}</button>
-      <button onClick={() => go(index + 1)} disabled={index === narratedScenes.length - 1} aria-label="Next scene"><SkipForward size={18} /></button>
+      <button onClick={() => go(ended ? narratedScenes.length - 1 : index - 1)} disabled={!ended && index === 0} aria-label="Previous scene"><SkipBack size={18} /></button>
+      <button onClick={() => setPlaying((p) => !p)} aria-label={playing ? "Pause" : "Play"}>{playing ? <Pause size={18} /> : <Play size={18} />}</button>
+      <button onClick={() => (index === narratedScenes.length - 1 ? finish() : go(index + 1))} disabled={ended} aria-label="Next scene"><SkipForward size={18} /></button>
       <div className="swp-progress">{narratedScenes.map((s, i) => <span key={s.id} onClick={() => go(i)}><b style={{ width: `${i < index || ended ? 100 : i === index ? progress * 100 : 0}%` }} /></span>)}</div>
       <button onClick={() => setMuted((m) => !m)} aria-label={muted ? "Unmute" : "Mute"}>{muted ? <VolumeX size={18} /> : <Volume2 size={18} />}</button>
       <button onClick={replay} aria-label="Replay from the start"><RotateCcw size={18} /></button>

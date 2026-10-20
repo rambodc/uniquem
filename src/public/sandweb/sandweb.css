@@ -131,3 +131,29 @@
 .sw-watch{display:inline-flex;align-items:center;gap:8px;margin-top:14px;color:#ffd21f;font-weight:650;font-size:14px}
 @media (max-width:760px){.swp-title{top:70px;left:16px;right:16px}.swp-caption{bottom:96px;font-size:16px}.swp-controls{bottom:18px;gap:2px}.swp-controls button{width:38px;height:38px}.swp-progress{width:24vw;padding:0 4px}.swp-play{width:92px;height:92px}}
 @media (prefers-reduced-motion:reduce){.swp-play{animation:none}}
+/* v3: cut dip, footnote, questionnaire */
+.swp-cut{position:absolute;inset:0;background:#000;pointer-events:none;transition:opacity .08s linear}
+.swp-footnote{position:absolute;z-index:2;left:50%;bottom:84px;transform:translateX(-50%);width:min(860px,calc(100% - 32px));margin:0;text-align:center;color:#8f9ba4;font-size:11px}
+.swq{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:84px 20px 40px;overflow-y:auto}
+.swq-bg{position:fixed;inset:0;z-index:0}.swq-bg:after{content:"";position:absolute;inset:0;background:radial-gradient(circle at 50% 50%,rgba(5,7,11,.25),rgba(5,7,11,.82) 75%);pointer-events:none}
+.swq-preview{position:fixed;z-index:3;top:18px;right:18px;margin:0;padding:7px 12px;border-radius:999px;border:1px solid rgba(255,210,31,.5);background:rgba(40,30,0,.75);color:#ffd21f;font-size:12px;font-weight:650}
+.swq-progress{position:relative;z-index:2;display:flex;gap:8px;margin-bottom:26px}.swq-progress i{width:38px;height:5px;border-radius:5px;background:rgba(255,255,255,.16);transition:background .4s}.swq-progress i.done{background:#ffb547}.swq-progress i.active{background:#ffd21f;box-shadow:0 0 12px rgba(255,210,31,.6)}
+.swq-card{position:relative;z-index:2;width:min(760px,100%);text-align:center;animation:swq-in .5s cubic-bezier(.2,.8,.2,1) both}
+@keyframes swq-in{from{opacity:0;transform:translateY(22px) scale(.98)}to{opacity:1;transform:none}}
+.swq-card h2{margin:14px 0 30px;font-size:clamp(28px,4.4vw,50px);line-height:1.05;letter-spacing:-.04em}
+.swq-options{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.swq-options.n4{grid-template-columns:repeat(4,1fr)}
+.swq-options button{position:relative;min-height:108px;padding:20px 16px;border:1px solid rgba(255,255,255,.16);border-radius:20px;background:rgba(12,16,22,.72);backdrop-filter:blur(10px);color:#f4f7fa;font-size:18px;font-weight:650;line-height:1.25;transition:transform .2s,border-color .2s,background .2s}
+.swq-options button:hover{transform:translateY(-3px);border-color:rgba(255,210,31,.6)}
+.swq-options button.selected{border-color:#ffd21f;background:rgba(70,52,0,.72);box-shadow:0 0 0 3px rgba(255,210,31,.18)}
+.swq-options button svg{position:absolute;top:12px;right:12px;color:#ffd21f}
+.swq-back{display:inline-flex;align-items:center;gap:6px;margin-top:22px;border:0;background:none;color:#a9b5be;font-size:14px}
+.swq-signs{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:0 0 28px;padding:0;list-style:none}.swq-signs li{padding:18px;border:1px solid rgba(255,181,71,.35);border-radius:16px;background:rgba(12,16,22,.72);font-weight:600}
+.swq-summary{text-align:left;padding:30px;border:1px solid rgba(255,255,255,.14);border-radius:26px;background:rgba(8,11,16,.82);backdrop-filter:blur(12px)}
+.swq-summary h2{margin-bottom:16px;font-size:clamp(26px,3.6vw,40px)}.swq-summary ul{margin:0 0 22px;padding-left:20px;color:#c4ced6;line-height:1.6}
+.swq-summary form{display:grid;grid-template-columns:1fr 1fr;gap:14px}.swq-summary label{display:grid;gap:7px;color:#b7c3cc;font-size:13px}
+.swq-summary input{padding:14px;border:1px solid rgba(255,255,255,.18);border-radius:12px;background:#0b0f14;color:#fff;outline:0}.swq-summary input:focus{border-color:#ffd21f}
+.swq-summary input[aria-invalid=true]{border-color:#ff7a6b}.swq-summary label em{color:#ff9d90;font-style:normal;font-size:12px}
+.swq-summary .sw-button{grid-column:1/-1;justify-content:center}.swq-lab{grid-column:1/-1;display:flex;align-items:center;gap:8px;margin:0;color:#ffd86a;font-size:14px}
+.swq-error{grid-column:1/-1;margin:0;padding:12px;border-radius:12px;background:rgba(190,65,63,.18);color:#ffb0aa}
+.swq-done p{color:#c4ced6;font-size:17px;line-height:1.6}.swq-done .sw-actions{justify-content:center}
+@media(max-width:760px){.swq-options,.swq-options.n4{grid-template-columns:1fr 1fr}.swq-options button{min-height:84px;font-size:16px}.swq-signs,.swq-summary form{grid-template-columns:1fr}.swq-summary{padding:20px}.swq{justify-content:flex-start}}
