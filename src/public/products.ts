@@ -10,6 +10,8 @@ export type PublicProduct = {
   packaging: string;
   image: string;
   alt: string;
+  /** Highlighted first in the catalogue with a "Featured" badge. */
+  featured?: boolean;
   /** Search intent and cross-linking are centralized in the public SEO registry. */
   applications?: readonly string[];
   relatedProducts?: readonly string[];
@@ -17,6 +19,27 @@ export type PublicProduct = {
 };
 
 export const publicProducts: readonly PublicProduct[] = [
+  {
+    slug: "sandweb",
+    path: "/chemicals/sandweb",
+    name: "SandWeb",
+    featured: true,
+    category: "Sand consolidation chemistry",
+    eyebrow: "Sand control for fracturing and well stimulation",
+    teaser:
+      "Sand consolidation chemical for existing wells and fracs. Watch the narrated 3D demo to see how it holds sand and fines in place.",
+    description:
+      "SandWeb is a liquid sand consolidation chemical for existing producing wells and hydraulic fracturing. It holds sand, proppant and fines in place while the pore spaces stay open, as a cost-effective alternative to resin-coated sand.",
+    benefits: [
+      "Holds sand, proppant and fines in place",
+      "Supports sand flowback control in fracturing and stimulation",
+      "Helps protect pumps, chokes and surface equipment",
+      "Provides a cost-effective alternative to resin-coated sand",
+    ],
+    packaging: "Available in 1000 L totes",
+    image: "/images/products/sandweb-tote.webp",
+    alt: "Yellow Uniquem SandWeb sand-consolidation tote in a galvanized cage",
+  },
   {
     slug: "elixir",
     path: "/chemicals/elixir",
@@ -278,26 +301,6 @@ export const publicProducts: readonly PublicProduct[] = [
     alt: "Green Uniquem KaoloK formation-treatment tote in a galvanized cage",
   },
   {
-    slug: "sandweb",
-    path: "/chemicals/sandweb",
-    name: "SandWeb",
-    category: "Sand consolidation chemistry",
-    eyebrow: "Sand control for fracture treatments",
-    teaser:
-      "Sand consolidation chemistry for hydraulic fracturing, designed as a cost-effective alternative to resin-coated sand.",
-    description:
-      "SandWeb is a specialized sand consolidation chemistry designed for fracturing operations. It helps consolidate sand particles and supports reliable sand control and fracture-treatment stability. As an alternative to traditional resin-coated sand, it is designed to improve sand management while reducing treatment costs.",
-    benefits: [
-      "Helps consolidate sand particles",
-      "Supports sand control during hydraulic fracturing",
-      "Supports fracture-treatment stability",
-      "Provides a cost-effective alternative to resin-coated sand",
-    ],
-    packaging: "Available in 1000 L totes",
-    image: "/images/products/sandweb-tote.webp",
-    alt: "Yellow Uniquem SandWeb sand-consolidation tote in a galvanized cage",
-  },
-  {
     slug: "corrosion-inhibitor",
     path: "/chemicals/corrosion-inhibitor",
     name: "Corrosion Inhibitor",
@@ -341,7 +344,8 @@ export const publicProducts: readonly PublicProduct[] = [
   },
 ];
 
-const cataloguePriority = ["elixir", "corrosion-inhibitor", "friction-reducer"];
+// SandWeb leads the catalogue (featured), then the established priority order.
+const cataloguePriority = ["sandweb", "elixir", "corrosion-inhibitor", "friction-reducer"];
 
 export const catalogueProducts: readonly PublicProduct[] = [
   ...cataloguePriority

@@ -81,6 +81,15 @@
             "value": "noindex, nofollow"
           }
         ]
+      },
+      {
+        "source": "/audio/**",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "public,max-age=86400"
+          }
+        ]
       }
     ],
     "redirects": [
@@ -237,6 +246,11 @@
       {
         "source": "/fracturing-stimulation.html",
         "destination": "/chemicals",
+        "type": 301
+      },
+      {
+        "source": "/chemicals/sandweb/presentation",
+        "destination": "/chemicals/sandweb",
         "type": 301
       }
     ]
