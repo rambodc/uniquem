@@ -2,7 +2,7 @@ import { ArrowUp, ArrowUpRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { findPublicProduct } from "../products";
 import SandWebPresentation from "./presentation/SandWebPresentation";
-import { FLOWBACK_FOOTNOTE, presentationSummary, sandwebBenefits, sandwebComparison, sandwebFaqs, sandwebSections } from "./seoContent";
+import { presentationSummary, sandwebBenefits, sandwebComparison, sandwebFaqs, sandwebSections } from "./seoContent";
 
 /** /chemicals/sandweb: the narrated presentation fills the first screen; the
  * short product information and presentation summary follow below it as normal content. */
@@ -30,7 +30,6 @@ export default function SandWebLanding() {
       <section className="sw-block" id="benefits">
         <h2>Benefits of SandWeb</h2>
         <div className="sw-benefit-grid">{sandwebBenefits.map((b) => <div key={b.title}><h3>{b.title}</h3><p>{b.copy}</p></div>)}</div>
-        <p className="sw-note">{FLOWBACK_FOOTNOTE}</p>
       </section>
 
       <section className="sw-block" id="vs-resin-coated-sand">
@@ -44,7 +43,6 @@ export default function SandWebLanding() {
       <section className="sw-block" id="transcript">
         <h2>Presentation summary</h2>
         {presentationSummary.map((part, i) => <div className="sw-transcript" key={part.id}><h3>{String(i + 1).padStart(2, "0")} · {part.title}</h3><p>{part.text}</p></div>)}
-        <p className="sw-note">{FLOWBACK_FOOTNOTE}</p>
       </section>
 
       <section className="sw-block" id="faq">

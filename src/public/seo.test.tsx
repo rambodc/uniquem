@@ -56,7 +56,7 @@ describe("public SEO", () => {
     expect(sandweb.querySelector("h1")?.textContent).toBe("SandWeb sand consolidation chemical");
     expect(sandweb.textContent).toContain("SandWeb vs resin-coated sand");
     expect(sandweb.textContent).toContain("Presentation summary");
-    expect(sandweb.textContent).toContain("Reported in field frac treatments");
+    expect(sandweb.textContent).not.toMatch(/Reported in field frac|90% less sand flowback\*/i);
     // SandWeb email/phone live only in the client-only "I'll reach out" panel.
     expect(sandweb.innerHTML).not.toMatch(/sandweb@uniquem|390[-\s]?0067|3900067/);
     // The SandWeb page is the presentation: no site header, footer or back link until the ending.

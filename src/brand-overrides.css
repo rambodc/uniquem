@@ -43,3 +43,7 @@ footer .logo img { width: 30px; }
 .catalogue-card.is-featured{position:relative}.catalogue-card.is-featured>a{border-color:rgba(31,214,90,.55)!important;box-shadow:0 0 0 1px rgba(31,214,90,.35),0 20px 60px rgba(31,214,90,.12)}
 .catalogue-visual{position:relative}
 .catalogue-badge{position:absolute;z-index:2;top:14px;left:14px;padding:6px 12px;border-radius:999px;background:#1fd65a;color:#02170a;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+/* iOS Safari zooms into any focused form control with a font size under 16px.
+   Keep every control at 16px or more on phones and touch devices; pinch-zoom
+   stays enabled (no maximum-scale / user-scalable in the viewport meta). */
+@media (max-width:1024px),(pointer:coarse){input,textarea,select{font-size:16px!important}}

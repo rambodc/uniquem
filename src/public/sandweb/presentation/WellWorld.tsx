@@ -21,6 +21,8 @@ const HEEL = 0.434;
 // well with all four fractures: side-on for desktop, three-quarter for phones.
 const FULL_DESKTOP = [35, -28.5, 68, 35, -35.5, -1], FULL_MOBILE = [-22, -16, 100, 31, -35, 0];
 const easeInOut = (x: number) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
+// Sine ease: gentle start and stop with a low peak speed (about half the cubic's).
+const easeSine = (x: number) => 0.5 - 0.5 * Math.cos(Math.PI * x);
 const v3 = (x: number, y: number, z = Z) => new THREE.Vector3(x, y, z);
 
 function wellPath() {
@@ -99,12 +101,15 @@ export default function WellWorld({ mode, progress, compact }: Props) {
     const FULL = compact ? FULL_MOBILE : FULL_DESKTOP;
     const WIDE = compact ? [8, 22, 122, 28, -18] : [-14, 18, 66, 26, -17], PERF = compact ? [36, -26, 40, 40, -35.5] : [30, -27, 24, 40, -35.5];
     if (mode === "treat") {
-      // 1) Glide down the vertical wellbore with the SandWeb front to the heel,
-      //    eased in and out. 2) Pull back until the whole horizontal well and
-      //    every fracture is in frame, then hold there.
-      const d = easeInOut(ramp(p, 0, 0.52)), k = easeInOut(ramp(p, 0.4, 0.76));
+      // The well view lasts ~12 s (timeline cut 0.56 of 21.9 s). 1) Glide slowly
+      //    down the vertical wellbore with the SandWeb front to the heel over
+      //    ~10 s (about 2x longer than before, with a much lower peak speed).
+      //    2) Ease back until the whole horizontal well and every fracture is in
+      //    frame, then hold there briefly before the cut.
+      const d = easeSine(ramp(p, 0, 0.82)), k = easeInOut(ramp(p, 0.66, 0.95));
       sampleUp(0.9 * (1 - HEEL * d), v);
-      const near = [v.x + 9, v.y + 5, compact ? 46 : 32, v.x + 3, v.y - 1, -1];
+      // Keep the treatment front centred (tighter offset on phones).
+      const near = compact ? [v.x + 4, v.y + 4, 46, v.x + 1, v.y - 1, -1] : [v.x + 9, v.y + 5, 32, v.x + 3, v.y - 1, -1];
       const lerp = (i: number) => THREE.MathUtils.lerp(near[i], FULL[i], k);
       camera.position.set(lerp(0) + Math.sin(t * 0.2) * 0.5, lerp(1), lerp(2)); camera.lookAt(lerp(3), lerp(4), lerp(5));
       return;

@@ -17,10 +17,6 @@
 .swp-play{display:grid;place-items:center;width:112px;height:112px;margin-top:28px;border:0;border-radius:50%;background:#1fd65a;color:#02170a;box-shadow:0 0 0 14px rgba(31,214,90,.15),0 0 80px rgba(31,214,90,.45);animation:swp-pulse 2.2s ease-in-out infinite;cursor:pointer}
 .swp-play svg{margin-left:6px}
 @keyframes swp-pulse{50%{box-shadow:0 0 0 26px rgba(31,214,90,.06),0 0 110px rgba(31,214,90,.55)}}
-.swp-title{position:absolute;z-index:2;top:80px;left:max(24px,4vw);max-width:560px;animation:swp-in .8s ease both}
-.swp-title span{color:#1fd65a;font-size:12px;font-weight:700;letter-spacing:.16em}
-.swp-title h2{margin:8px 0 12px;font-size:clamp(26px,3.4vw,44px);line-height:1.05;letter-spacing:-.03em;text-shadow:0 4px 30px rgba(0,0,0,.6)}
-.swp-chips{display:flex;flex-wrap:wrap;gap:8px}.swp-chips i{padding:6px 11px;border:1px solid rgba(31,214,90,.4);border-radius:999px;color:#1fd65a;font-size:12px;font-style:normal;font-weight:650;background:rgba(5,7,11,.45)}
 .swp-caption{position:absolute;z-index:2;left:50%;bottom:110px;transform:translateX(-50%);width:min(860px,calc(100% - 32px));margin:0;padding:14px 22px;border-radius:14px;background:rgba(5,7,11,.72);backdrop-filter:blur(8px);text-align:center;font-size:clamp(17px,2vw,24px);line-height:1.4;font-weight:550;animation:swp-in .45s ease both}
 .swp-caption:empty{display:none}
 @keyframes swp-in{from{opacity:0;transform:translate(var(--tx,0),10px)}to{opacity:1;transform:translate(var(--tx,0),0)}}
@@ -28,11 +24,10 @@
 .swp-controls{position:absolute;z-index:3;left:50%;bottom:28px;transform:translateX(-50%);display:flex;align-items:center;gap:6px;padding:8px;border:1px solid rgba(255,255,255,.14);border-radius:999px;background:rgba(5,7,11,.75);backdrop-filter:blur(10px)}
 .swp-controls button{display:grid;place-items:center;width:42px;height:42px;border:0;border-radius:50%;background:transparent;color:#eef3f7;cursor:pointer}.swp-controls button:hover{background:rgba(255,255,255,.08)}.swp-controls button:disabled{opacity:.3;cursor:default}
 .swp-progress{display:flex;gap:6px;width:min(220px,30vw);padding:0 8px}.swp-progress span{flex:1;height:5px;border-radius:9px;background:rgba(255,255,255,.15);overflow:hidden;cursor:pointer}.swp-progress b{display:block;height:100%;background:#1fd65a}
-@media (max-width:760px){.swp-title{top:70px;left:16px;right:16px}.swp-caption{bottom:96px;font-size:16px}.swp-controls{bottom:18px;gap:2px}.swp-controls button{width:38px;height:38px}.swp-progress{width:24vw;padding:0 4px}.swp-play{width:92px;height:92px}}
+@media (max-width:760px){.swp-caption{bottom:96px;font-size:16px}.swp-controls{bottom:18px;gap:2px}.swp-controls button{width:38px;height:38px}.swp-progress{width:24vw;padding:0 4px}.swp-play{width:92px;height:92px}}
 @media (prefers-reduced-motion:reduce){.swp-play{animation:none}}
 /* Cut dip and footnote */
 .swp-cut{position:absolute;inset:0;background:#000;pointer-events:none;transition:opacity .08s linear}
-.swp-footnote{position:absolute;z-index:2;left:50%;bottom:84px;transform:translateX(-50%);width:min(860px,calc(100% - 32px));margin:0;text-align:center;color:#8f9ba4;font-size:11px}
 /* v4: green theme inside the presentation, ending scene and contact choices */
 .swp{--sw-yellow:#1fd65a;--sw-amber:#00c21a}
 .swp .sw-button{color:#02170a;background:linear-gradient(135deg,#3dea6a,#00c21a);box-shadow:0 10px 40px rgba(0,194,26,.28)}.swp .sw-button:hover{box-shadow:0 14px 50px rgba(0,194,26,.45)}
@@ -54,21 +49,21 @@
 .swp-choices button small{color:#9fd8b0;font-size:13px;font-weight:500}
 .swp-choices button:hover,.swp-choices button:focus-visible{transform:translateY(-4px);border-color:#3dff7a;background:rgba(6,44,22,.82);box-shadow:0 18px 50px rgba(0,194,26,.25);outline:0}
 .swp-replay{display:inline-flex;align-items:center;gap:7px;border:0;background:none;color:#a9c8b3;font-size:14px;cursor:pointer;text-decoration:underline;text-underline-offset:4px}
-.swp-panel{width:min(560px,100%);padding:26px;border:1px solid rgba(80,255,140,.25);border-radius:24px;background:rgba(3,16,10,.86);backdrop-filter:blur(14px);text-align:left;animation:swp-in .45s ease both}
+.swp-panel{position:relative;width:min(560px,100%);padding:58px 26px 26px;border:1px solid rgba(80,255,140,.25);border-radius:24px;background:rgba(3,16,10,.86);backdrop-filter:blur(14px);text-align:left;animation:swp-in .45s ease both}
 .swp-panel h3{margin:0 0 6px;font-size:26px;letter-spacing:-.03em}.swp-panel>p{margin:0 0 18px;color:#b4cdbd;line-height:1.55}
 .swp-panel form{display:grid;gap:14px}.swp-panel label{display:grid;gap:7px;color:#b7cdbf;font-size:13px}.swp-panel label span{color:#7c9b87;font-size:11px}
 .swp-panel input{padding:14px;border:1px solid rgba(255,255,255,.18);border-radius:12px;background:#06120b;color:#fff;font-size:16px;outline:0}.swp-panel input:focus{border-color:#1fd65a;box-shadow:0 0 0 3px rgba(31,214,90,.15)}
 .swp-panel input[aria-invalid=true]{border-color:#ff7a6b}.swp-panel label em{color:#ff9d90;font-style:normal;font-size:12px}
 .swp-panel .sw-button{justify-content:center;margin-top:4px}.swp-panel .sw-button:disabled{opacity:.6}
-.swp-panel-back{display:inline-flex;align-items:center;gap:6px;margin-top:14px;border:0;background:none;color:#a9c8b3;font-size:14px;cursor:pointer}
+.swp-panel-back{position:absolute;top:16px;left:16px;display:inline-flex;align-items:center;gap:4px;padding:6px 12px 6px 8px;border:1px solid rgba(255,255,255,.16);border-radius:999px;background:rgba(255,255,255,.04);color:#a9c8b3;font-size:14px;cursor:pointer}.swp-panel-back:hover,.swp-panel-back:focus-visible{border-color:#3dff7a;color:#fff;outline:0}
+.swp-preview-note{margin:12px 0 0;color:#9fb3a7;font-size:12px}
 .swp-error{margin:0;padding:12px;border-radius:12px;background:rgba(190,65,63,.18);color:#ffb0aa}
 .swp-contact{display:grid;gap:12px}
 .swp-contact a{display:flex;align-items:center;gap:14px;padding:18px;border:1px solid rgba(80,255,140,.3);border-radius:18px;background:rgba(6,36,18,.6);color:#f2fff6;transition:border-color .2s,transform .2s}.swp-contact a:hover{border-color:#3dff7a;transform:translateY(-2px)}
 .swp-contact a svg{flex:none;width:26px;height:26px;color:#3dff7a}.swp-contact b{display:block;font-size:20px;letter-spacing:-.01em}.swp-contact small{display:block;color:#9fd8b0;font-size:13px}
 .swp-done{text-align:center}.swp-done svg.check{width:54px;height:54px;padding:12px;border-radius:50%;background:rgba(31,214,90,.18);color:#3dff7a}
-.swp-preview{position:absolute;z-index:4;top:22px;right:20px;margin:0;padding:7px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.45);background:rgba(0,0,0,.66);color:#fff;font-size:12px;font-weight:650}
 .swp-ending .swp-caption{position:static;transform:none;animation:none;width:min(760px,100%)}
-@media(max-width:760px){.swp-choices{grid-template-columns:1fr;max-width:340px}.swp-choices button{min-height:0;flex-direction:row;justify-content:flex-start;padding:16px 18px;text-align:left;font-size:17px}.swp-choices button small{margin-left:auto}.swp-preview{top:16px;right:12px;max-width:170px;padding:5px 10px;font-size:10px;line-height:1.3;text-align:center}.swp-logo,.swp-logo img{width:120px;height:120px}.swp-ending{padding-bottom:110px}.swp-panel{padding:20px}}
+@media(max-width:760px){.swp-choices{grid-template-columns:1fr;max-width:340px}.swp-choices button{min-height:0;flex-direction:row;justify-content:flex-start;padding:16px 18px;text-align:left;font-size:17px}.swp-choices button small{margin-left:auto}.swp-logo,.swp-logo img{width:120px;height:120px}.swp-ending{padding-bottom:110px}.swp-panel{padding:20px}}
 
 /* Ending-only exit and the link down to the About section */
 .swp-leave{position:absolute;z-index:4;top:22px;left:22px;display:inline-flex;align-items:center;gap:4px;padding:10px 18px 10px 12px;border:1px solid rgba(255,255,255,.3);border-radius:999px;background:rgba(2,14,7,.72);backdrop-filter:blur(10px);color:#fff;font-size:15px;font-weight:700;cursor:pointer;animation:swp-in .6s ease both}

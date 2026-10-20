@@ -5,7 +5,9 @@ import type { SceneId } from "./narration";
 export type View = "well" | "pore" | "flow";
 const PLAN: Record<SceneId, { first: View; second: View; cut: number }> = {
   problem: { first: "well", second: "pore", cut: 0.42 },
-  sandweb: { first: "well", second: "pore", cut: 0.42 },
+  // SandWeb: a long, slow well-scale descent (about 12 s) that cuts to the pore
+  // view just as the narration says "Instead of repelling, the grains draw together".
+  sandweb: { first: "well", second: "pore", cut: 0.56 },
   result: { first: "flow", second: "well", cut: 0.46 },
 };
 export const FADE = 0.45;

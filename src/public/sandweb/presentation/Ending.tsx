@@ -59,16 +59,17 @@ export default function EndingChoices({ showChoices, onReplay, onPanel }: { show
   </div>;
 
   if (method === "self") return <div className="swp-panel">
+    <button className="swp-panel-back" onClick={() => open(null)}><ArrowLeft size={15} /> Back</button>
     <h3>Reach the SandWeb team</h3>
     <p>We'd love to hear about your wells.</p>
     <div className="swp-contact">
       <a href={PHONE_TEL}><Phone /><span><b>{PHONE_DISPLAY}</b><small>Tap to call</small></span></a>
       <a href={`mailto:${SANDWEB_EMAIL}?subject=${encodeURIComponent("SandWeb")}`}><Mail /><span><b>{SANDWEB_EMAIL}</b><small>Tap to email</small></span></a>
     </div>
-    <button className="swp-panel-back" onClick={() => open(null)}><ArrowLeft size={15} /> Back</button>
   </div>;
 
   if (method) return <div className="swp-panel">
+    <button className="swp-panel-back" onClick={() => open(null)}><ArrowLeft size={15} /> Back</button>
     <h3>{method === "call" ? "We'll call you" : "We'll email you"}</h3>
     <p>{method === "call" ? "Leave your number and the SandWeb team will call you back." : "Leave your email and the SandWeb team will be in touch."}</p>
     <form onSubmit={send} noValidate>
@@ -79,7 +80,6 @@ export default function EndingChoices({ showChoices, onReplay, onPanel }: { show
       <button className="sw-button" disabled={busy}>{busy ? "Sending…" : method === "call" ? "Request a call" : "Email me"} <ArrowUpRight size={17} /></button>
       {errors.submit && <p className="swp-error" role="alert">{errors.submit}</p>}
     </form>
-    <button className="swp-panel-back" onClick={() => open(null)}><ArrowLeft size={15} /> Back</button>
   </div>;
 
   return showChoices ? <>

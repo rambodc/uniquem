@@ -8,7 +8,6 @@ import { viewAt } from "./timeline";
 
 const Stage3 = lazy(() => import("./Stage3"));
 const EndingWorld = lazy(() => import("./EndingWorld"));
-const chips: Record<string, string[]> = { problem: ["Sand & fines migration", "Equipment wear"], sandweb: ["Existing wells", "Pumped with the frac", "No resin coating"], result: ["Oil & gas flowing", "Sand stays downhole", "Up to 90% less flowback*"] };
 const GAP_AFTER_SCENE = 1.1;
 type Phase = "start" | "scenes" | "close";
 const ASK_AT = (endingClip.captions[endingClip.captions.length - 1]?.start ?? endingClip.duration) - 0.3;
@@ -107,16 +106,14 @@ export default function SandWebPresentation() {
       <a className="swp-about-link" href="#about-sandweb">About SandWeb and the transcript <ArrowDown size={15} /></a>
     </section>}
 
-    {preview && started && <p className="swp-preview">Preview: submissions are marked as test leads</p>}
-    {phase === "scenes" && <header className="swp-title" key={scene.id}><span>{String(index + 1).padStart(2, "0")} / {String(narratedScenes.length).padStart(2, "0")} · {view.view === "pore" ? "Pore scale" : view.view === "flow" ? "Near-wellbore flow" : "Well scale"}</span><h2>{scene.title}</h2><div className="swp-chips">{chips[scene.id].map((c) => <i key={c}>{c}</i>)}</div></header>}
     {phase === "scenes" && caption && <p className="swp-caption" aria-live="polite" key={caption.text}>{caption.text}</p>}
-    {phase === "scenes" && scene.id === "result" && <p className="swp-footnote">*Reported in field frac treatments.</p>}
 
     {ended && <section className={`swp-ending ${panel ? "has-panel" : ""}`} aria-label="Talk to the SandWeb team">
       <div className="swp-logo" ref={logo}><img src="/brand/uniquem-mark-180.png" alt="Uniquem" width={180} height={180} /></div>
       <p className="swp-brand">SandWeb by Uniquem</p>
       {!panel && (showChoices ? <h2>How would you like to <span>hear from us?</span></h2> : caption && <p className="swp-caption" aria-live="polite" key={caption.text}>{caption.text}</p>)}
       <EndingChoices showChoices={showChoices} onReplay={replay} onPanel={setPanel} />
+      {preview && panel && <p className="swp-preview-note">Preview: submissions are marked as test leads</p>}
       {showChoices && !panel && <a className="swp-about-link" href="#about-sandweb">About SandWeb and the transcript <ArrowDown size={15} /></a>}
     </section>}
     {showChoices && !panel && <button className="swp-leave" onClick={leave}><ChevronLeft size={18} /> Back</button>}
