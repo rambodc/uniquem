@@ -1,0 +1,15 @@
+.ss-scene{position:absolute;inset:0;background:#020609;overflow:hidden}
+.ss-scene canvas{display:block}
+.ss-captions{position:absolute;left:0;right:0;top:calc(50% + 12.5vmin + 34px);height:90px;pointer-events:none;text-align:center}
+.ss-caption{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;gap:10px;opacity:0;transform:translateY(8px);filter:blur(4px);transition:opacity 1.3s ease,transform 1.3s ease,filter 1.3s ease}
+.ss-caption.is-on{opacity:1;transform:none;filter:none}
+.ss-title{color:#e9fff3;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;font-weight:300;font-size:clamp(22px,3.2vmin,34px);letter-spacing:.18em;text-shadow:0 0 18px rgba(61,255,138,.35),0 0 42px rgba(46,230,214,.18)}
+.ss-caption.is-brand .ss-title{font-size:clamp(30px,5vmin,52px);letter-spacing:.22em;font-weight:250;background:linear-gradient(90deg,#8dffc4,#3dff8a 45%,#2ee6d6);-webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:none;filter:drop-shadow(0 0 16px rgba(61,255,138,.35))}
+.ss-sub{color:#8fd9c0;font-family:Inter,ui-sans-serif,system-ui,sans-serif;font-size:clamp(12px,1.6vmin,15px);letter-spacing:.24em;text-transform:uppercase}
+@media(prefers-reduced-motion:reduce){.ss-caption{transition:none;filter:none;transform:none}}
+/* Idle overlay */
+.ss-overlay{position:fixed;inset:0;z-index:2147483000;cursor:none;animation:ss-in .9s ease both}
+.ss-overlay.is-leaving{animation:ss-out .32s ease both}
+.ss-fallback{position:absolute;inset:0;background:#020609}
+@keyframes ss-in{from{opacity:0}to{opacity:1}}@keyframes ss-out{from{opacity:1}to{opacity:0}}
+@media(prefers-reduced-motion:reduce){.ss-overlay,.ss-overlay.is-leaving{animation-duration:.01s}}

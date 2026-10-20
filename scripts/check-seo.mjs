@@ -50,6 +50,12 @@ const sitemap = new JSDOM((await read("/sitemap.xml")).html, { contentType: "tex
 const urls = [...sitemap.querySelectorAll("loc")].map((node) => node.textContent);
 assert.equal(urls.length, 21, "public sitemap count");
 assert.equal(new Set(urls).size, urls.length, "duplicate sitemap URLs");
+for (const node of sitemap.querySelectorAll("url")) assert.match(node.querySelector("lastmod")?.textContent ?? "", /^\d{4}-\d{2}-\d{2}$/, `${node.querySelector("loc").textContent}: sitemap lastmod`);
+for (const required of ["https://uniquem.ca/", "https://uniquem.ca/chemicals/sandweb"]) assert.ok(urls.includes(required), `sitemap includes ${required}`);
+const robots = base ? await (await fetch(`${base}/robots.txt`)).text() : await readFile("public/robots.txt", "utf8");
+assert.match(robots, /^User-agent: \*\s+Allow: \/\s*$/m, "robots.txt allows crawling");
+assert.match(robots, /^Sitemap: https:\/\/uniquem\.ca\/sitemap\.xml$/m, "robots.txt points to the sitemap");
+
 for (const url of urls) {
   const pathname = new URL(url).pathname;
   const { html, headers } = await read(pathname);
@@ -62,9 +68,38 @@ for (const url of urls) {
   assert.ok(doc.querySelector('meta[name="google-site-verification"]'), `${pathname}: verification preserved`);
   assert.ok(doc.querySelector('a[href="/contact-us"]'), `${pathname}: real navigation`);
   assert.ok(doc.querySelector("main").textContent.length > 350, `${pathname}: complete content`);
+  assert.equal(doc.documentElement.getAttribute("lang"), "en-CA", `${pathname}: html lang`);
+  assert.equal(doc.querySelector('link[rel="alternate"][hreflang="en-CA"]')?.getAttribute("href"), url, `${pathname}: hreflang en-CA`);
+  assert.equal(doc.querySelector('link[rel="alternate"][hreflang="x-default"]')?.getAttribute("href"), url, `${pathname}: hreflang x-default`);
+  const title = doc.title, description = doc.querySelector('meta[name="description"]').content;
+  assert.ok(title.length >= 30 && title.length <= 65, `${pathname}: title length ${title.length}`);
+  assert.ok(description.length >= 70 && description.length <= 165, `${pathname}: description length ${description.length}`);
+  if (["/", "/chemicals/sandweb"].includes(pathname)) { assert.ok(title.length <= 60, `${pathname}: key page title <= 60`); assert.ok(description.length <= 160, `${pathname}: key page description <= 160`); }
+  const meta = (key) => doc.querySelector(`meta[property="${key}"], meta[name="${key}"]`)?.content;
+  for (const key of ["og:title", "og:description", "og:url", "og:image", "og:image:width", "og:image:height", "og:image:alt", "twitter:card", "twitter:title", "twitter:description", "twitter:image"]) assert.ok(meta(key), `${pathname}: ${key}`);
+  assert.equal(meta("og:url"), url, `${pathname}: og:url`);
+  assert.match(meta("og:image"), /^https:\/\/uniquem\.ca\/.+\.(jpg|png|webp)$/, `${pathname}: absolute og:image`);
+  assert.equal(meta("twitter:image"), meta("og:image"), `${pathname}: twitter:image`);
+  const imagePath = new URL(meta("og:image")).pathname;
+  if (!checkedAssets.has(imagePath)) {
+    if (base) assert.equal(await fetchStatus(`${base}${imagePath}`), 200, `${pathname}: og:image ${imagePath}`); else await readFile(`dist${imagePath}`);
+    checkedAssets.add(imagePath);
+  }
+  for (const img of doc.querySelectorAll("main img")) assert.ok(img.hasAttribute("alt"), `${pathname}: img alt ${img.getAttribute("src")}`);
+  const types = structured => structured["@graph"].flatMap((item) => [item["@type"]].flat());
   const structured = JSON.parse(doc.querySelector("script[data-seo-jsonld]").textContent);
   // Product snippets need offers/review/rating, which Uniquem does not publish.
   assert.ok(!structured["@graph"].some((item) => [item["@type"]].flat().includes("Product")), `${pathname}: no schema.org Product item`);
+  for (const type of ["Organization", "LocalBusiness", "WebSite"]) assert.ok(types(structured).includes(type), `${pathname}: JSON-LD ${type}`);
+  if (pathname !== "/") assert.ok(types(structured).includes("BreadcrumbList"), `${pathname}: JSON-LD BreadcrumbList`);
+  if (pathname === "/chemicals/sandweb") {
+    const faq = structured["@graph"].find((item) => item["@type"] === "FAQPage");
+    assert.ok(faq?.mainEntity?.length >= 3, "SandWeb: FAQPage JSON-LD");
+    const text = doc.querySelector("main").textContent.replace(/\s+/g, " ");
+    for (const q of faq.mainEntity) { assert.ok(text.includes(q.name), `SandWeb: FAQ question visible in HTML: ${q.name}`); assert.ok(text.includes(q.acceptedAnswer.text), `SandWeb: FAQ answer visible in HTML: ${q.name}`); }
+    assert.ok(doc.querySelector('nav[aria-label="Breadcrumb"] a[href="/chemicals"]'), "SandWeb: breadcrumb links to /chemicals");
+    assert.ok(doc.querySelector("#about-sandweb-title"), "SandWeb: About section prerendered");
+  }
   for (const asset of doc.querySelectorAll('script[src], link[rel="stylesheet"]')) {
     const source = asset.getAttribute("src") || asset.getAttribute("href");
     if (base) {
