@@ -37,7 +37,8 @@ footer .logo img { width: 30px; }
 .home-new-badge{flex:none;padding:7px 11px;border-radius:999px;background:linear-gradient(135deg,#5dff8a,#14c94e);color:#02170a;font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
 .home-new-text{display:grid;gap:3px;min-width:0}.home-new-text strong{font-size:19px;letter-spacing:-.01em}.home-new-text em{font-style:normal;color:#a5bbc5;font-size:14px;line-height:1.45}
 .home-new-cta{display:inline-flex;align-items:center;gap:6px;flex:none;margin-left:auto;color:#7dffa8;font-size:14px;font-weight:700;white-space:nowrap}
-@media(max-width:700px){.home-new-product{flex-wrap:wrap;gap:10px 12px;margin-top:22px;padding:14px}.home-new-cta{margin-left:0;width:100%}}
+.home-hero .hero-copy{padding-bottom:96px}
+@media(max-width:700px){.home-hero .hero-copy{padding-bottom:70px}.home-new-product{flex-wrap:wrap;gap:10px 12px;margin-top:22px;padding:14px}.home-new-cta{margin-left:0;width:100%}}
 @media(prefers-reduced-motion:reduce){.home-new-product{transition:none}}
 .catalogue-card.is-featured{position:relative}.catalogue-card.is-featured>a{border-color:rgba(31,214,90,.55)!important;box-shadow:0 0 0 1px rgba(31,214,90,.35),0 20px 60px rgba(31,214,90,.12)}
 .catalogue-visual{position:relative}
