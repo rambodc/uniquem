@@ -67,7 +67,7 @@ export default function SandWebPresentation() {
   return <main className="swp">
     <audio ref={audio} preload="auto" />
     <div className="swp-stage" aria-hidden="true">
-      {started && webgl ? <Suspense fallback={null}><PresentationScenes scene={scene.id} clock={clock} compact={compact} active /></Suspense> : <div className="swp-fallback"><img src="/images/products/sandweb-tote.webp" alt="" /></div>}
+      {started && webgl ? <Suspense fallback={null}><PresentationScenes scene={scene.id} duration={scene.duration} clock={clock} compact={compact} active /></Suspense> : <div className="swp-fallback"><img src="/images/products/sandweb-tote.webp" alt="" /></div>}
       <div className="swp-fade" key={`${index}-${started}`} />
     </div>
     <Link className="swp-back" to="/chemicals/sandweb"><ArrowLeft size={16} /> SandWeb</Link>

@@ -9,7 +9,10 @@ import * as THREE from "three";
 
 export type ClockRef = { current: number };
 type SceneId = "problem" | "sandweb" | "result";
-type Props = { scene: SceneId; clock: ClockRef; compact: boolean; active: boolean };
+type Props = { scene: SceneId; clock: ClockRef; compact: boolean; active: boolean; duration: number };
+// Animation beats were choreographed against these scene lengths (seconds);
+// the clock is rescaled so the animation always spans the actual narration.
+const DESIGN_DURATION: Record<SceneId, number> = { problem: 20.5, sandweb: 25.3, result: 20.3 };
 
 const SAND = new THREE.Color("#c9965a"), GOLD = new THREE.Color("#ffcf2e"), WEB = new THREE.Color("#ffd21f");
 const clamp01 = (x: number) => Math.min(1, Math.max(0, x));
@@ -192,7 +195,8 @@ function ResultScene({ clock, compact }: { clock: ClockRef; compact: boolean }) 
   </group>;
 }
 
-export default function PresentationScenes({ scene, clock, compact, active }: Props) {
+export default function PresentationScenes({ scene, clock: narration, compact, active, duration }: Props) {
+  const clock = useMemo<ClockRef>(() => { const factor = DESIGN_DURATION[scene] / Math.max(1, duration); return { get current() { return narration.current * factor; }, set current(_value: number) { /* read-only view */ } }; }, [scene, duration, narration]);
   return <Canvas frameloop={active ? "always" : "never"} dpr={[1, compact ? 1.25 : 1.75]} camera={{ fov: compact ? 58 : 45, near: 0.1, far: 900, position: [0, 0, 15] }} gl={{ antialias: false, powerPreference: "high-performance" }}>
     <color attach="background" args={["#05070b"]} />
     {scene === "problem" ? <ProblemScene clock={clock} compact={compact} /> : scene === "sandweb" ? <SandWebScene clock={clock} compact={compact} /> : <ResultScene clock={clock} compact={compact} />}
