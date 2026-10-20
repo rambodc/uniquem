@@ -70,7 +70,7 @@ describe("public SEO", () => {
     expect(renderPage("/")).toContain("Environmental responsibility");
     const home = document.createElement("div");
     home.innerHTML = renderPage("/");
-    expect(home.querySelector("h1")?.textContent).toBe("Chemical solutionswith purpose."); // original markup: "Chemical solutions<br />with purpose."
+    expect(home.querySelector("h1")?.textContent).toBe("Chemical solutions with purpose."); // original markup: "Chemical solutions<br />with purpose."
     expect(home.querySelector('a.home-new-product[href="/chemicals/sandweb"]')?.textContent).toContain("New productSandWeb");
     expect(home.innerHTML).not.toContain("uniquem-logo-light");
     const homeGraph = JSON.parse(jsonLd(routes[0]))["@graph"];

@@ -1,5 +1,6 @@
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Bloom, EffectComposer } from "@react-three/postprocessing";
+import { COMPOSER_SAMPLES, QualityMonitor, useAdaptiveDpr } from "../../scenes/quality";
 import { useMemo, useRef, type RefObject } from "react";
 import * as THREE from "three";
 import { dotTexture, seeded, smooth } from "./world3d";
@@ -94,9 +95,11 @@ function Scene({ anchor, compact }: { anchor: Anchor; compact: boolean }) {
 }
 
 export default function EndingWorld({ anchor, compact }: { anchor: Anchor; compact: boolean }) {
-  return <Canvas dpr={[1, compact ? 1.4 : 1.75]} camera={{ fov: compact ? 58 : 45, position: [0, 0, 16] }} gl={{ antialias: true }}>
+  const q = useAdaptiveDpr();
+  return <Canvas dpr={q.dpr} camera={{ fov: compact ? 58 : 45, position: [0, 0, 16] }} gl={{ antialias: true, powerPreference: "high-performance" }}>
+    <QualityMonitor {...q} />
     <color attach="background" args={["#020b07"]} />
     <Scene anchor={anchor} compact={compact} />
-    <EffectComposer multisampling={0}><Bloom mipmapBlur intensity={0.75} luminanceThreshold={0.6} luminanceSmoothing={0.25} /></EffectComposer>
+    <EffectComposer multisampling={COMPOSER_SAMPLES}><Bloom mipmapBlur intensity={0.75} luminanceThreshold={0.6} luminanceSmoothing={0.25} /></EffectComposer>
   </Canvas>;
 }

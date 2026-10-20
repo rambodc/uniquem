@@ -93,7 +93,7 @@ export default function SandWebPresentation() {
     <audio ref={audio} preload="auto" />
     <div className="swp-stage" aria-hidden="true">
       {ended ? (webgl ? <Suspense fallback={null}><EndingWorld anchor={logo} compact={compact} /></Suspense> : <div className="swp-fallback" />)
-        : started && webgl ? <Suspense fallback={null}><Stage3 scene={scene.id} view={view.view} clock={clock} duration={scene.duration} compact={compact} active /></Suspense> : <div className="swp-fallback"><img src="/images/products/sandweb-tote.webp" alt="" /></div>}
+        : started && webgl ? <Suspense fallback={null}><Stage3 scene={scene.id} view={view.view} clock={clock} duration={scene.duration} compact={compact} active /></Suspense> : <div className="swp-fallback"><img src="/images/products/sandweb-tote.webp" alt="SandWeb sand consolidation chemical tote" width={1254} height={1254} /></div>}
       <div className="swp-fade" key={`${index}-${started}-${ended}`} />
       {!ended && <div className="swp-cut" style={{ opacity: started ? view.fade : 0 }} />}
     </div>
