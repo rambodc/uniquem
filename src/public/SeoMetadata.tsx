@@ -9,9 +9,7 @@ export default function SeoMetadata() {
     const template = document.createElement("template");
     template.innerHTML = route
       ? head(route)
-      : pathname === "/chemicals/sandweb/presentation"
-        ? '<title>SandWeb narrated 3D demo | Uniquem</title><meta name="robots" content="noindex, nofollow">'
-        : '<title>Uniquem | Private page</title><meta name="robots" content="noindex, nofollow">';
+      : '<title>Uniquem | Private page</title><meta name="robots" content="noindex, nofollow">';
     document.head.querySelectorAll(seoSelectors).forEach((node) => node.remove());
     document.head.append(template.content);
   }, [pathname]);

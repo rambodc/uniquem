@@ -1,6 +1,6 @@
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
-import { ArrowLeft, Pause, Play, RotateCcw, SkipBack, SkipForward, Volume2, VolumeX } from "lucide-react";
-import { Link } from "react-router-dom";
+import { ArrowDown, ChevronLeft, Pause, Play, RotateCcw, SkipBack, SkipForward, Volume2, VolumeX } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import EndingChoices, { isPreviewHost } from "./Ending";
 import { endingClip, narratedScenes, type Caption } from "./narration";
 import type { ClockRef } from "./Stage3";
@@ -13,13 +13,14 @@ const GAP_AFTER_SCENE = 1.1;
 type Phase = "start" | "scenes" | "close";
 const ASK_AT = (endingClip.captions[endingClip.captions.length - 1]?.start ?? endingClip.duration) - 0.3;
 
-function canRenderWebGL() { try { const c = document.createElement("canvas"); return Boolean(c.getContext("webgl2") || c.getContext("webgl")); } catch { return false; } }
+function canRenderWebGL() { if (typeof document === "undefined") return true; try { const c = document.createElement("canvas"); return Boolean(c.getContext("webgl2") || c.getContext("webgl")); } catch { return false; } }
 const captionAt = (captions: readonly Caption[], t: number) => captions.find((c, i) => t >= c.start - 0.1 && t < (captions[i + 1]?.start ?? c.end + 1.2));
 
 export default function SandWebPresentation() {
   const audio = useRef<HTMLAudioElement>(null), logo = useRef<HTMLDivElement>(null), clock = useRef(0) as ClockRef, closeClock = useRef(0);
   const [phase, setPhase] = useState<Phase>("start"), [index, setIndex] = useState(0), [playing, setPlaying] = useState(false), [muted, setMuted] = useState(false);
-  const [time, setTime] = useState(0), [closeTime, setCloseTime] = useState(0), [webgl] = useState(canRenderWebGL), [panel, setPanel] = useState(false), [preview] = useState(isPreviewHost), [compact, setCompact] = useState(() => matchMedia("(max-width: 760px)").matches);
+  const [time, setTime] = useState(0), [closeTime, setCloseTime] = useState(0), [webgl] = useState(canRenderWebGL), [panel, setPanel] = useState(false), [preview] = useState(isPreviewHost), [compact, setCompact] = useState(() => typeof window !== "undefined" && typeof window.matchMedia === "function" && window.matchMedia("(max-width: 760px)").matches);
+  const navigate = useNavigate();
   const scene = narratedScenes[index], started = phase !== "start";
 
   useEffect(() => { const mq = matchMedia("(max-width: 760px)"); const sync = () => setCompact(mq.matches); mq.addEventListener("change", sync); return () => mq.removeEventListener("change", sync); }, []);
@@ -68,6 +69,15 @@ export default function SandWebPresentation() {
 
   const go = useCallback((next: number) => { clock.current = 0; setPhase("scenes"); setPlaying(true); setIndex(Math.max(0, Math.min(narratedScenes.length - 1, next))); }, [clock]);
   const start = () => { setPhase("scenes"); setPlaying(true); };
+  // Leave the presentation: back to the uniquem page the visitor came from,
+  // otherwise to the homepage.
+  const leave = () => {
+    // In-app navigation (react-router history index) does not update document.referrer.
+    if (((window.history.state as { idx?: number } | null)?.idx ?? 0) > 0) { navigate(-1); return; }
+    let target = "/";
+    try { const ref = document.referrer ? new URL(document.referrer) : null; if (ref && ref.origin === window.location.origin && ref.pathname !== window.location.pathname) target = ref.pathname + ref.search; } catch { target = "/"; }
+    navigate(target);
+  };
   const replay = () => { setPanel(false); clock.current = 0; setIndex(0); setPhase("scenes"); setPlaying(true); if (index === 0) playSrc(narratedScenes[0].audio); };
 
   useEffect(() => {
@@ -80,7 +90,7 @@ export default function SandWebPresentation() {
   const progress = Math.min(1, time / scene.duration), ended = phase === "close";
   const showChoices = ended && closeTime >= ASK_AT;
 
-  return <main className={`swp ${ended ? "is-ended" : ""}`}>
+  return <section className={`swp ${ended ? "is-ended" : ""}`} aria-label="SandWeb narrated 3D presentation">
     <audio ref={audio} preload="auto" />
     <div className="swp-stage" aria-hidden="true">
       {ended ? (webgl ? <Suspense fallback={null}><EndingWorld anchor={logo} compact={compact} /></Suspense> : <div className="swp-fallback" />)
@@ -88,13 +98,13 @@ export default function SandWebPresentation() {
       <div className="swp-fade" key={`${index}-${started}-${ended}`} />
       {!ended && <div className="swp-cut" style={{ opacity: started ? view.fade : 0 }} />}
     </div>
-    <Link className="swp-back" to="/chemicals/sandweb"><ArrowLeft size={16} /> SandWeb</Link>
 
     {!started && <section className="swp-start">
-      <span className="sw-kicker">Narrated 3D demo · about 80 seconds</span>
-      <h1>SandWeb <span>sand and fines control chemistry</span></h1>
-      <p>See how SandWeb holds sand and fines in place, in three short scenes. Turn your sound on.</p>
+      <span className="sw-kicker">Narrated 3D demo · under 90 seconds</span>
+      <h1>SandWeb <span>sand consolidation chemical</span></h1>
+      <p>See how SandWeb by Uniquem holds sand and fines in place in existing wells and fracs, in three short scenes. Turn your sound on.</p>
       <button className="swp-play" onClick={start} aria-label="Play the narrated SandWeb demo"><Play size={34} fill="currentColor" /></button>
+      <a className="swp-about-link" href="#about-sandweb">About SandWeb and the transcript <ArrowDown size={15} /></a>
     </section>}
 
     {preview && started && <p className="swp-preview">Preview: submissions are marked as test leads</p>}
@@ -107,7 +117,9 @@ export default function SandWebPresentation() {
       <p className="swp-brand">SandWeb by Uniquem</p>
       {!panel && (showChoices ? <h2>How would you like to <span>hear from us?</span></h2> : caption && <p className="swp-caption" aria-live="polite" key={caption.text}>{caption.text}</p>)}
       <EndingChoices showChoices={showChoices} onReplay={replay} onPanel={setPanel} />
+      {showChoices && !panel && <a className="swp-about-link" href="#about-sandweb">About SandWeb and the transcript <ArrowDown size={15} /></a>}
     </section>}
+    {showChoices && !panel && <button className="swp-leave" onClick={leave}><ChevronLeft size={18} /> Back</button>}
 
     {started && <nav className="swp-controls" aria-label="Presentation controls">
       <button onClick={() => go(ended ? narratedScenes.length - 1 : index - 1)} disabled={!ended && index === 0} aria-label="Previous scene"><SkipBack size={18} /></button>
@@ -117,5 +129,5 @@ export default function SandWebPresentation() {
       <button onClick={() => setMuted((m) => !m)} aria-label={muted ? "Unmute" : "Mute"}>{muted ? <VolumeX size={18} /> : <Volume2 size={18} />}</button>
       <button onClick={replay} aria-label="Replay from the start"><RotateCcw size={18} /></button>
     </nav>}
-  </main>;
+  </section>;
 }

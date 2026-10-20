@@ -15,6 +15,12 @@ const STRATA = [
   { top: -31, bottom: -41, color: "#c39b64", seed: 6, reservoir: true }, // reservoir sandstone
   { top: -41, bottom: -52, color: "#3f514e", seed: 7 },    // grey-green shale
 ];
+// Fraction of the well path (from the wellhead) at which the horizontal section starts.
+const HEEL = 0.434;
+// Camera poses [x, y, z, lookX, lookY, lookZ] that frame the entire horizontal
+// well with all four fractures: side-on for desktop, three-quarter for phones.
+const FULL_DESKTOP = [35, -28.5, 68, 35, -35.5, -1], FULL_MOBILE = [-22, -16, 100, 31, -35, 0];
+const easeInOut = (x: number) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
 const v3 = (x: number, y: number, z = Z) => new THREE.Vector3(x, y, z);
 
 function wellPath() {
@@ -62,7 +68,7 @@ export default function WellWorld({ mode, progress, compact }: Props) {
     if (fl) {
       data.flow.forEach(([seed, dy, dz], i) => {
         if (producing) sampleUp((seed + t * rate) % 1, v);
-        else { const u = (seed + t * 0.06) % 1; sampleUp(0.9 - u * 0.9 * Math.min(1, 0.25 + p * 1.4), v); }
+        else { const u = (seed + t * 0.06) % 1; sampleUp(0.9 - u * 0.9 * Math.min(1, 0.1 + p * 1.4), v); }
         data.flowPos.set([v.x + dy, v.y + dz, v.z + dz], i * 3);
       });
       fl.geometry.attributes.position.needsUpdate = true;
@@ -90,11 +96,17 @@ export default function WellWorld({ mode, progress, compact }: Props) {
     const zoneScale = mode === "treat" ? 0.2 + 5.5 * ramp(p, 0.45, 1) : mode === "clean" ? 5.5 : 0.001;
     zones.current.forEach((z) => { z?.scale.set(zoneScale * 0.38, zoneScale * 0.95, 1); });
     // Camera moves: wide → perforations (sand, treat); perforations → wide (clean).
+    const FULL = compact ? FULL_MOBILE : FULL_DESKTOP;
     const WIDE = compact ? [8, 22, 122, 28, -18] : [-14, 18, 66, 26, -17], PERF = compact ? [36, -26, 40, 40, -35.5] : [30, -27, 24, 40, -35.5];
     if (mode === "treat") {
-      // Follow the SandWeb front down the wellbore to the perforations.
-      sampleUp(0.9 - 0.9 * Math.min(1, 0.12 + smooth(p) * 1.05), v);
-      camera.position.set(v.x + 8 + Math.sin(t * 0.2) * 0.6, v.y + 6, compact ? 44 : 30); camera.lookAt(v.x + 4, v.y - 1, -1);
+      // 1) Glide down the vertical wellbore with the SandWeb front to the heel,
+      //    eased in and out. 2) Pull back until the whole horizontal well and
+      //    every fracture is in frame, then hold there.
+      const d = easeInOut(ramp(p, 0, 0.52)), k = easeInOut(ramp(p, 0.4, 0.76));
+      sampleUp(0.9 * (1 - HEEL * d), v);
+      const near = [v.x + 9, v.y + 5, compact ? 46 : 32, v.x + 3, v.y - 1, -1];
+      const lerp = (i: number) => THREE.MathUtils.lerp(near[i], FULL[i], k);
+      camera.position.set(lerp(0) + Math.sin(t * 0.2) * 0.5, lerp(1), lerp(2)); camera.lookAt(lerp(3), lerp(4), lerp(5));
       return;
     }
     const kk = mode === "sand" ? smooth(ramp(p, 0.3, 1)) : smooth(Math.min(1, p * 1.6));

@@ -83,15 +83,6 @@
         ]
       },
       {
-        "source": "/chemicals/sandweb/presentation",
-        "headers": [
-          {
-            "key": "X-Robots-Tag",
-            "value": "noindex, nofollow"
-          }
-        ]
-      },
-      {
         "source": "/audio/**",
         "headers": [
           {
@@ -255,6 +246,11 @@
       {
         "source": "/fracturing-stimulation.html",
         "destination": "/chemicals",
+        "type": 301
+      },
+      {
+        "source": "/chemicals/sandweb/presentation",
+        "destination": "/chemicals/sandweb",
         "type": 301
       }
     ]
