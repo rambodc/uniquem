@@ -89,11 +89,11 @@ export default function WellWorld({ mode, progress, compact }: Props) {
     const zoneScale = mode === "treat" ? 0.2 + 5.5 * ramp(p, 0.45, 1) : mode === "clean" ? 5.5 : 0.001;
     zones.current.forEach((z) => { z?.scale.set(zoneScale * 0.38, zoneScale * 0.95, 1); });
     // Camera moves: wide → perforations (sand, treat); perforations → wide (clean).
-    const WIDE = [-14, 18, 66, 26, -17], PERF = [30, -27, 24, 40, -35.5];
+    const WIDE = compact ? [8, 22, 122, 28, -18] : [-14, 18, 66, 26, -17], PERF = compact ? [36, -26, 40, 40, -35.5] : [30, -27, 24, 40, -35.5];
     if (mode === "treat") {
       // Follow the SandWeb front down the wellbore to the perforations.
       sampleUp(0.9 - 0.9 * Math.min(1, 0.12 + smooth(p) * 1.05), v);
-      camera.position.set(v.x + 8 + Math.sin(t * 0.2) * 0.6, v.y + 6, 30); camera.lookAt(v.x + 4, v.y - 1, -1);
+      camera.position.set(v.x + 8 + Math.sin(t * 0.2) * 0.6, v.y + 6, compact ? 44 : 30); camera.lookAt(v.x + 4, v.y - 1, -1);
       return;
     }
     const kk = mode === "sand" ? smooth(ramp(p, 0.3, 1)) : smooth(Math.min(1, p * 1.6));
