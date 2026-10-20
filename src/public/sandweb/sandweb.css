@@ -9,7 +9,7 @@
 .swp-stage{position:absolute;inset:0}.swp-stage canvas{position:absolute!important;inset:0}
 .swp-fade{position:absolute;inset:0;background:#05070b;pointer-events:none;animation:swp-fade 1.1s ease forwards}
 @keyframes swp-fade{to{opacity:0}}
-.swp-fallback{position:absolute;inset:0;display:grid;place-items:center;background:radial-gradient(circle at 50% 45%,rgba(31,214,90,.16),transparent 60%)}.swp-fallback img{width:min(44vw,420px);opacity:.9}
+.swp-fallback{position:absolute;inset:0;display:grid;place-items:center;background:radial-gradient(circle at 50% 45%,rgba(31,214,90,.16),transparent 60%)}.swp-fallback img{width:min(44vw,420px);height:auto;aspect-ratio:1/1;object-fit:contain;opacity:.9}
 .swp-start{position:absolute;inset:0;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;background:radial-gradient(circle at 50% 50%,rgba(5,7,11,.35),rgba(5,7,11,.92) 70%)}
 .swp-start h1{margin:16px 0 14px;font-size:clamp(44px,7vw,92px);line-height:.95;letter-spacing:-.05em}
 .swp-start h1 span{display:block;margin-top:10px;font-size:.42em;letter-spacing:-.02em;background:linear-gradient(90deg,#5dff8a,#00c21a);-webkit-background-clip:text;background-clip:text;color:transparent}
