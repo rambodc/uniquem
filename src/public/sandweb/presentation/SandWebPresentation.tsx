@@ -63,6 +63,8 @@ export default function SandWebPresentation() {
 
   useEffect(() => { const el = audio.current; if (!el || !started || !el.src) return; if (playing) el.play().catch(() => undefined); else el.pause(); }, [playing, started, phase]);
   useEffect(() => { if (audio.current) audio.current.muted = muted; }, [muted]);
+  // Warm the ending scene chunk during the last scene so it starts promptly.
+  useEffect(() => { if (index === narratedScenes.length - 1) void import("./EndingWorld"); }, [index]);
 
   const go = useCallback((next: number) => { clock.current = 0; setPhase("scenes"); setPlaying(true); setIndex(Math.max(0, Math.min(narratedScenes.length - 1, next))); }, [clock]);
   const start = () => { setPhase("scenes"); setPlaying(true); };
