@@ -2,7 +2,7 @@ import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react"
 import { ArrowDown, ChevronLeft, Pause, Play, RotateCcw, SkipBack, SkipForward, Volume2, VolumeX } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import EndingChoices, { isPreviewHost } from "./Ending";
-import { endingClip, narratedScenes, type Caption } from "./narration";
+import { narratedScenes, type Caption } from "./narration";
 import type { ClockRef } from "./Stage3";
 import { viewAt } from "./timeline";
 
@@ -10,7 +10,9 @@ const Stage3 = lazy(() => import("./Stage3"));
 const EndingWorld = lazy(() => import("./EndingWorld"));
 const GAP_AFTER_SCENE = 1.1;
 type Phase = "start" | "scenes" | "close";
-const ASK_AT = (endingClip.captions[endingClip.captions.length - 1]?.start ?? endingClip.duration) - 0.3;
+// No spoken ending: after scene 3 the contact choices appear after a short beat
+// while the logo settles in.
+const ASK_AT = 0.9;
 
 function canRenderWebGL() { if (typeof document === "undefined") return true; try { const c = document.createElement("canvas"); return Boolean(c.getContext("webgl2") || c.getContext("webgl")); } catch { return false; } }
 const captionAt = (captions: readonly Caption[], t: number) => captions.find((c, i) => t >= c.start - 0.1 && t < (captions[i + 1]?.start ?? c.end + 1.2));
@@ -26,7 +28,7 @@ export default function SandWebPresentation() {
 
   const playSrc = useCallback((src: string) => { const el = audio.current; if (!el) return; el.src = src; el.currentTime = 0; el.play().catch(() => undefined); }, []);
 
-  const finish = useCallback(() => { clock.current = narratedScenes[narratedScenes.length - 1].duration; closeClock.current = 0; setPlaying(true); setPhase("close"); playSrc(endingClip.audio); }, [clock, playSrc]);
+  const finish = useCallback(() => { const el = audio.current; if (el) { el.pause(); el.removeAttribute("src"); el.load(); } clock.current = narratedScenes[narratedScenes.length - 1].duration; closeClock.current = 0; setPlaying(true); setPhase("close"); }, [clock]);
 
   // Narration time drives the 3D animation and captions. If audio cannot play
   // (blocked or failed to load), a wall clock keeps the presentation moving.
@@ -44,7 +46,7 @@ export default function SandWebPresentation() {
             if (index < narratedScenes.length - 1) setIndex(index + 1);
             else finish();
           }
-        } else closeClock.current = audioOk ? el.currentTime : Math.min(endingClip.duration + 5, closeClock.current + dt);
+        } else closeClock.current = Math.min(ASK_AT + 5, closeClock.current + dt);
       }
       setTime(clock.current); setCloseTime(closeClock.current);
       frame = requestAnimationFrame(tick);
@@ -61,7 +63,7 @@ export default function SandWebPresentation() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [index, phase === "scenes"]);
 
-  useEffect(() => { const el = audio.current; if (!el || !started || !el.src) return; if (playing) el.play().catch(() => undefined); else el.pause(); }, [playing, started, phase]);
+  useEffect(() => { const el = audio.current; if (!el || !started || phase === "close" || !el.getAttribute("src")) return; if (playing) el.play().catch(() => undefined); else el.pause(); }, [playing, started, phase]);
   useEffect(() => { if (audio.current) audio.current.muted = muted; }, [muted]);
   // Warm the ending scene chunk during the last scene so it starts promptly.
   useEffect(() => { if (index === narratedScenes.length - 1) void import("./EndingWorld"); }, [index]);
@@ -85,7 +87,7 @@ export default function SandWebPresentation() {
   }, [phase, index, go]);
 
   const view = viewAt(scene.id, phase === "close" ? scene.duration : time, scene.duration);
-  const caption = phase === "close" ? captionAt(endingClip.captions, closeTime) : captionAt(scene.captions, time);
+  const caption = phase === "close" ? undefined : captionAt(scene.captions, time);
   const progress = Math.min(1, time / scene.duration), ended = phase === "close";
   const showChoices = ended && closeTime >= ASK_AT;
 
@@ -111,7 +113,7 @@ export default function SandWebPresentation() {
     {ended && <section className={`swp-ending ${panel ? "has-panel" : ""}`} aria-label="Talk to the SandWeb team">
       <div className="swp-logo" ref={logo}><img src="/brand/uniquem-mark-180.png" alt="Uniquem" width={180} height={180} /></div>
       <p className="swp-brand">SandWeb by Uniquem</p>
-      {!panel && (showChoices ? <h2>How would you like to <span>hear from us?</span></h2> : caption && <p className="swp-caption" aria-live="polite" key={caption.text}>{caption.text}</p>)}
+      {!panel && showChoices && <h2>How would you like to <span>hear from us?</span></h2>}
       <EndingChoices showChoices={showChoices} onReplay={replay} onPanel={setPanel} />
       {preview && panel && <p className="swp-preview-note">Preview: submissions are marked as test leads</p>}
       {showChoices && !panel && <a className="swp-about-link" href="#about-sandweb">About SandWeb and the transcript <ArrowDown size={15} /></a>}

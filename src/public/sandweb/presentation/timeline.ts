@@ -4,10 +4,11 @@ import type { SceneId } from "./narration";
 // pore-scale macro view. `cut` is the fraction of the scene at which it cuts.
 export type View = "well" | "pore" | "flow";
 const PLAN: Record<SceneId, { first: View; second: View; cut: number }> = {
-  problem: { first: "well", second: "pore", cut: 0.42 },
-  // SandWeb: a long, slow well-scale descent (about 12 s) that cuts to the pore
-  // view just as the narration says "Instead of repelling, the grains draw together".
-  sandweb: { first: "well", second: "pore", cut: 0.56 },
+  // Cuts to the pore view as the narration says "Those particles disperse".
+  problem: { first: "well", second: "pore", cut: 0.4 },
+  // SandWeb: a long, slow well-scale descent (about 15 s) that cuts to the pore
+  // view just as the narration says "Instead of dispersing, the particles are consolidated".
+  sandweb: { first: "well", second: "pore", cut: 0.53 },
   result: { first: "flow", second: "well", cut: 0.46 },
 };
 export const FADE = 0.45;
