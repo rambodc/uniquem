@@ -42,8 +42,7 @@ export const sandwebFaqs = [
 // Short on-page summary of the narrated presentation (the full narration lives
 // in presentation/narration.ts and is shown as captions in the player).
 export const presentationSummary = [
-  { id: "problem", title: "The hidden cost of sand", text: "As fluid flows to the wellbore, it carries sand and fines that plug the formation, wear down pumps and chokes, force cleanouts and cut production." },
-  { id: "sandweb", title: "SandWeb changes the charge", text: "Pumped into an existing well or with the frac, SandWeb surrounds each grain and reverses the charge that drives grains apart, so they hold together. No resin coating, no formation damage, and the pore spaces stay open." },
-  { id: "result", title: "Sand stays down. Oil flows.", text: "Oil flows freely through a stable sand pack, with up to 90% less sand flowback, less equipment wear and fewer cleanouts." },
-  { id: "ending", title: "Let's talk about your wells", text: "More production, less sand, less downtime and lower costs." },
+  { id: "problem", title: "The hidden cost of sand", text: "As fluid flows to the wellbore, it carries sand and fines that disperse in the fluid and either plug the pore throats in the formation or travel to surface, wearing down pumps and chokes, forcing cleanouts and cutting production." },
+  { id: "sandweb", title: "SandWeb changes the charge", text: "Pumped into an existing well as part of a stimulation package, or with the frac fluid, SandWeb surrounds each grain to increase the friction between sand particles. Instead of dispersing, the particles are consolidated into a web while minimizing the chemical impact on reservoir permeability." },
+  { id: "result", title: "Sand stays down. Oil flows.", text: "The well can produce at its maximum potential. Oil flows freely through a stable, connected sand pack, with up to 90% less sand flowback, less equipment wear, fewer cleanouts and more production." },
 ] as const;

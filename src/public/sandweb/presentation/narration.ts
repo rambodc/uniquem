@@ -1,166 +1,142 @@
-// Narration v4: OpenAI gpt-4o-mini-tts voice "ash", one continuous take per
-// clip. Scenes use a professional delivery; the ending uses a warm, upbeat
-// delivery (best of 8 takes, long pauses tightened to 0.42 s, +4% tempo).
+// Narration v5: OpenAI gpt-4o-mini-tts voice "ash", one continuous take per
+// scene, professional delivery (same instructions as v3/v4), 0.5 s lead-in and
+// 0.3 s tail. There is no spoken ending: after scene 3 the presentation goes
+// straight to the "How would you like to hear from us?" contact section.
 // "Uniquem" is sent to the TTS as "Uni-kem" so it is pronounced "UniKem";
 // captions keep the real spelling. Caption times are aligned to
 // faster-whisper word timestamps (first words of each caption chunk).
 export type Caption = { start: number; end: number; text: string };
 export type SceneId = "problem" | "sandweb" | "result";
 export type NarratedScene = { id: SceneId; title: string; audio: string; duration: number; captions: readonly Caption[] };
-export type NarratedClip = Omit<NarratedScene, "id"> & { id: "ending" };
 
 export const narratedScenes: readonly NarratedScene[] = [
   {
     "id": "problem",
     "title": "The hidden cost of sand",
-    "audio": "/audio/sandweb/scene-problem-v3.mp3",
-    "duration": 23.78,
+    "audio": "/audio/sandweb/scene-problem-v5.mp3",
+    "duration": 23.98,
     "captions": [
       {
         "start": 0.5,
-        "end": 3.64,
+        "end": 3.62,
         "text": "Every producing well carries a hidden cost."
       },
       {
-        "start": 4.32,
-        "end": 6.2,
+        "start": 4.2,
+        "end": 6.04,
         "text": "As fluid flows toward the wellbore,"
       },
       {
-        "start": 6.7,
-        "end": 9.78,
+        "start": 6.52,
+        "end": 9.12,
         "text": "it pulls sand and fines along with it."
       },
       {
-        "start": 10.3,
-        "end": 13.96,
-        "text": "Those grains naturally repel each other, so they break loose,"
+        "start": 9.64,
+        "end": 11.78,
+        "text": "Those particles disperse in the fluid"
       },
       {
-        "start": 14.36,
-        "end": 17.02,
-        "text": "plug the formation, and travel to surface,"
+        "start": 11.78,
+        "end": 14.72,
+        "text": "and either plug the pore throats in the formation,"
       },
       {
-        "start": 17.56,
-        "end": 20.62,
-        "text": "wearing down pumps and chokes, forcing cleanouts,"
+        "start": 14.72,
+        "end": 19.06,
+        "text": "or travel to surface, wearing down pumps and chokes,"
       },
       {
-        "start": 21.24,
-        "end": 23.02,
-        "text": "and quietly cutting into production."
+        "start": 19.42,
+        "end": 22.84,
+        "text": "forcing cleanouts, and quietly cutting into production."
       }
     ]
   },
   {
     "id": "sandweb",
     "title": "SandWeb changes the charge",
-    "audio": "/audio/sandweb/scene-sandweb-v3.mp3",
-    "duration": 21.91,
+    "audio": "/audio/sandweb/scene-sandweb-v5.mp3",
+    "duration": 28.73,
     "captions": [
       {
         "start": 0.5,
-        "end": 3.74,
-        "text": "SandWeb, by Uniquem, changes that."
+        "end": 3.94,
+        "text": "SandWeb, by Uniquem, provides a solution."
       },
       {
-        "start": 4.28,
-        "end": 6.94,
-        "text": "Pumped into an existing well, or with the frac,"
+        "start": 4.7,
+        "end": 7.96,
+        "text": "Pumped into an existing well as part of a stimulation package,"
       },
       {
-        "start": 7.36,
-        "end": 11.28,
-        "text": "it surrounds each grain and reverses the charge that drives them apart."
+        "start": 8.38,
+        "end": 9.62,
+        "text": "or with the frac fluid,"
       },
       {
-        "start": 12.04,
-        "end": 15.18,
-        "text": "Instead of repelling, the grains draw together and hold."
+        "start": 10.12,
+        "end": 14.58,
+        "text": "it surrounds each grain to increase the friction between the sand particles."
       },
       {
-        "start": 15.82,
-        "end": 19.02,
-        "text": "There's no resin coating and nothing to damage the formation."
+        "start": 15.42,
+        "end": 16.64,
+        "text": "Instead of dispersing,"
       },
       {
-        "start": 19.68,
-        "end": 21.22,
-        "text": "The pore spaces stay open."
+        "start": 17.12,
+        "end": 19.58,
+        "text": "the particles are consolidated into a web"
+      },
+      {
+        "start": 19.58,
+        "end": 23.52,
+        "text": "while minimizing the chemical impact on reservoir permeability—"
+      },
+      {
+        "start": 24.1,
+        "end": 27.94,
+        "text": "helping operators maintain production without compromising flow."
       }
     ]
   },
   {
     "id": "result",
     "title": "Sand stays down. Oil flows.",
-    "audio": "/audio/sandweb/scene-result-v4.mp3",
-    "duration": 22.42,
+    "audio": "/audio/sandweb/scene-result-v5.mp3",
+    "duration": 21.48,
     "captions": [
       {
         "start": 0.5,
-        "end": 3.0,
-        "text": "Now the well produces the way it should."
+        "end": 4.04,
+        "text": "Now the well can produce at its maximum potential."
       },
       {
-        "start": 3.7,
-        "end": 7.08,
+        "start": 4.98,
+        "end": 8.58,
         "text": "Oil flows freely and at higher rates through a stable,"
       },
       {
-        "start": 7.16,
-        "end": 10.56,
-        "text": "connected sand pack, and the sand stays downhole."
+        "start": 8.64,
+        "end": 9.9,
+        "text": "connected sand pack."
       },
       {
-        "start": 11.34,
-        "end": 14.8,
-        "text": "Operators have seen up to ninety percent less sand flowback."
+        "start": 10.86,
+        "end": 14.44,
+        "text": "Operators have seen up to ninety percent less sand flowback,"
       },
       {
-        "start": 15.32,
-        "end": 18.52,
-        "text": "That means less wear on equipment, fewer cleanouts,"
+        "start": 14.76,
+        "end": 18.22,
+        "text": "leading to less wear on equipment, fewer cleanouts,"
       },
       {
-        "start": 18.96,
-        "end": 21.62,
-        "text": "and more production from the wells you already have."
+        "start": 18.22,
+        "end": 20.66,
+        "text": "and more production from their wells."
       }
     ]
   }
 ];
-
-export const endingClip: NarratedClip = {
-  "id": "ending",
-  "title": "",
-  "audio": "/audio/sandweb/scene-ending-v4.mp3",
-  "duration": 12.79,
-  "captions": [
-    {
-      "start": 0.5,
-      "end": 2.6,
-      "text": "Imagine your wells producing more,"
-    },
-    {
-      "start": 2.87,
-      "end": 6.25,
-      "text": "with less sand, less downtime, and lower costs."
-    },
-    {
-      "start": 6.81,
-      "end": 8.75,
-      "text": "That's what SandWeb was built to do."
-    },
-    {
-      "start": 9.05,
-      "end": 10.47,
-      "text": "So let's talk about your wells."
-    },
-    {
-      "start": 11.1,
-      "end": 12.25,
-      "text": "How would you like to hear from us?"
-    }
-  ]
-};
