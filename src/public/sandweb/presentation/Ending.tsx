@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { ArrowLeft, ArrowUpRight, Check, Mail, MessageSquare, Phone, RotateCcw } from "lucide-react";
+import { trackEvent } from "../../../core/analytics";
 
 type Method = "call" | "email" | "self";
 type Form = { name: string; phone: string; email: string; company: string; website: string };
@@ -32,7 +33,7 @@ export default function EndingChoices({ showChoices, onReplay, onPanel }: { show
   const [method, setMethod] = useState<Method | null>(null), [form, setForm] = useState<Form>({ name: "", phone: "", email: "", company: "", website: "" });
   const [errors, setErrors] = useState<Partial<Record<"name" | "phone" | "email" | "submit", string>>>({}), [busy, setBusy] = useState(false), [done, setDone] = useState(false);
   const preview = isPreviewHost();
-  const open = (m: Method | null) => { setMethod(m); setErrors({}); onPanel(m !== null); };
+  const open = (m: Method | null) => { if (m) trackEvent("contact_option_select", { option: m === "self" ? "reach_out_myself" : m === "call" ? "call_me" : "email_me" }); setMethod(m); setErrors({}); onPanel(m !== null); };
   const field = (key: keyof Form, label: string, opts: { type?: string; optional?: boolean; auto?: string; err?: string } = {}) =>
     <label>{label}{opts.optional && <span> (optional)</span>}<input type={opts.type ?? "text"} value={form[key]} onChange={(e) => setForm({ ...form, [key]: e.target.value })} autoComplete={opts.auto} maxLength={key === "name" ? 100 : 120} aria-invalid={Boolean(opts.err)} inputMode={key === "phone" ? "tel" : undefined} />{opts.err && <em>{opts.err}</em>}</label>;
 
@@ -44,7 +45,7 @@ export default function EndingChoices({ showChoices, onReplay, onPanel }: { show
     if (method === "email" && !emailOk(form.email)) next.email = "Please enter a valid email address.";
     setErrors(next); if (Object.keys(next).length) return;
     setBusy(true);
-    try { await submit(leadPayload(method, form, preview)); setDone(true); }
+    try { await submit(leadPayload(method, form, preview)); trackEvent("lead_form_submit", { form: "sandweb_presentation", method, product_name: "SandWeb" }); setDone(true); }
     catch { setErrors({ submit: "We couldn't send that just now. Please try again, or go back and choose \u201cI'll reach out\u201d." }); }
     finally { setBusy(false); }
   }

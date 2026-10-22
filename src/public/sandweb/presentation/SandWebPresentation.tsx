@@ -5,6 +5,8 @@ import EndingChoices, { isPreviewHost } from "./Ending";
 import { narratedScenes, type Caption } from "./narration";
 import type { ClockRef } from "./Stage3";
 import { viewAt } from "./timeline";
+import { trackEvent } from "../../../core/analytics";
+import { responsive } from "../../img";
 
 const Stage3 = lazy(() => import("./Stage3"));
 const EndingWorld = lazy(() => import("./EndingWorld"));
@@ -65,11 +67,15 @@ export default function SandWebPresentation() {
 
   useEffect(() => { const el = audio.current; if (!el || !started || phase === "close" || !el.getAttribute("src")) return; if (playing) el.play().catch(() => undefined); else el.pause(); }, [playing, started, phase]);
   useEffect(() => { if (audio.current) audio.current.muted = muted; }, [muted]);
+  // Analytics: one scene_view per scene shown, one complete per run (no-op without a GA ID).
+  const skippedEnd = useRef(false);
+  useEffect(() => { if (phase === "scenes") trackEvent("sandweb_scene_view", { scene_number: index + 1, scene_title: narratedScenes[index].title }); }, [phase, index]);
+  useEffect(() => { if (phase === "close") { trackEvent("sandweb_presentation_complete", { skipped: skippedEnd.current }); skippedEnd.current = false; } }, [phase]);
   // Warm the ending scene chunk during the last scene so it starts promptly.
   useEffect(() => { if (index === narratedScenes.length - 1) void import("./EndingWorld"); }, [index]);
 
   const go = useCallback((next: number) => { clock.current = 0; setPhase("scenes"); setPlaying(true); setIndex(Math.max(0, Math.min(narratedScenes.length - 1, next))); }, [clock]);
-  const start = () => { setPhase("scenes"); setPlaying(true); };
+  const start = () => { trackEvent("sandweb_presentation_start", { replay: false }); setPhase("scenes"); setPlaying(true); };
   // Leave the presentation: back to the uniquem page the visitor came from,
   // otherwise to the homepage.
   const leave = () => {
@@ -79,7 +85,7 @@ export default function SandWebPresentation() {
     try { const ref = document.referrer ? new URL(document.referrer) : null; if (ref && ref.origin === window.location.origin && ref.pathname !== window.location.pathname) target = ref.pathname + ref.search; } catch { target = "/"; }
     navigate(target);
   };
-  const replay = () => { setPanel(false); clock.current = 0; setIndex(0); setPhase("scenes"); setPlaying(true); if (index === 0) playSrc(narratedScenes[0].audio); };
+  const replay = () => { trackEvent("sandweb_presentation_start", { replay: true }); setPanel(false); clock.current = 0; setIndex(0); setPhase("scenes"); setPlaying(true); if (index === 0) playSrc(narratedScenes[0].audio); };
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => { if (phase !== "scenes" && phase !== "close") return; if (event.key === " ") { event.preventDefault(); setPlaying((p) => !p); } if (event.key === "ArrowRight" && phase === "scenes") go(index + 1); if (event.key === "ArrowLeft") go(phase === "close" ? narratedScenes.length - 1 : index - 1); if (event.key === "m") setMuted((m) => !m); };
@@ -95,7 +101,7 @@ export default function SandWebPresentation() {
     <audio ref={audio} preload="auto" />
     <div className="swp-stage" aria-hidden="true">
       {ended ? (webgl ? <Suspense fallback={null}><EndingWorld anchor={logo} compact={compact} /></Suspense> : <div className="swp-fallback" />)
-        : started && webgl ? <Suspense fallback={null}><Stage3 scene={scene.id} view={view.view} clock={clock} duration={scene.duration} compact={compact} active /></Suspense> : <div className="swp-fallback"><img src="/images/products/sandweb-tote.webp" alt="SandWeb sand consolidation chemical tote" width={1254} height={1254} /></div>}
+        : started && webgl ? <Suspense fallback={null}><Stage3 scene={scene.id} view={view.view} clock={clock} duration={scene.duration} compact={compact} active /></Suspense> : <div className="swp-fallback"><img {...responsive("/images/products/sandweb-tote.webp", "(max-width: 800px) 90vw, 50vw")} alt="SandWeb sand consolidation chemical tote" width={1254} height={1254} /></div>}
       <div className="swp-fade" key={`${index}-${started}-${ended}`} />
       {!ended && <div className="swp-cut" style={{ opacity: started ? view.fade : 0 }} />}
     </div>
@@ -123,7 +129,7 @@ export default function SandWebPresentation() {
     {started && <nav className="swp-controls" aria-label="Presentation controls">
       <button onClick={() => go(ended ? narratedScenes.length - 1 : index - 1)} disabled={!ended && index === 0} aria-label="Previous scene"><SkipBack size={18} /></button>
       <button onClick={() => setPlaying((p) => !p)} aria-label={playing ? "Pause" : "Play"}>{playing ? <Pause size={18} /> : <Play size={18} />}</button>
-      <button onClick={() => (index === narratedScenes.length - 1 ? finish() : go(index + 1))} disabled={ended} aria-label="Next scene"><SkipForward size={18} /></button>
+      <button onClick={() => { if (index === narratedScenes.length - 1) { skippedEnd.current = true; finish(); } else go(index + 1); }} disabled={ended} aria-label="Next scene"><SkipForward size={18} /></button>
       <div className="swp-progress">{narratedScenes.map((s, i) => <span key={s.id} onClick={() => go(i)}><b style={{ width: `${i < index || ended ? 100 : i === index ? progress * 100 : 0}%` }} /></span>)}</div>
       <button onClick={() => setMuted((m) => !m)} aria-label={muted ? "Unmute" : "Mute"}>{muted ? <VolumeX size={18} /> : <Volume2 size={18} />}</button>
       <button onClick={replay} aria-label="Replay from the start"><RotateCcw size={18} /></button>

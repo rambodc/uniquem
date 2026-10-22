@@ -9,7 +9,9 @@ export default function SeoMetadata() {
     const template = document.createElement("template");
     template.innerHTML = route
       ? head(route)
-      : '<title>Uniquem | Private page</title><meta name="robots" content="noindex, nofollow">';
+      : /^\/(signin|contact-inbox)(\/|$)/.test(pathname)
+        ? '<title>Uniquem | Private page</title><meta name="robots" content="noindex, nofollow">'
+        : '<title>Page not found | Uniquem</title><meta name="robots" content="noindex, follow">';
     document.head.querySelectorAll(seoSelectors).forEach((node) => node.remove());
     document.head.append(template.content);
   }, [pathname]);

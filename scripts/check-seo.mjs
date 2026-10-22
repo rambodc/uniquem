@@ -136,4 +136,11 @@ for (const redirect of config.hosting.redirects) {
   }
 }
 if (base) assert.equal(await fetchStatus(`${base}/does-not-exist-seo-check`), 404, "unknown URLs stay 404");
+{
+  const notFound = base ? await (await fetch(`${base}/does-not-exist-seo-check`)).text() : await readFile("dist/404.html", "utf8");
+  const doc = new JSDOM(notFound).window.document;
+  assert.match(doc.querySelector('meta[name="robots"]')?.content ?? "", /^noindex/, "404 page is noindex");
+  assert.equal(doc.querySelector('link[rel="canonical"]'), null, "404 page has no canonical");
+  assert.ok(doc.querySelector('a[href="/"]'), "404 page links home");
+}
 console.log(`SEO checks passed: ${urls.length} public pages, 2 private pages, ${config.hosting.redirects.length} legacy redirects${base ? ` at ${base}` : " in build output"}.`);

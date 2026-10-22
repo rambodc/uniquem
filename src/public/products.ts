@@ -29,7 +29,7 @@ export const publicProducts: readonly PublicProduct[] = [
     teaser:
       "Sand consolidation chemical for existing wells and fracs. Watch the narrated 3D demo to see how it holds sand and fines in place.",
     description:
-      "SandWeb is a liquid sand consolidation chemical for existing producing wells and hydraulic fracturing. It holds sand, proppant and fines in place while the pore spaces stay open, as a cost-effective alternative to resin-coated sand.",
+      "SandWeb is a liquid sand consolidation chemical for existing producing wells and hydraulic fracturing. It increases the friction between sand particles so sand, proppant and fines consolidate into a web and stay in place, while minimizing the chemical impact on reservoir permeability. A cost-effective alternative to resin-coated sand.",
     benefits: [
       "Holds sand, proppant and fines in place",
       "Supports sand flowback control in fracturing and stimulation",
