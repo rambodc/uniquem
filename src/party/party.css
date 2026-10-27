@@ -57,3 +57,11 @@ a.ws-card:hover{transform:translateY(-3px);border-color:var(--accent);box-shadow
 .ws-door-done{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}.ws-checked{display:inline-flex;gap:6px;align-items:center;color:#16604f;font-weight:700;font-size:17px}
 .ws-undo{display:inline-flex;gap:6px;align-items:center;min-height:48px;padding:0 16px;border:1px solid var(--line2);border-radius:14px;background:#fff;color:#4a615e;font:inherit;font-size:15px;cursor:pointer}.ws-undo.armed{background:#b3382f;border-color:#b3382f;color:#fff}
 @media(max-width:720px){.ws-info{grid-template-columns:1fr}.ws-page{padding-top:28px}.ws-user span{display:none}.ws-table th:nth-child(3),.ws-table td:nth-child(3){display:none}}
+
+.ws-import textarea{min-height:180px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;line-height:1.5;resize:vertical}
+.ws-import-field{display:grid;gap:6px;font-size:14px;font-weight:600;color:#2a4a47;margin:14px 0}
+.ws-import-preview{margin:0 0 14px}.ws-import-preview>p{margin:0 0 10px}
+.ws-import .ws-status{margin:12px 0}.ws-import .ws-status ul{margin:8px 0 0;padding-left:18px}.ws-import .ws-status li{margin:4px 0;overflow-wrap:anywhere}.ws-import .ws-status code{display:block;font-size:13px;opacity:.85}
+.ws-import-rows{list-style:none;margin:0;padding:0;max-height:320px;overflow:auto;border:1px solid var(--line2);border-radius:12px}
+.ws-import-rows li{display:grid;gap:2px;padding:9px 13px;border-bottom:1px solid #e6efec}.ws-import-rows li:last-child{border-bottom:0}.ws-import-rows small{color:var(--mute);font-size:13px}.ws-import-rows li.dup{background:#f5f7f6;opacity:.75}
+.ws-section-head{flex-wrap:wrap}

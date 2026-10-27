@@ -1,7 +1,7 @@
 import { Buffer } from "node:buffer";
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { validateParty, validateGuest, validatePhoto, summarize, docId, status, capacity, sniffImage, PHOTO } from "../party.js";
+import { validateParty, validateGuest, validateGuestBatch, planImport, guestKey, LIMITS, validatePhoto, summarize, docId, status, capacity, sniffImage, PHOTO } from "../party.js";
 import { staffAccess, requireStaff } from "../core.js";
 
 const party = { name: "  Winter   Mixer ", startsAt: "2026-12-04T02:30:00.000Z", location: " Calgary Petroleum Club ", description: "  Drinks\r\nand food ", capacity: 120, hostNotes: "Reserve table 4" };
@@ -97,4 +97,29 @@ test("staff access: owner, listed active staff, everyone else denied", async () 
   assert.equal(await staffAccess(request("ann@uniquem.ca", false), database), null);
   assert.equal(await staffAccess({}, database), null);
   await assert.rejects(() => requireStaff(request("eve@example.com"), database), /not authorized/);
+});
+
+test("bulk import validates and trims every guest like a single guest, and reports which row is wrong", () => {
+  const batch = validateGuestBatch([{ firstName: " Ada ", lastName: "Lovelace", company: " Engines  Ltd " }, { firstName: "Grace", lastName: "Hopper", status: "notComing", invitedBy: "Rambod" }]);
+  assert.equal(batch.length, 2);
+  assert.deepEqual([batch[0].firstName, batch[0].company, batch[0].status, batch[0].searchKey], ["Ada", "Engines Ltd", "pending", "ada lovelace engines ltd"]);
+  assert.equal(batch[1].status, "notComing");
+  assert.throws(() => validateGuestBatch([{ firstName: "Ada", lastName: "L" }, { firstName: "Bob", lastName: "" }]), /Guest 2: Enter a last name/);
+  assert.throws(() => validateGuestBatch([{ firstName: "Ada", lastName: "L", status: "maybe" }]), /Guest 1: Status/);
+  assert.throws(() => validateGuestBatch([null]), /Guest 1/);
+});
+test("bulk import accepts 1 to 200 guests only", () => {
+  const many = (count) => Array.from({ length: count }, (_, index) => ({ firstName: `G${index}`, lastName: "X" }));
+  assert.equal(validateGuestBatch(many(LIMITS.importPerCall)).length, 200);
+  assert.throws(() => validateGuestBatch(many(201)), /up to 200/);
+  for (const bad of [[], undefined, null, "Ada Lovelace", { length: 1 }]) assert.throws(() => validateGuestBatch(bad), /at least one guest/);
+});
+test("bulk import skips names already on the party (any case) and repeats within the import", () => {
+  const guests = validateGuestBatch([{ firstName: "Ada", lastName: "Lovelace" }, { firstName: "ADA", lastName: "LOVELACE", company: "dup" }, { firstName: "Grace", lastName: "Hopper" }, { firstName: "Alan", lastName: "Turing" }]);
+  const existing = [guestKey({ firstName: "alan", lastName: "TURING" })];
+  const plan = planImport(guests, existing);
+  assert.deepEqual(plan.toAdd.map((guest) => `${guest.firstName} ${guest.lastName}`), ["Ada Lovelace", "Grace Hopper"]);
+  assert.equal(plan.skipped, 2);
+  assert.equal(plan.toAdd[0].company, "");
+  assert.deepEqual(planImport(guests.slice(0, 1), []).skipped, 0);
 });

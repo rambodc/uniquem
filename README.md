@@ -53,6 +53,10 @@ functions in `functions/party-functions.js`; Firestore and Storage rules stay de
   To add a staff member: create their Firebase Auth user (email verified), then add a Firestore document
   `staff/{their email in lowercase}` with `{ active: true }`. Staff get Party only; the contact inbox stays owner-only.
   Set `active: false` (or delete the document) to remove access.
+- Bulk import (party page, "Import guests"): one guest per line, fields separated by commas or tabs (spreadsheet paste) in the
+  order first name, last name, company, invited by, status. Only the names are required; status is coming, pending or not coming
+  (friendly variants like "yes" or "not-coming" work; blank means pending). A header row is ignored. Guests whose first + last
+  name already exist on the party (any case) are skipped. Max 200 per `importGuests` call; the page sends longer lists in chunks.
 - Times are entered and shown in Calgary time (America/Edmonton).
 - Local testing without touching production: run the Firebase emulators (auth, functions, firestore, storage) with a
   `demo-` project id and start the site with `VITE_USE_EMULATORS=true VITE_FIREBASE_PROJECT_ID=demo-uniquem npm run dev`.

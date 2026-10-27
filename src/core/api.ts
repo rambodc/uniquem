@@ -28,6 +28,7 @@ export const removePartyPhoto = (partyId: string) => invoke("removePartyPhoto", 
 export const getPartyPhoto = (partyId: string) => invoke<{ partyId: string }, { dataUrl: string | null }>("getPartyPhoto", { partyId });
 export const listGuests = (partyId: string) => invoke<{ partyId: string }, GuestList>("listGuests", { partyId });
 export const addGuest = (partyId: string, data: GuestInput) => invoke("addGuest", { partyId, ...data });
+export const importGuests = (partyId: string, guests: GuestInput[]) => invoke<{ partyId: string; guests: GuestInput[] }, { added: number; skipped: number }>("importGuests", { partyId, guests });
 export const updateGuest = (partyId: string, guestId: string, data: GuestInput) => invoke("updateGuest", { partyId, guestId, ...data });
 export const deleteGuest = (partyId: string, guestId: string) => invoke("deleteGuest", { partyId, guestId });
 export const checkInGuest = (partyId: string, guestId: string) => invoke<{ partyId: string; guestId: string }, { alreadyCheckedIn: boolean; guest: Guest }>("checkInGuest", { partyId, guestId });
