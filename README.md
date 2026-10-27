@@ -37,3 +37,22 @@ The GA4 measurement ID lives in `src/core/analyticsConfig.ts` (`GA_MEASUREMENT_I
 ## Search Console verification
 
 The existing `google-site-verification` meta tag in `index.html` must stay. Extra HTML-tag codes can be added to `SEARCH_CONSOLE_VERIFICATION_CODES` in `src/core/analyticsConfig.ts`; for the HTML-file method, put Google's `googleXXXX.html` file in `public/`.
+
+## Private workspace: dashboard and Party
+
+After sign-in staff land on `/dashboard` (two cards: Contact Form, Party). Party lives at `/party`
+(list, create/edit, guest list, `/party/:id/check-in` door screen, `/party/:id/summary`).
+All pages are private (`noindex`, no analytics, no screensaver) and every read/write goes through callable
+functions in `functions/party-functions.js`; Firestore and Storage rules stay deny-all for browsers.
+
+- Data: `parties/{partyId}` (name, startsAt, location, description, capacity, hostNotes, photoPath, thumbDataUrl, timestamps)
+  and `parties/{partyId}/guests/{guestId}` (firstName, lastName, company, invitedBy, status `coming|pending|notComing`,
+  checkedIn, checkedInAt, searchKey, timestamps). Theme photos are stored in Storage under `party-photos/{partyId}/`
+  and returned only to signed-in staff through `getPartyPhoto`.
+- Access: the owner account (`ALLOWED_EMAIL` in `functions/core.js`) always has access, including the contact inbox.
+  To add a staff member: create their Firebase Auth user (email verified), then add a Firestore document
+  `staff/{their email in lowercase}` with `{ active: true }`. Staff get Party only; the contact inbox stays owner-only.
+  Set `active: false` (or delete the document) to remove access.
+- Times are entered and shown in Calgary time (America/Edmonton).
+- Local testing without touching production: run the Firebase emulators (auth, functions, firestore, storage) with a
+  `demo-` project id and start the site with `VITE_USE_EMULATORS=true VITE_FIREBASE_PROJECT_ID=demo-uniquem npm run dev`.

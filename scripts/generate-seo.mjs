@@ -25,7 +25,7 @@ for (const route of routes) {
 }
 
 // Separate shells prevent private routes from inheriting homepage indexing tags.
-for (const route of ["signin", "contact-inbox"]) {
+for (const route of ["signin", "contact-inbox", "dashboard", "party"]) {
   await mkdir(`dist/${route}`, { recursive: true });
   await writeFile(`dist/${route}/index.html`, cleanShell.replace("</head>", '<title>Uniquem | Private page</title><meta name="robots" content="noindex, nofollow"></head>'));
 }
