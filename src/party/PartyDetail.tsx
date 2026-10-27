@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useCallback, useEffect, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
-import { Archive, ArchiveRestore, ClipboardList, DoorOpen, MapPin, Pencil, Search, Trash2, Upload, UserPlus } from "lucide-react";
+import { Archive, ArchiveRestore, DoorOpen, MapPin, Pencil, Search, Trash2, Upload, UserPlus } from "lucide-react";
 import { addGuest, archiveParty, deleteGuest, restoreParty, getPartyPhoto, listGuests, setGuestStatus, updateGuest, type Guest, type GuestInput, type GuestList, type GuestStatus } from "../core/api";
 import { Confirm, Page, messageOf } from "./Workspace";
 import GuestForm from "./GuestForm";
@@ -25,18 +25,22 @@ export default function PartyDetail() {
     try { if (confirm.kind === "party") { await archiveParty(partyId); navigate("/party", { replace: true }); return; } await deleteGuest(partyId, confirm.guest.id); setConfirm(null); await load(); }
     catch (cause) { setError(messageOf(cause, confirm.kind === "party" ? "The party could not be archived. Try again." : "That could not be deleted. Try again.")); setConfirm(null); } finally { setBusy(false); }
   }
+  const left = summary?.capacityLeft;
+  const stats: [string, string | number, string?][] = summary ? [["Invited", summary.invited], ["Coming", summary.coming], ["Pending", summary.pending], ["Not coming", summary.notComing], ["Checked in", summary.checkedIn], ["Capacity left", left == null ? "No limit" : left < 0 ? `Over by ${-left}` : left, left != null && left < 0 ? "warn" : undefined]] : [];
   if (!data) return <Page title="Party" back={{ to: "/party", label: "Parties" }}>{error ? <div className="ws-status error" role="alert">{error}</div> : <div className="ws-empty">Loading…</div>}</Page>;
   return <Page title={party!.name} subtitle={<><span>{formatPartyDateTime(party!.startsAt)}</span> · <span><MapPin size={14} /> {party!.location}</span></>} back={{ to: "/party", label: "Parties" }}
-    actions={<><Link className="ws-button" to={`/party/${partyId}/check-in`}><DoorOpen size={18} /> Door check-in</Link><Link className="ws-button ghost" to={`/party/${partyId}/summary`}><ClipboardList size={18} /> Summary</Link><Link className="ws-button ghost" to={`/party/${partyId}/edit`}><Pencil size={18} /> Edit</Link>{party!.archived ? <button className="ws-button ghost" onClick={() => void act(() => restoreParty(partyId), "The party could not be restored. Try again.")}><ArchiveRestore size={18} /> Restore party</button> : <button className="ws-button ghost danger-text" onClick={() => setConfirm({ kind: "party" })}><Archive size={18} /> Archive party</button>}</>}>
+    actions={<><Link className="ws-button" to={`/party/${partyId}/check-in`}><DoorOpen size={18} /> Door check-in</Link><Link className="ws-button ghost" to={`/party/${partyId}/edit`}><Pencil size={18} /> Edit</Link>{party!.archived ? <button className="ws-button ghost" onClick={() => void act(() => restoreParty(partyId), "The party could not be restored. Try again.")}><ArchiveRestore size={18} /> Restore party</button> : <button className="ws-button ghost danger-text" onClick={() => setConfirm({ kind: "party" })}><Archive size={18} /> Archive party</button>}</>}>
     {party!.archived && <div className="ws-status error" role="status">This party is archived, so it is hidden from the party list. Use Restore party to bring it back.</div>}
     {notice && <div className="ws-status error" role="status">{notice}</div>}
     {error && <div className="ws-status error" role="alert">{error}</div>}
+    <section className="ws-stats" aria-label="Party summary">{stats.map(([label, value, tone]) => <div key={label} className={`ws-stat ${tone ?? ""}`}><b>{value}</b><span>{label}</span></div>)}</section>
+    {(summary!.checkedInNotComing > 0 || summary!.checkedInPending > 0) && <p className="ws-meta">Of those checked in, {summary!.checkedInPending} were marked pending and {summary!.checkedInNotComing} were marked not coming.</p>}
     <section className="ws-info">
       {photo && <img className="ws-photo" src={photo} alt={`Theme for ${party!.name}`} />}
       <div>
         {party!.description && <><h2 className="ws-h2">About</h2><p className="ws-pre">{party!.description}</p></>}
         {party!.hostNotes && <><h2 className="ws-h2">Host notes <em>(private)</em></h2><p className="ws-pre">{party!.hostNotes}</p></>}
-        <p className="ws-meta">Capacity: {party!.capacity ?? "no limit set"} · Invited: {summary!.invited} · Coming: {summary!.coming} · Pending: {summary!.pending} · Not coming: {summary!.notComing}</p>
+        <p className="ws-meta">Capacity: {party!.capacity ?? "no limit set"}</p>
       </div>
     </section>
     <section>

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Guest, Party } from "../core/api";
-import { arrivals, filterGuests, sortGuests, splitParties } from "./logic";
+import { filterGuests, sortGuests, splitParties } from "./logic";
 import { edmontonInputToIso, formatClock, isoToEdmontonInput } from "./time";
 import { checkPhotoFile } from "./photo";
 
@@ -53,11 +53,6 @@ describe("guest search", () => {
     expect(sortGuests(list).map((g) => g.id)).toEqual(["5", "4", "3", "2", "1"]);
   });
   it("does not change the order of the original list", () => { const list = [guest({ id: "1", firstName: "Zed" }), guest({ id: "2", firstName: "Abe" })]; sortGuests(list); expect(list.map((g) => g.id)).toEqual(["1", "2"]); });
-});
-
-describe("arrivals", () => {
-  const list = [guest({ id: "a", checkedIn: true, checkedInAt: "2026-12-05T02:40:00Z" }), guest({ id: "b", checkedIn: true, checkedInAt: "2026-12-05T02:10:00Z" }), guest({ id: "c" })];
-  it("lists only checked-in guests, oldest or newest first", () => { expect(arrivals(list, false).map((g) => g.id)).toEqual(["b", "a"]); expect(arrivals(list, true).map((g) => g.id)).toEqual(["a", "b"]); });
 });
 
 describe("photo checks", () => {
