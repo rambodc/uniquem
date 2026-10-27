@@ -19,7 +19,3 @@ const foldName = (value: string) => value.normalize("NFD").replace(/[\u0300-\u03
 /** Guests are always listed A to Z by first name, then last name (ignores case and accents). */
 export const compareGuests = (a: Pick<Guest, "firstName" | "lastName">, b: Pick<Guest, "firstName" | "lastName">) => foldName(a.firstName).localeCompare(foldName(b.firstName), "en") || foldName(a.lastName).localeCompare(foldName(b.lastName), "en");
 export const sortGuests = (guests: Guest[]) => [...guests].sort(compareGuests);
-export function arrivals(guests: Guest[], newestFirst: boolean) {
-  const rows = guests.filter((guest) => guest.checkedIn && guest.checkedInAt).sort((a, b) => Date.parse(a.checkedInAt!) - Date.parse(b.checkedInAt!));
-  return newestFirst ? rows.reverse() : rows;
-}
