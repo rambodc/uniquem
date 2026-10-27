@@ -1,17 +1,18 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useCallback, useEffect, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
-import { ClipboardList, DoorOpen, MapPin, Pencil, Search, Trash2, UserPlus } from "lucide-react";
+import { ClipboardList, DoorOpen, MapPin, Pencil, Search, Trash2, Upload, UserPlus } from "lucide-react";
 import { addGuest, deleteGuest, deleteParty, getPartyPhoto, listGuests, setGuestStatus, updateGuest, type Guest, type GuestInput, type GuestList, type GuestStatus } from "../core/api";
 import { Confirm, Page, messageOf } from "./Workspace";
 import GuestForm from "./GuestForm";
+import ImportGuests from "./ImportGuests";
 import { STATUS_LABEL, filterGuests, guestName, sortGuests } from "./logic";
 import { formatClock, formatPartyDateTime } from "./time";
 
 export default function PartyDetail() {
   const { partyId = "" } = useParams(), navigate = useNavigate(), notice = (useLocation().state as { notice?: string } | null)?.notice;
   const [data, setData] = useState<GuestList | null>(null), [photo, setPhoto] = useState<string | null>(null), [error, setError] = useState("");
-  const [query, setQuery] = useState(""), [filter, setFilter] = useState<GuestStatus | "all">("all"), [adding, setAdding] = useState(false), [editing, setEditing] = useState<string | null>(null);
+  const [query, setQuery] = useState(""), [filter, setFilter] = useState<GuestStatus | "all">("all"), [adding, setAdding] = useState(false), [importing, setImporting] = useState(false), [editing, setEditing] = useState<string | null>(null);
   const [confirm, setConfirm] = useState<{ kind: "party" } | { kind: "guest"; guest: Guest } | null>(null), [busy, setBusy] = useState(false);
   const load = useCallback(async () => { try { setData(await listGuests(partyId)); setError(""); } catch (cause) { setError(messageOf(cause, "This party could not be loaded. Try again.")); } }, [partyId]);
   useEffect(() => { void load(); }, [load]);
@@ -38,7 +39,8 @@ export default function PartyDetail() {
       </div>
     </section>
     <section>
-      <div className="ws-section-head"><h2 className="ws-h2">Guest list</h2>{!adding && <button className="ws-button" onClick={() => { setAdding(true); setEditing(null); }}><UserPlus size={18} /> Add guest</button>}</div>
+      <div className="ws-section-head"><h2 className="ws-h2">Guest list</h2><div className="ws-row">{!adding && <button className="ws-button" onClick={() => { setAdding(true); setImporting(false); setEditing(null); }}><UserPlus size={18} /> Add guest</button>}{!importing && <button className="ws-button ghost" onClick={() => { setImporting(true); setAdding(false); setEditing(null); }}><Upload size={18} /> Import guests</button>}</div></div>
+      {importing && <ImportGuests partyId={partyId} existing={data.guests} onImported={load} onClose={() => setImporting(false)} />}
       {adding && <div className="ws-panel"><h3>Add a guest</h3><GuestForm submitLabel="Add guest" clearAfterSave onSubmit={async (guest) => { await addGuest(partyId, guest); await load(); }} onCancel={() => setAdding(false)} /></div>}
       <div className="ws-toolbar">
         <label className="ws-search"><Search size={18} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search name or company" aria-label="Search guests" /></label>

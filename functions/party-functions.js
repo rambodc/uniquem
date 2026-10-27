@@ -4,7 +4,7 @@ import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { getStorage } from "firebase-admin/storage";
 import { FieldValue, Timestamp } from "firebase-admin/firestore";
 import { db, callable, staffAccess, requireStaff } from "./core.js";
-import { LIMITS, docId, status, validateParty, validateGuest, validatePhoto, summarize } from "./party.js";
+import { LIMITS, docId, status, validateParty, validateGuest, validateGuestBatch, planImport, guestKey, validatePhoto, summarize } from "./party.js";
 
 const parties = () => db.collection("parties");
 const guestsOf = (partyId) => parties().doc(partyId).collection("guests");
@@ -112,6 +112,21 @@ export const addGuest = onCall(callable, async (request) => {
   const ref = guestsOf(partyId).doc();
   await ref.set({ schemaVersion: 1, ...guest, checkedIn: false, checkedInAt: null, createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() });
   return { success: true, guestId: ref.id };
+});
+/** Bulk add (staff only). Skips guests already on the party by first + last name. Returns { added, skipped }. */
+export const importGuests = onCall(callable, async (request) => {
+  const staff = await requireStaff(request);
+  const partyId = docId(request.data?.partyId, "party"), guests = validateGuestBatch(request.data?.guests);
+  await loadParty(partyId);
+  const existing = (await guestsOf(partyId).select("firstName", "lastName").limit(LIMITS.guestsPerParty).get()).docs.map((doc) => guestKey({ firstName: String(doc.get("firstName") ?? ""), lastName: String(doc.get("lastName") ?? "") }));
+  const { toAdd, skipped } = planImport(guests, existing);
+  if (existing.length + toAdd.length > LIMITS.guestsPerParty) throw new HttpsError("resource-exhausted", `A party can have up to ${LIMITS.guestsPerParty} guests.`);
+  for (let start = 0; start < toAdd.length; start += 400) {
+    const batch = db.batch();
+    for (const guest of toAdd.slice(start, start + 400)) batch.set(guestsOf(partyId).doc(), { schemaVersion: 1, ...guest, checkedIn: false, checkedInAt: null, importedBy: staff.email, createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() });
+    await batch.commit();
+  }
+  return { success: true, added: toAdd.length, skipped };
 });
 export const updateGuest = onCall(callable, async (request) => {
   await requireStaff(request);

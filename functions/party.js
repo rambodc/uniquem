@@ -3,7 +3,7 @@ import { Buffer } from "node:buffer";
 import { HttpsError } from "firebase-functions/v2/https";
 
 export const STATUSES = ["coming", "pending", "notComing"];
-export const LIMITS = { name: 120, location: 200, description: 2000, hostNotes: 2000, firstName: 80, lastName: 80, company: 120, invitedBy: 120, capacityMax: 100000, guestsPerParty: 2000 };
+export const LIMITS = { name: 120, location: 200, description: 2000, hostNotes: 2000, firstName: 80, lastName: 80, company: 120, invitedBy: 120, capacityMax: 100000, guestsPerParty: 2000, importPerCall: 200 };
 export const PHOTO = { maxBytes: 5 * 1024 * 1024, thumbMaxBytes: 30 * 1024, types: { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" } };
 const MIN_TIME = Date.UTC(2020, 0, 1), MAX_TIME = Date.UTC(2100, 0, 1);
 const invalid = (message) => new HttpsError("invalid-argument", message);
@@ -72,6 +72,23 @@ export function validateGuest(value) {
     status: value.status == null ? "pending" : status(value.status),
   };
   return { ...guest, searchKey: searchKey(guest) };
+}
+
+/** Two guests are "the same person" on a party when first + last name match, ignoring case and extra spaces. */
+export const guestKey = (guest) => `${guest.firstName.toLowerCase()}\n${guest.lastName.toLowerCase()}`;
+/** A bulk import: 1 to LIMITS.importPerCall guests, each validated and trimmed exactly like a single guest. */
+export function validateGuestBatch(value) {
+  if (!Array.isArray(value) || value.length === 0) throw invalid("Add at least one guest to import.");
+  if (value.length > LIMITS.importPerCall) throw invalid(`You can import up to ${LIMITS.importPerCall} guests at a time.`);
+  return value.map((entry, index) => {
+    try { return validateGuest(entry); } catch (cause) { throw invalid(`Guest ${index + 1}: ${cause?.message ?? "invalid"}`); }
+  });
+}
+/** Splits validated guests into the ones to add and the number skipped (already on the list, or repeated within the import). */
+export function planImport(guests, existingKeys) {
+  const seen = new Set(existingKeys), toAdd = [];
+  for (const guest of guests) { const key = guestKey(guest); if (seen.has(key)) continue; seen.add(key); toAdd.push(guest); }
+  return { toAdd, skipped: guests.length - toAdd.length };
 }
 
 const hasBytes = (buffer, bytes, offset = 0) => bytes.every((byte, index) => buffer[offset + index] === byte);
