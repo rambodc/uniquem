@@ -1,5 +1,6 @@
 import { httpsCallable } from "firebase/functions";
 import { functions } from "./firebase";
+import type { Feature, Role } from "../auth/permissions";
 async function invoke<TRequest, TResponse>(name: string, data?: TRequest) { return (await httpsCallable<TRequest, TResponse>(functions, name)(data as TRequest)).data; }
 export type Inquiry = { id: string; inquiryType: string; productName?: string; name: string; email?: string; company?: string; phone?: string; message: string; createdAt: string | null; archived: boolean };
 export type InquiryList = { inquiries: Inquiry[]; total: number; nextCursor: number | null };
@@ -8,7 +9,7 @@ export const listContactInquiries = (data: { archived: boolean; query?: string; 
 export const archiveContactInquiry = (inquiryId: string) => invoke("archiveContactInquiry", { inquiryId });
 export const restoreContactInquiry = (inquiryId: string) => invoke("restoreContactInquiry", { inquiryId });
 
-// ---- Party (staff only) ----
+// ---- Access and Party ----
 export type GuestStatus = "coming" | "pending" | "notComing";
 export type Party = { id: string; name: string; startsAt: string | null; location: string; description: string; capacity: number | null; hostNotes: string; hasPhoto: boolean; archived: boolean; archivedAt: string | null; thumbDataUrl: string | null; createdAt: string | null; updatedAt: string | null };
 export type PartyInput = { name: string; startsAt: string; location: string; description: string; capacity: number | null; hostNotes: string };
@@ -16,7 +17,8 @@ export type Guest = { id: string; firstName: string; lastName: string; company: 
 export type GuestInput = { firstName: string; lastName: string; company: string; invitedBy: string; status: GuestStatus };
 export type PartySummary = { invited: number; coming: number; pending: number; notComing: number; checkedIn: number; checkedInNotComing: number; checkedInPending: number; capacity: number | null; capacityLeft: number | null };
 export type GuestList = { party: Party; guests: Guest[]; summary: PartySummary; serverTime: string };
-export type StaffAccess = { party: boolean; inbox: boolean };
+/** What the server says the signed-in account may use. `role` is null when the account has no active staff document. */
+export type StaffAccess = { role: Role | null; features: Feature[] };
 export const getStaffAccess = () => invoke<undefined, StaffAccess>("getStaffAccess");
 export const listParties = (archived = false) => invoke<{ archived: boolean }, { parties: Party[] }>("listParties", { archived });
 export const getParty = (partyId: string) => invoke<{ partyId: string }, { party: Party }>("getParty", { partyId });

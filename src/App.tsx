@@ -7,9 +7,8 @@ import IdleScreensaver from "./public/screensaver/IdleScreensaver";
 // Private pages (and Firebase Auth) load on demand, keeping them out of the public bundle.
 const PrivateLayout = lazy(() => import("./auth/PrivateLayout"));
 const SignIn = lazy(() => import("./auth/SignIn"));
-const Protected = lazy(() => import("./auth/Protected"));
 const ContactInbox = lazy(() => import("./contact/ContactInbox"));
-const StaffProtected = lazy(() => import("./auth/StaffProtected"));
+const RequireFeature = lazy(() => import("./auth/RequireFeature"));
 const Dashboard = lazy(() => import("./auth/Dashboard"));
 const PartyList = lazy(() => import("./party/PartyList"));
 const PartyForm = lazy(() => import("./party/PartyForm"));
@@ -20,9 +19,9 @@ function ScrollToTop() { const { pathname } = useLocation(); useEffect(() => { i
 export default function App() { return <><SeoMetadata /><AnalyticsTracker /><ScrollToTop /><Routes>
   <Route element={<Suspense fallback={<main className="center-state">Opening your Uniquem workspace…</main>}><PrivateLayout /></Suspense>}>
     <Route path="/signin" element={<SignIn />} />
-    <Route element={<Protected />}><Route path="/contact-inbox" element={<ContactInbox />} /></Route>
-    <Route element={<StaffProtected />}>
-      <Route path="/dashboard" element={<Dashboard />} />
+    <Route element={<RequireFeature />}><Route path="/dashboard" element={<Dashboard />} /></Route>
+    <Route element={<RequireFeature feature="contact" />}><Route path="/contact-inbox" element={<ContactInbox />} /></Route>
+    <Route element={<RequireFeature feature="party" />}>
       <Route path="/party" element={<PartyList />} /><Route path="/party/new" element={<PartyForm />} />
       <Route path="/party/:partyId" element={<PartyDetail />} /><Route path="/party/:partyId/edit" element={<PartyForm />} />
       <Route path="/party/:partyId/check-in" element={<CheckIn />} /><Route path="/party/:partyId/summary" element={<SummaryRedirect />} />

@@ -3,7 +3,7 @@
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { getStorage } from "firebase-admin/storage";
 import { FieldValue, Timestamp } from "firebase-admin/firestore";
-import { db, callable, staffAccess, requireStaff } from "./core.js";
+import { db, callable, resolveAccess, requireFeature } from "./core.js";
 import { LIMITS, sortGuestList, docId, status, validateParty, validateGuest, validateGuestBatch, planImport, guestKey, validatePhoto, summarize } from "./party.js";
 
 const parties = () => db.collection("parties");
@@ -35,28 +35,28 @@ async function listGuestDocs(partyId) {
 }
 
 export const getStaffAccess = onCall(callable, async (request) => {
-  const access = await staffAccess(request);
-  return { party: Boolean(access), inbox: access?.owner === true };
+  const access = await resolveAccess(request);
+  return { role: access?.role ?? null, features: access?.features ?? [] };
 });
 
 export const listParties = onCall(callable, async (request) => {
-  await requireStaff(request);
+  await requireFeature(request, "party");
   const wantArchived = request.data?.archived === true, snapshot = await parties().orderBy("startsAt", "desc").limit(200).get();
   return { parties: snapshot.docs.map(partyView).filter((party) => party.archived === wantArchived) }; // parties without the field are active
 });
 export const getParty = onCall(callable, async (request) => {
-  await requireStaff(request);
+  await requireFeature(request, "party");
   return { party: partyView(await loadParty(docId(request.data?.partyId, "party"))) };
 });
 export const createParty = onCall(callable, async (request) => {
-  const staff = await requireStaff(request);
+  const staff = await requireFeature(request, "party");
   const party = validateParty(request.data);
   const ref = parties().doc();
   await ref.set({ schemaVersion: 1, ...party, startsAt: Timestamp.fromDate(party.startsAt), photoPath: null, thumbDataUrl: null, createdBy: staff.email, createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() });
   return { success: true, partyId: ref.id };
 });
 export const updateParty = onCall(callable, async (request) => {
-  await requireStaff(request);
+  await requireFeature(request, "party");
   const partyId = docId(request.data?.partyId, "party"), party = validateParty(request.data);
   await loadParty(partyId);
   await parties().doc(partyId).update({ ...party, startsAt: Timestamp.fromDate(party.startsAt), updatedAt: FieldValue.serverTimestamp() });
@@ -64,7 +64,7 @@ export const updateParty = onCall(callable, async (request) => {
 });
 /** Archiving hides a party but keeps everything (guests, check-ins, photo). Nothing is deleted. */
 const archiveHandler = async (request) => {
-  const staff = await requireStaff(request);
+  const staff = await requireFeature(request, "party");
   const partyId = docId(request.data?.partyId, "party");
   await loadParty(partyId);
   await parties().doc(partyId).update({ archived: true, archivedAt: FieldValue.serverTimestamp(), archivedBy: staff.email, updatedAt: FieldValue.serverTimestamp() });
@@ -74,7 +74,7 @@ export const archiveParty = onCall(callable, archiveHandler);
 /** Legacy name kept so an older open page can never hard-delete a party: it archives instead. */
 export const deleteParty = onCall(callable, archiveHandler);
 export const restoreParty = onCall(callable, async (request) => {
-  await requireStaff(request);
+  await requireFeature(request, "party");
   const partyId = docId(request.data?.partyId, "party");
   await loadParty(partyId);
   await parties().doc(partyId).update({ archived: false, archivedAt: null, archivedBy: null, updatedAt: FieldValue.serverTimestamp() });
@@ -82,7 +82,7 @@ export const restoreParty = onCall(callable, async (request) => {
 });
 
 export const setPartyPhoto = onCall({ ...callable, memory: "512MiB" }, async (request) => {
-  await requireStaff(request);
+  await requireFeature(request, "party");
   const partyId = docId(request.data?.partyId, "party"), photo = validatePhoto(request.data);
   const party = await loadParty(partyId), bucket = getStorage().bucket();
   const path = `${photoPrefix(partyId)}photo-${Date.now()}.${photo.full.ext}`;
@@ -93,7 +93,7 @@ export const setPartyPhoto = onCall({ ...callable, memory: "512MiB" }, async (re
   return { success: true };
 });
 export const removePartyPhoto = onCall(callable, async (request) => {
-  await requireStaff(request);
+  await requireFeature(request, "party");
   const partyId = docId(request.data?.partyId, "party"), party = await loadParty(partyId), previous = party.data().photoPath;
   await parties().doc(partyId).update({ photoPath: null, thumbDataUrl: null, updatedAt: FieldValue.serverTimestamp() });
   if (previous) await getStorage().bucket().file(previous).delete({ ignoreNotFound: true });
@@ -101,7 +101,7 @@ export const removePartyPhoto = onCall(callable, async (request) => {
 });
 /** Staff only. The photo never has a public URL; it is returned to the signed-in staff member as a data URL. */
 export const getPartyPhoto = onCall({ ...callable, memory: "512MiB" }, async (request) => {
-  await requireStaff(request);
+  await requireFeature(request, "party");
   const party = await loadParty(docId(request.data?.partyId, "party")), path = party.data().photoPath;
   if (!path || !path.startsWith(photoPrefix(party.id))) return { dataUrl: null };
   const file = getStorage().bucket().file(path), [[buffer], [metadata]] = await Promise.all([file.download(), file.getMetadata()]);
@@ -109,12 +109,12 @@ export const getPartyPhoto = onCall({ ...callable, memory: "512MiB" }, async (re
 });
 
 export const listGuests = onCall(callable, async (request) => {
-  await requireStaff(request);
+  await requireFeature(request, "party");
   const partyId = docId(request.data?.partyId, "party"), party = await loadParty(partyId), docs = await listGuestDocs(partyId), guests = sortGuestList(docs.map(guestView));
   return { party: partyView(party), guests, summary: summarize(guests, party.data().capacity ?? null), serverTime: new Date().toISOString() };
 });
 export const addGuest = onCall(callable, async (request) => {
-  await requireStaff(request);
+  await requireFeature(request, "party");
   const partyId = docId(request.data?.partyId, "party"), guest = validateGuest(request.data);
   await loadParty(partyId);
   const count = (await guestsOf(partyId).count().get()).data().count;
@@ -125,7 +125,7 @@ export const addGuest = onCall(callable, async (request) => {
 });
 /** Bulk add (staff only). Skips guests already on the party by first + last name. Returns { added, skipped }. */
 export const importGuests = onCall(callable, async (request) => {
-  const staff = await requireStaff(request);
+  const staff = await requireFeature(request, "party");
   const partyId = docId(request.data?.partyId, "party"), guests = validateGuestBatch(request.data?.guests);
   await loadParty(partyId);
   const existing = (await guestsOf(partyId).select("firstName", "lastName").limit(LIMITS.guestsPerParty).get()).docs.map((doc) => guestKey({ firstName: String(doc.get("firstName") ?? ""), lastName: String(doc.get("lastName") ?? "") }));
@@ -139,21 +139,21 @@ export const importGuests = onCall(callable, async (request) => {
   return { success: true, added: toAdd.length, skipped };
 });
 export const updateGuest = onCall(callable, async (request) => {
-  await requireStaff(request);
+  await requireFeature(request, "party");
   const partyId = docId(request.data?.partyId, "party"), guestId = docId(request.data?.guestId, "guest"), guest = validateGuest(request.data);
   await guestSnapshot(partyId, guestId);
   await guestsOf(partyId).doc(guestId).update({ ...guest, updatedAt: FieldValue.serverTimestamp() });
   return { success: true };
 });
 export const setGuestStatus = onCall(callable, async (request) => {
-  await requireStaff(request);
+  await requireFeature(request, "party");
   const partyId = docId(request.data?.partyId, "party"), guestId = docId(request.data?.guestId, "guest"), next = status(request.data?.status);
   await guestSnapshot(partyId, guestId);
   await guestsOf(partyId).doc(guestId).update({ status: next, updatedAt: FieldValue.serverTimestamp() });
   return { success: true };
 });
 export const deleteGuest = onCall(callable, async (request) => {
-  await requireStaff(request);
+  await requireFeature(request, "party");
   const partyId = docId(request.data?.partyId, "party"), guestId = docId(request.data?.guestId, "guest");
   await guestSnapshot(partyId, guestId);
   await guestsOf(partyId).doc(guestId).delete();
@@ -162,7 +162,7 @@ export const deleteGuest = onCall(callable, async (request) => {
 
 /** Works for any status. If the guest is already checked in, nothing changes and the original time is returned. */
 export const checkInGuest = onCall(callable, async (request) => {
-  const staff = await requireStaff(request);
+  const staff = await requireFeature(request, "party");
   const partyId = docId(request.data?.partyId, "party"), guestId = docId(request.data?.guestId, "guest"), ref = guestsOf(partyId).doc(guestId);
   const alreadyCheckedIn = await db.runTransaction(async (transaction) => {
     const snapshot = await transaction.get(ref);
@@ -174,7 +174,7 @@ export const checkInGuest = onCall(callable, async (request) => {
   return { success: true, alreadyCheckedIn, guest: guestView(await ref.get()) };
 });
 export const undoCheckIn = onCall(callable, async (request) => {
-  await requireStaff(request);
+  await requireFeature(request, "party");
   const partyId = docId(request.data?.partyId, "party"), guestId = docId(request.data?.guestId, "guest"), ref = guestsOf(partyId).doc(guestId);
   await guestSnapshot(partyId, guestId);
   await ref.update({ checkedIn: false, checkedInAt: null, checkedInBy: null, updatedAt: FieldValue.serverTimestamp() });

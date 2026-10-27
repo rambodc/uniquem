@@ -19,6 +19,5 @@ export const auth = getAuth(app);
 export const authReady = setPersistence(auth, browserLocalPersistence).catch(() => undefined);
 export const functions = getFunctions(app, "us-central1");
 export const storage = getStorage(app);
-export const ALLOWED_EMAIL = "rambodr@uniquem.ca";
 // Local testing only: `VITE_USE_EMULATORS=true npm run dev` talks to the Firebase emulators instead of production.
 if (import.meta.env.DEV && import.meta.env.VITE_USE_EMULATORS === "true") { connectAuthEmulator(auth, "http://127.0.0.1:9099", { disableWarnings: true }); connectFunctionsEmulator(functions, "127.0.0.1", 5001); }
