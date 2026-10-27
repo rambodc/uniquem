@@ -115,6 +115,13 @@ export function validatePhoto(value) {
   return { full, thumb, thumbDataUrl: `data:${thumb.type};base64,${thumb.buffer.toString("base64")}` };
 }
 
+/** Guest order everywhere: first name, then last name, ignoring case and accents. Works on any { firstName, lastName }. */
+const foldName = (value) => String(value ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+export function compareGuests(a, b) {
+  return foldName(a.firstName).localeCompare(foldName(b.firstName), "en") || foldName(a.lastName).localeCompare(foldName(b.lastName), "en") || String(a.id ?? "").localeCompare(String(b.id ?? ""));
+}
+export const sortGuestList = (guests) => [...guests].sort(compareGuests);
+
 /** Counts for one party's guest list. Guests need { status, checkedIn }. */
 export function summarize(guests, partyCapacity) {
   const summary = { invited: guests.length, coming: 0, pending: 0, notComing: 0, checkedIn: 0, checkedInNotComing: 0, checkedInPending: 0, capacity: partyCapacity ?? null, capacityLeft: null };
