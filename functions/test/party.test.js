@@ -2,7 +2,7 @@ import { Buffer } from "node:buffer";
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { validateParty, validateGuest, validateGuestBatch, planImport, guestKey, LIMITS, validatePhoto, summarize, docId, status, capacity, sniffImage, PHOTO, sortGuestList, compareGuests } from "../party.js";
-import { staffAccess, requireStaff } from "../core.js";
+
 
 const party = { name: "  Winter   Mixer ", startsAt: "2026-12-04T02:30:00.000Z", location: " Calgary Petroleum Club ", description: "  Drinks\r\nand food ", capacity: 120, hostNotes: "Reserve table 4" };
 const png = Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), Buffer.alloc(40)]);
@@ -84,19 +84,6 @@ test("summarizes guest counts, check-ins by status and capacity left", () => {
   assert.equal(summarize(guests, null).capacityLeft, null);
   assert.equal(summarize(guests, 2).capacityLeft, -1);
   assert.equal(summarize([], 5).invited, 0);
-});
-
-const fakeDb = (staff) => ({ collection: (name) => { assert.equal(name, "staff"); return { doc: (id) => ({ get: async () => ({ exists: id in staff, data: () => staff[id] }) }) }; } });
-const request = (email, verified = true) => ({ auth: { uid: "u1", token: { email, email_verified: verified } } });
-test("staff access: owner, listed active staff, everyone else denied", async () => {
-  const database = fakeDb({ "ann@uniquem.ca": { active: true }, "bob@uniquem.ca": { active: false } });
-  assert.deepEqual(await staffAccess(request("RAMBODR@uniquem.ca"), database), { uid: "u1", email: "rambodr@uniquem.ca", owner: true });
-  assert.equal((await staffAccess(request("Ann@uniquem.ca"), database)).owner, false);
-  assert.equal(await staffAccess(request("bob@uniquem.ca"), database), null);
-  assert.equal(await staffAccess(request("eve@example.com"), database), null);
-  assert.equal(await staffAccess(request("ann@uniquem.ca", false), database), null);
-  assert.equal(await staffAccess({}, database), null);
-  await assert.rejects(() => requireStaff(request("eve@example.com"), database), /not authorized/);
 });
 
 test("bulk import validates and trims every guest like a single guest, and reports which row is wrong", () => {

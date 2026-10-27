@@ -4,10 +4,9 @@ Uniquem’s public website and private contact inbox. The site uses Vite/React, 
 
 ## One-time Firebase setup
 
-1. Create `rambodr@uniquem.ca` as an Email/Password user in Firebase Authentication.
-2. Mark the user’s email as verified.
-3. Enable Email/Password sign-in in Firebase Authentication.
-4. Add the repository secrets below to the `Prod` GitHub environment.
+1. Enable Email/Password sign-in in Firebase Authentication.
+2. Create the first admin by hand (see "Users, roles and features" below): Auth user, verified email, and a `staff/{email}` document with `role: "admin"`.
+3. Add the repository secrets below to the `Prod` GitHub environment.
 
 ## GitHub Actions secrets
 
@@ -40,7 +39,7 @@ The existing `google-site-verification` meta tag in `index.html` must stay. Extr
 
 ## Private workspace: dashboard and Party
 
-After sign-in staff land on `/dashboard` (two cards: Contact Form, Party). Party lives at `/party`
+After sign-in everyone lands on `/dashboard`, which shows one card per feature their role includes (today: Contact Form, Party). Party lives at `/party`
 (list, create/edit, guest list, `/party/:id/check-in` door screen, `/party/:id/summary`).
 All pages are private (`noindex`, no analytics, no screensaver) and every read/write goes through callable
 functions in `functions/party-functions.js`; Firestore and Storage rules stay deny-all for browsers.
@@ -49,14 +48,38 @@ functions in `functions/party-functions.js`; Firestore and Storage rules stay de
   and `parties/{partyId}/guests/{guestId}` (firstName, lastName, company, invitedBy, status `coming|pending|notComing`,
   checkedIn, checkedInAt, searchKey, timestamps). Theme photos are stored in Storage under `party-photos/{partyId}/`
   and returned only to signed-in staff through `getPartyPhoto`.
-- Access: the owner account (`ALLOWED_EMAIL` in `functions/core.js`) always has access, including the contact inbox.
-  To add a staff member: create their Firebase Auth user (email verified), then add a Firestore document
-  `staff/{their email in lowercase}` with `{ active: true }`. Staff get Party only; the contact inbox stays owner-only.
-  Set `active: false` (or delete the document) to remove access.
 - Bulk import (party page, "Import guests"): one guest per line, fields separated by commas or tabs (spreadsheet paste) in the
   order first name, last name, company, invited by, status. Only the names are required; status is coming, pending or not coming
   (friendly variants like "yes" or "not-coming" work; blank means pending). A header row is ignored. Guests whose first + last
   name already exist on the party (any case) are skipped. Max 200 per `importGuests` call; the page sends longer lists in chunks.
 - Times are entered and shown in Calgary time (America/Edmonton).
+
+## Users, roles and features
+
+Access is role based and has no hardcoded accounts. Who can sign in and what they can open comes only from Firestore:
+`staff/{email in lowercase}` = `{ active: true, role: "admin" | "staff" }`. The account must also have a **verified** email.
+A missing or unknown `role` means `staff`; `active: false` (or no document) means no access.
+
+| Feature (key)           | admin | staff |
+| ----------------------- | :---: | :---: |
+| Contact form inbox (`contact`) | yes | yes |
+| Party (`party`)         | yes   | yes   |
+
+Admins always get every feature in `FEATURES`, so anything added later reaches admins automatically. Roles live in one
+place per side, kept identical by tests: `functions/permissions.js` (enforced on the server) and `src/auth/permissions.ts`
+(decides which dashboard cards and routes are shown). The server (`requireFeature(request, "<feature>")` in `functions/core.js`)
+checks the role on every callable; the browser only hides screens. `getStaffAccess` returns `{ role, features }` for the signed-in account.
+
+**Add a user:** (1) create the Email/Password user in Firebase Authentication; (2) make the email verified by using
+"Reset password" on that user and setting the password through the emailed link; (3) in Firestore create the document
+`staff/{their email in lowercase}` with `active` (boolean `true`) and `role` (string `admin` or `staff`).
+To change a role, edit `role`; to remove access set `active` to `false` or delete the document. The very first admin has to be
+created this way in the console, since nobody can sign in before an admin document exists.
+
+**Add a feature:** (1) add its key to `FEATURES` in both permissions files and list it under the roles that get it in
+`ROLE_FEATURES` (admin gets all features automatically; add it to `staff` only if staff should have it); (2) guard its callables with
+`await requireFeature(request, "<feature>")`; (3) add its card in `src/auth/Dashboard.tsx` and wrap its routes in
+`<RequireFeature feature="<feature>" />` in `src/App.tsx`; (4) run `npm test` and `npm test --prefix functions`, which fail if the two permission maps differ.
+To add a role, add it to `ROLES` and `ROLE_FEATURES` in both files.
 - Local testing without touching production: run the Firebase emulators (auth, functions, firestore, storage) with a
   `demo-` project id and start the site with `VITE_USE_EMULATORS=true VITE_FIREBASE_PROJECT_ID=demo-uniquem npm run dev`.
