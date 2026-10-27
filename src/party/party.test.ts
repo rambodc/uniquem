@@ -8,16 +8,23 @@ const guest = (over: Partial<Guest>): Guest => ({ id: "g", firstName: "Ada", las
 const party = (id: string, startsAt: string): Party => ({ id, name: id, startsAt, location: "", description: "", capacity: null, hostNotes: "", hasPhoto: false, thumbDataUrl: null, createdAt: null, updatedAt: null });
 
 describe("Calgary time", () => {
-  it("converts typed Calgary time to the right instant in winter (MST, UTC-7) and summer (MDT, UTC-6)", () => {
-    expect(edmontonInputToIso("2026-12-04T19:30")).toBe("2026-12-05T02:30:00.000Z");
+  // Alberta stays on UTC-6 all year from 1 Nov 2026 (Official Time Act), and tz data differs by version for later dates.
+  // So fixed-offset checks use dates that are the same under every tz-data version (Jan 2026 = MST, Jul 2026 = MDT).
+  it("converts typed Calgary time to the right instant in winter 2026 (MST, UTC-7) and summer (MDT, UTC-6)", () => {
+    expect(edmontonInputToIso("2026-01-15T19:30")).toBe("2026-01-16T02:30:00.000Z");
     expect(edmontonInputToIso("2026-07-10T19:30")).toBe("2026-07-11T01:30:00.000Z");
   });
+  it("gives a Calgary offset of 6 or 7 hours for a later winter date and round-trips it, whichever tz data is installed", () => {
+    const iso = edmontonInputToIso("2026-12-04T19:30");
+    expect(["2026-12-05T01:30:00.000Z", "2026-12-05T02:30:00.000Z"]).toContain(iso);
+    expect(isoToEdmontonInput(iso)).toBe("2026-12-04T19:30");
+  });
   it("round-trips and handles the daylight-saving edges", () => {
-    for (const input of ["2026-12-04T19:30", "2026-03-08T01:30", "2026-03-08T03:30", "2026-11-01T00:30", "2026-11-01T03:30"]) expect(isoToEdmontonInput(edmontonInputToIso(input))).toBe(input);
+    for (const input of ["2026-12-04T19:30", "2026-01-15T19:30", "2026-03-08T01:30", "2026-03-08T03:30", "2026-11-01T00:30", "2026-11-01T03:30"]) expect(isoToEdmontonInput(edmontonInputToIso(input))).toBe(input);
     expect(edmontonInputToIso("2026-03-08T02:30")).toBe(""); // skipped hour when clocks spring forward
   });
   it("rejects malformed input", () => { expect(edmontonInputToIso("")).toBe(""); expect(edmontonInputToIso("2026-13-40T99:00")).toBe(""); });
-  it("shows check-in times in Calgary time", () => { expect(formatClock("2026-12-05T02:30:15.000Z")).toMatch(/7:30:15\s?p\.?m/i); });
+  it("shows check-in times in Calgary time", () => { expect(formatClock("2026-07-11T01:30:15.000Z")).toMatch(/7:30:15\s?p\.?m/i); });
 });
 
 describe("party lists", () => {
