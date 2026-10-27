@@ -10,8 +10,8 @@ describe("analytics", () => {
   it("uses the live GA4 measurement ID", () => { expect(measurementId()).toBe("G-1DLVMZX18M"); });
   it("only reports from the live hosts", () => { expect(isLiveHost("uniquem.ca")).toBe(true); expect(isLiveHost("www.uniquem.ca")).toBe(true); expect(isLiveHost("localhost")).toBe(false); expect(isLiveHost("uniquem-4366e.web.app")).toBe(false); });
   it("never tracks private pages and disables GA while one is open", () => {
-    expect(isPrivatePath("/signin")).toBe(true); expect(isPrivatePath("/contact-inbox/x")).toBe(true); expect(isPrivatePath("/signing")).toBe(false);
-    expect(trackPageView("/signin")).toBe(false); expect(trackPageView("/contact-inbox")).toBe(false);
+    expect(isPrivatePath("/signin")).toBe(true); expect(isPrivatePath("/contact-inbox/x")).toBe(true); expect(isPrivatePath("/dashboard")).toBe(true); expect(isPrivatePath("/party")).toBe(true); expect(isPrivatePath("/party/abc/check-in")).toBe(true); expect(isPrivatePath("/signing")).toBe(false); expect(isPrivatePath("/partyline")).toBe(false);
+    expect(trackPageView("/signin")).toBe(false); expect(trackPageView("/contact-inbox")).toBe(false); expect(trackPageView("/party/abc/check-in")).toBe(false); expect(trackPageView("/dashboard")).toBe(false);
     expect(calls()).toEqual([]);
     expect((window as unknown as Record<string, boolean>)["ga-disable-G-1DLVMZX18M"]).toBe(true);
   });

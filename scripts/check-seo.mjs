@@ -117,7 +117,7 @@ for (const url of urls) {
     }
   }
 }
-for (const pathname of ["/signin", "/contact-inbox"]) {
+for (const pathname of ["/signin", "/contact-inbox", "/dashboard", "/party"]) {
   const { html, headers } = await read(pathname);
   const doc = new JSDOM(html).window.document;
   assert.equal(doc.querySelector('meta[name="robots"]').content, "noindex, nofollow");
@@ -143,4 +143,4 @@ if (base) assert.equal(await fetchStatus(`${base}/does-not-exist-seo-check`), 40
   assert.equal(doc.querySelector('link[rel="canonical"]'), null, "404 page has no canonical");
   assert.ok(doc.querySelector('a[href="/"]'), "404 page links home");
 }
-console.log(`SEO checks passed: ${urls.length} public pages, 2 private pages, ${config.hosting.redirects.length} legacy redirects${base ? ` at ${base}` : " in build output"}.`);
+console.log(`SEO checks passed: ${urls.length} public pages, 4 private pages, ${config.hosting.redirects.length} legacy redirects${base ? ` at ${base}` : " in build output"}.`);

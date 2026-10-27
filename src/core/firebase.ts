@@ -1,5 +1,5 @@
-import { getAuth, setPersistence, browserLocalPersistence } from "firebase/auth";
-import { getFunctions } from "firebase/functions";
+import { getAuth, setPersistence, browserLocalPersistence, connectAuthEmulator } from "firebase/auth";
+import { getFunctions, connectFunctionsEmulator } from "firebase/functions";
 import { getStorage } from "firebase/storage";
 import { initializeApp } from "firebase/app";
 import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "firebase/app-check";
@@ -20,3 +20,5 @@ export const authReady = setPersistence(auth, browserLocalPersistence).catch(() 
 export const functions = getFunctions(app, "us-central1");
 export const storage = getStorage(app);
 export const ALLOWED_EMAIL = "rambodr@uniquem.ca";
+// Local testing only: `VITE_USE_EMULATORS=true npm run dev` talks to the Firebase emulators instead of production.
+if (import.meta.env.DEV && import.meta.env.VITE_USE_EMULATORS === "true") { connectAuthEmulator(auth, "http://127.0.0.1:9099", { disableWarnings: true }); connectFunctionsEmulator(functions, "127.0.0.1", 5001); }

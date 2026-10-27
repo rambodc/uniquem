@@ -4,8 +4,9 @@ import "./screensaver.css";
 
 /** Milliseconds of inactivity before the screensaver appears. */
 export const SCREENSAVER_IDLE_MS = 30_000;
-// Never on the narrated SandWeb presentation (it plays audio).
-const EXCLUDED = (path: string) => path === "/chemicals/sandweb";
+// Never on the narrated SandWeb presentation (it plays audio), nor on the staff dashboard and Party
+// pages (the door check-in screen must never be covered mid-use).
+const EXCLUDED = (path: string) => path === "/chemicals/sandweb" || /^\/(dashboard|party)(\/|$)/.test(path);
 const ACTIVITY = ["pointermove", "pointerdown", "mousemove", "mousedown", "keydown", "wheel", "scroll", "touchstart", "touchmove"] as const;
 const load = () => import("./ScreensaverScene");
 const Scene = lazy(load);

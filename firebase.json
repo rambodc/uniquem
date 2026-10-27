@@ -83,6 +83,42 @@
         ]
       },
       {
+        "source": "/dashboard",
+        "headers": [
+          {
+            "key": "X-Robots-Tag",
+            "value": "noindex, nofollow"
+          }
+        ]
+      },
+      {
+        "source": "/dashboard/**",
+        "headers": [
+          {
+            "key": "X-Robots-Tag",
+            "value": "noindex, nofollow"
+          }
+        ]
+      },
+      {
+        "source": "/party",
+        "headers": [
+          {
+            "key": "X-Robots-Tag",
+            "value": "noindex, nofollow"
+          }
+        ]
+      },
+      {
+        "source": "/party/**",
+        "headers": [
+          {
+            "key": "X-Robots-Tag",
+            "value": "noindex, nofollow"
+          }
+        ]
+      },
+      {
         "source": "/audio/**",
         "headers": [
           {
@@ -252,6 +288,12 @@
         "source": "/chemicals/sandweb/presentation",
         "destination": "/chemicals/sandweb",
         "type": 301
+      }
+    ],
+    "rewrites": [
+      {
+        "source": "/party/**",
+        "destination": "/party/index.html"
       }
     ]
   }
