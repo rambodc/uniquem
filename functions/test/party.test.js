@@ -1,7 +1,7 @@
 import { Buffer } from "node:buffer";
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { validateParty, validateGuest, validateGuestBatch, planImport, guestKey, LIMITS, validatePhoto, summarize, docId, status, capacity, sniffImage, PHOTO } from "../party.js";
+import { validateParty, validateGuest, validateGuestBatch, planImport, guestKey, LIMITS, validatePhoto, summarize, docId, status, capacity, sniffImage, PHOTO, sortGuestList, compareGuests } from "../party.js";
 import { staffAccess, requireStaff } from "../core.js";
 
 const party = { name: "  Winter   Mixer ", startsAt: "2026-12-04T02:30:00.000Z", location: " Calgary Petroleum Club ", description: "  Drinks\r\nand food ", capacity: 120, hostNotes: "Reserve table 4" };
@@ -122,4 +122,11 @@ test("bulk import skips names already on the party (any case) and repeats within
   assert.equal(plan.skipped, 2);
   assert.equal(plan.toAdd[0].company, "");
   assert.deepEqual(planImport(guests.slice(0, 1), []).skipped, 0);
+});
+
+test("guest lists sort by first name, then last name, ignoring case and accents", () => {
+  const guests = [{ id: "1", firstName: "zoe", lastName: "Adams" }, { id: "2", firstName: "Éric", lastName: "Zed" }, { id: "3", firstName: "eric", lastName: "Baker" }, { id: "4", firstName: "Ada", lastName: "Young" }, { id: "5", firstName: "ada", lastName: "Brown" }];
+  assert.deepEqual(sortGuestList(guests).map((g) => g.id), ["5", "4", "3", "2", "1"]);
+  assert.equal(guests[0].id, "1"); // input is not mutated
+  assert.ok(compareGuests({ firstName: "Amy", lastName: "Z" }, { firstName: "Ben", lastName: "A" }) < 0);
 });

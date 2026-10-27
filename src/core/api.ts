@@ -10,7 +10,7 @@ export const restoreContactInquiry = (inquiryId: string) => invoke("restoreConta
 
 // ---- Party (staff only) ----
 export type GuestStatus = "coming" | "pending" | "notComing";
-export type Party = { id: string; name: string; startsAt: string | null; location: string; description: string; capacity: number | null; hostNotes: string; hasPhoto: boolean; thumbDataUrl: string | null; createdAt: string | null; updatedAt: string | null };
+export type Party = { id: string; name: string; startsAt: string | null; location: string; description: string; capacity: number | null; hostNotes: string; hasPhoto: boolean; archived: boolean; archivedAt: string | null; thumbDataUrl: string | null; createdAt: string | null; updatedAt: string | null };
 export type PartyInput = { name: string; startsAt: string; location: string; description: string; capacity: number | null; hostNotes: string };
 export type Guest = { id: string; firstName: string; lastName: string; company: string; invitedBy: string; status: GuestStatus; checkedIn: boolean; checkedInAt: string | null; createdAt: string | null; updatedAt: string | null };
 export type GuestInput = { firstName: string; lastName: string; company: string; invitedBy: string; status: GuestStatus };
@@ -18,11 +18,12 @@ export type PartySummary = { invited: number; coming: number; pending: number; n
 export type GuestList = { party: Party; guests: Guest[]; summary: PartySummary; serverTime: string };
 export type StaffAccess = { party: boolean; inbox: boolean };
 export const getStaffAccess = () => invoke<undefined, StaffAccess>("getStaffAccess");
-export const listParties = () => invoke<undefined, { parties: Party[] }>("listParties");
+export const listParties = (archived = false) => invoke<{ archived: boolean }, { parties: Party[] }>("listParties", { archived });
 export const getParty = (partyId: string) => invoke<{ partyId: string }, { party: Party }>("getParty", { partyId });
 export const createParty = (data: PartyInput) => invoke<PartyInput, { partyId: string }>("createParty", data);
 export const updateParty = (partyId: string, data: PartyInput) => invoke("updateParty", { partyId, ...data });
-export const deleteParty = (partyId: string) => invoke("deleteParty", { partyId });
+export const archiveParty = (partyId: string) => invoke("archiveParty", { partyId });
+export const restoreParty = (partyId: string) => invoke("restoreParty", { partyId });
 export const setPartyPhoto = (partyId: string, photo: { photo: string; thumb: string }) => invoke("setPartyPhoto", { partyId, ...photo });
 export const removePartyPhoto = (partyId: string) => invoke("removePartyPhoto", { partyId });
 export const getPartyPhoto = (partyId: string) => invoke<{ partyId: string }, { dataUrl: string | null }>("getPartyPhoto", { partyId });

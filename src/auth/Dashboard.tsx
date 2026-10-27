@@ -5,7 +5,7 @@ import { Page } from "../party/Workspace";
 /** The page staff land on after signing in: exactly two cards. */
 export default function Dashboard() {
   const { access } = useAuth();
-  return <Page title="Dashboard" subtitle="Choose where to work.">
+  return <Page account title="Dashboard" subtitle="Choose where to work.">
     <section className="ws-cards" aria-label="Workspace">
       {access?.inbox
         ? <Link className="ws-card" to="/contact-inbox"><Mail size={30} /><h2>Contact Form</h2><p>Messages received through uniquem.ca.</p></Link>

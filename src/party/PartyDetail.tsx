@@ -1,8 +1,8 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useCallback, useEffect, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
-import { ClipboardList, DoorOpen, MapPin, Pencil, Search, Trash2, Upload, UserPlus } from "lucide-react";
-import { addGuest, deleteGuest, deleteParty, getPartyPhoto, listGuests, setGuestStatus, updateGuest, type Guest, type GuestInput, type GuestList, type GuestStatus } from "../core/api";
+import { Archive, ArchiveRestore, ClipboardList, DoorOpen, MapPin, Pencil, Search, Trash2, Upload, UserPlus } from "lucide-react";
+import { addGuest, archiveParty, deleteGuest, restoreParty, getPartyPhoto, listGuests, setGuestStatus, updateGuest, type Guest, type GuestInput, type GuestList, type GuestStatus } from "../core/api";
 import { Confirm, Page, messageOf } from "./Workspace";
 import GuestForm from "./GuestForm";
 import ImportGuests from "./ImportGuests";
@@ -22,12 +22,13 @@ export default function PartyDetail() {
   async function act(work: () => Promise<unknown>, fallback: string) { setError(""); try { await work(); await load(); } catch (cause) { setError(messageOf(cause, fallback)); } }
   async function confirmed() {
     if (!confirm) return; setBusy(true);
-    try { if (confirm.kind === "party") { await deleteParty(partyId); navigate("/party", { replace: true }); return; } await deleteGuest(partyId, confirm.guest.id); setConfirm(null); await load(); }
-    catch (cause) { setError(messageOf(cause, "That could not be deleted. Try again.")); setConfirm(null); } finally { setBusy(false); }
+    try { if (confirm.kind === "party") { await archiveParty(partyId); navigate("/party", { replace: true }); return; } await deleteGuest(partyId, confirm.guest.id); setConfirm(null); await load(); }
+    catch (cause) { setError(messageOf(cause, confirm.kind === "party" ? "The party could not be archived. Try again." : "That could not be deleted. Try again.")); setConfirm(null); } finally { setBusy(false); }
   }
   if (!data) return <Page title="Party" back={{ to: "/party", label: "Parties" }}>{error ? <div className="ws-status error" role="alert">{error}</div> : <div className="ws-empty">Loading…</div>}</Page>;
   return <Page title={party!.name} subtitle={<><span>{formatPartyDateTime(party!.startsAt)}</span> · <span><MapPin size={14} /> {party!.location}</span></>} back={{ to: "/party", label: "Parties" }}
-    actions={<><Link className="ws-button" to={`/party/${partyId}/check-in`}><DoorOpen size={18} /> Door check-in</Link><Link className="ws-button ghost" to={`/party/${partyId}/summary`}><ClipboardList size={18} /> Summary</Link><Link className="ws-button ghost" to={`/party/${partyId}/edit`}><Pencil size={18} /> Edit</Link><button className="ws-button ghost danger-text" onClick={() => setConfirm({ kind: "party" })}><Trash2 size={18} /> Delete party</button></>}>
+    actions={<><Link className="ws-button" to={`/party/${partyId}/check-in`}><DoorOpen size={18} /> Door check-in</Link><Link className="ws-button ghost" to={`/party/${partyId}/summary`}><ClipboardList size={18} /> Summary</Link><Link className="ws-button ghost" to={`/party/${partyId}/edit`}><Pencil size={18} /> Edit</Link>{party!.archived ? <button className="ws-button ghost" onClick={() => void act(() => restoreParty(partyId), "The party could not be restored. Try again.")}><ArchiveRestore size={18} /> Restore party</button> : <button className="ws-button ghost danger-text" onClick={() => setConfirm({ kind: "party" })}><Archive size={18} /> Archive party</button>}</>}>
+    {party!.archived && <div className="ws-status error" role="status">This party is archived, so it is hidden from the party list. Use Restore party to bring it back.</div>}
     {notice && <div className="ws-status error" role="status">{notice}</div>}
     {error && <div className="ws-status error" role="alert">{error}</div>}
     <section className="ws-info">
@@ -55,7 +56,7 @@ export default function PartyDetail() {
       </li>)}</ul>}
     </section>
     {confirm && <Confirm busy={busy} onCancel={() => setConfirm(null)} onConfirm={() => void confirmed()}
-      title={confirm.kind === "party" ? "Delete this party?" : "Delete this guest?"} confirmLabel={confirm.kind === "party" ? "Delete party" : "Delete guest"}
-      body={confirm.kind === "party" ? <>“{party!.name}”, its photo and all {summary!.invited} guests (including check-in times) will be permanently deleted. This can’t be undone.</> : <>{guestName(confirm.guest)} will be removed from the guest list{confirm.guest.checkedIn ? " along with their check-in time" : ""}.</>} />}
+      title={confirm.kind === "party" ? "Archive this party?" : "Delete this guest?"} confirmLabel={confirm.kind === "party" ? "Archive party" : "Delete guest"}
+      body={confirm.kind === "party" ? <>This hides “{party!.name}” from the party list. Its guests, check-in times and photo are kept, and you can restore it later.</> : <>{guestName(confirm.guest)} will be removed from the guest list{confirm.guest.checkedIn ? " along with their check-in time" : ""}.</>} />}
   </Page>;
 }

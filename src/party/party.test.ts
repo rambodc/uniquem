@@ -5,7 +5,7 @@ import { edmontonInputToIso, formatClock, isoToEdmontonInput } from "./time";
 import { checkPhotoFile } from "./photo";
 
 const guest = (over: Partial<Guest>): Guest => ({ id: "g", firstName: "Ada", lastName: "Lovelace", company: "Engines Ltd", invitedBy: "", status: "pending", checkedIn: false, checkedInAt: null, createdAt: null, updatedAt: null, ...over });
-const party = (id: string, startsAt: string): Party => ({ id, name: id, startsAt, location: "", description: "", capacity: null, hostNotes: "", hasPhoto: false, thumbDataUrl: null, createdAt: null, updatedAt: null });
+const party = (id: string, startsAt: string): Party => ({ id, name: id, startsAt, location: "", description: "", capacity: null, hostNotes: "", hasPhoto: false, archived: false, archivedAt: null, thumbDataUrl: null, createdAt: null, updatedAt: null });
 
 describe("Calgary time", () => {
   // Alberta stays on UTC-6 all year from 1 Nov 2026 (Official Time Act), and tz data differs by version for later dates.
@@ -48,7 +48,11 @@ describe("guest search", () => {
     expect(filterGuests(guests, "zzz")).toEqual([]);
   });
   it("filters by status", () => { expect(filterGuests(guests, "", "coming").map((g) => g.id)).toEqual(["3"]); expect(filterGuests(guests, "", "notComing").map((g) => g.id)).toEqual(["2"]); });
-  it("sorts by last name", () => { expect(sortGuests(guests).map((g) => g.id)).toEqual(["2", "3", "1"]); });
+  it("sorts by first name (then last name), ignoring case and accents", () => {
+    const list = [guest({ id: "1", firstName: "zoe", lastName: "Adams" }), guest({ id: "2", firstName: "Éric", lastName: "Zed" }), guest({ id: "3", firstName: "eric", lastName: "Baker" }), guest({ id: "4", firstName: "Ada", lastName: "Young" }), guest({ id: "5", firstName: "ada", lastName: "Brown" })];
+    expect(sortGuests(list).map((g) => g.id)).toEqual(["5", "4", "3", "2", "1"]);
+  });
+  it("does not change the order of the original list", () => { const list = [guest({ id: "1", firstName: "Zed" }), guest({ id: "2", firstName: "Abe" })]; sortGuests(list); expect(list.map((g) => g.id)).toEqual(["1", "2"]); });
 });
 
 describe("arrivals", () => {
