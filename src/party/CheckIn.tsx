@@ -32,7 +32,7 @@ export default function CheckIn() {
   const results = term ? filterGuests(sortGuests(guests), term) : [];
   const recent = guests.filter((guest) => guest.checkedIn && guest.checkedInAt).sort((a, b) => Date.parse(b.checkedInAt!) - Date.parse(a.checkedInAt!)).slice(0, 5);
   const row = (guest: Guest) => <li key={guest.id} className={`ws-door-row${guest.checkedIn ? " done" : ""}`}>
-    <div className="ws-door-name"><b>{guestName(guest)}</b>{guest.company && <small>{guest.company}</small>}{guest.invitedBy && <small>Invited by {guest.invitedBy}</small>}
+    <div className="ws-door-name"><b>{guestName(guest)}</b>{guest.company && <small>{guest.company}</small>}{guest.invitedBy && <small>{guest.invitedBy}</small>}
       {guest.status !== "coming" && <span className={`ws-flag ${guest.status}`}>{guest.status === "notComing" ? "Marked not coming" : "Marked pending"}</span>}</div>
     {guest.checkedIn
       ? <div className="ws-door-done"><span className="ws-checked"><Check size={20} /> Checked in {formatClock(guest.checkedInAt)}</span><button className={`ws-undo${armed === guest.id ? " armed" : ""}`} disabled={pending.has(guest.id)} onClick={() => undo(guest)}><Undo2 size={16} /> {armed === guest.id ? "Tap again to undo" : "Undo"}</button></div>
