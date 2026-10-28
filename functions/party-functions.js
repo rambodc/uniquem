@@ -1,9 +1,9 @@
-// Party feature: parties, guest lists, door check-in. Staff only; every read and write goes through these
+// Party mini app: parties, guest lists, door check-in. Only accounts with the "party" mini app; every read and write goes through these
 // callable functions (Firestore and Storage rules stay deny-all for browsers).
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { getStorage } from "firebase-admin/storage";
 import { FieldValue, Timestamp } from "firebase-admin/firestore";
-import { db, callable, resolveAccess, requireFeature } from "./core.js";
+import { db, callable, requireMiniApp } from "./core.js";
 import { LIMITS, sortGuestList, docId, status, validateParty, validateGuest, validateGuestBatch, validateGuestPatch, validateWalkIn, plusOnes, planImport, fillBlanks, searchKey, guestKey, validatePhoto, notCheckedIn, checkedInNow, doorPatchFor } from "./party.js";
 
 /** Door-screen callables stay warm (one idle instance) so the first tap is not delayed by a cold start. */
@@ -36,47 +36,39 @@ async function listGuestDocs(partyId) {
   return snapshot.docs; // sorted by first name (then last name) in listGuests, so no composite index is needed
 }
 
-export const getStaffAccess = onCall(callable, async (request) => {
-  const access = await resolveAccess(request);
-  return { role: access?.role ?? null, features: access?.features ?? [] };
-});
-
 export const listParties = onCall(callable, async (request) => {
-  await requireFeature(request, "party");
+  await requireMiniApp(request, "party");
   const wantArchived = request.data?.archived === true, snapshot = await parties().orderBy("startsAt", "desc").limit(200).get();
   return { parties: snapshot.docs.map(partyView).filter((party) => party.archived === wantArchived) }; // parties without the field are active
 });
 export const getParty = onCall(callable, async (request) => {
-  await requireFeature(request, "party");
+  await requireMiniApp(request, "party");
   return { party: partyView(await loadParty(docId(request.data?.partyId, "party"))) };
 });
 export const createParty = onCall(callable, async (request) => {
-  const staff = await requireFeature(request, "party");
+  const actor = await requireMiniApp(request, "party");
   const party = validateParty(request.data);
   const ref = parties().doc();
-  await ref.set({ schemaVersion: 1, ...party, startsAt: Timestamp.fromDate(party.startsAt), photoPath: null, thumbDataUrl: null, createdBy: staff.email, createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() });
+  await ref.set({ schemaVersion: 1, ...party, startsAt: Timestamp.fromDate(party.startsAt), photoPath: null, thumbDataUrl: null, createdBy: actor.email, createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() });
   return { success: true, partyId: ref.id };
 });
 export const updateParty = onCall(callable, async (request) => {
-  await requireFeature(request, "party");
+  await requireMiniApp(request, "party");
   const partyId = docId(request.data?.partyId, "party"), party = validateParty(request.data);
   await loadParty(partyId);
   await parties().doc(partyId).update({ ...party, startsAt: Timestamp.fromDate(party.startsAt), updatedAt: FieldValue.serverTimestamp() });
   return { success: true };
 });
 /** Archiving hides a party but keeps everything (guests, check-ins, photo). Nothing is deleted. */
-const archiveHandler = async (request) => {
-  const staff = await requireFeature(request, "party");
+export const archiveParty = onCall(callable, async (request) => {
+  const actor = await requireMiniApp(request, "party");
   const partyId = docId(request.data?.partyId, "party");
   await loadParty(partyId);
-  await parties().doc(partyId).update({ archived: true, archivedAt: FieldValue.serverTimestamp(), archivedBy: staff.email, updatedAt: FieldValue.serverTimestamp() });
+  await parties().doc(partyId).update({ archived: true, archivedAt: FieldValue.serverTimestamp(), archivedBy: actor.email, updatedAt: FieldValue.serverTimestamp() });
   return { success: true };
-};
-export const archiveParty = onCall(callable, archiveHandler);
-/** Legacy name kept so an older open page can never hard-delete a party: it archives instead. */
-export const deleteParty = onCall(callable, archiveHandler);
+});
 export const restoreParty = onCall(callable, async (request) => {
-  await requireFeature(request, "party");
+  await requireMiniApp(request, "party");
   const partyId = docId(request.data?.partyId, "party");
   await loadParty(partyId);
   await parties().doc(partyId).update({ archived: false, archivedAt: null, archivedBy: null, updatedAt: FieldValue.serverTimestamp() });
@@ -84,7 +76,7 @@ export const restoreParty = onCall(callable, async (request) => {
 });
 
 export const setPartyPhoto = onCall({ ...callable, memory: "512MiB" }, async (request) => {
-  await requireFeature(request, "party");
+  await requireMiniApp(request, "party");
   const partyId = docId(request.data?.partyId, "party"), photo = validatePhoto(request.data);
   const party = await loadParty(partyId), bucket = getStorage().bucket();
   const path = `${photoPrefix(partyId)}photo-${Date.now()}.${photo.full.ext}`;
@@ -95,15 +87,15 @@ export const setPartyPhoto = onCall({ ...callable, memory: "512MiB" }, async (re
   return { success: true };
 });
 export const removePartyPhoto = onCall(callable, async (request) => {
-  await requireFeature(request, "party");
+  await requireMiniApp(request, "party");
   const partyId = docId(request.data?.partyId, "party"), party = await loadParty(partyId), previous = party.data().photoPath;
   await parties().doc(partyId).update({ photoPath: null, thumbDataUrl: null, updatedAt: FieldValue.serverTimestamp() });
   if (previous) await getStorage().bucket().file(previous).delete({ ignoreNotFound: true });
   return { success: true };
 });
-/** Staff only. The photo never has a public URL; it is returned to the signed-in staff member as a data URL. */
+/** The photo never has a public URL; it is returned to the signed-in account as a data URL. */
 export const getPartyPhoto = onCall({ ...callable, memory: "512MiB" }, async (request) => {
-  await requireFeature(request, "party");
+  await requireMiniApp(request, "party");
   const party = await loadParty(docId(request.data?.partyId, "party")), path = party.data().photoPath;
   if (!path || !path.startsWith(photoPrefix(party.id))) return { dataUrl: null };
   const file = getStorage().bucket().file(path), [[buffer], [metadata]] = await Promise.all([file.download(), file.getMetadata()]);
@@ -111,12 +103,12 @@ export const getPartyPhoto = onCall({ ...callable, memory: "512MiB" }, async (re
 });
 
 export const listGuests = onCall(warm, async (request) => {
-  await requireFeature(request, "party");
+  await requireMiniApp(request, "party");
   const partyId = docId(request.data?.partyId, "party"), party = await loadParty(partyId), docs = await listGuestDocs(partyId), guests = sortGuestList(docs.map(guestView));
   return { party: partyView(party), guests, serverTime: new Date().toISOString() };
 });
 export const addGuest = onCall(callable, async (request) => {
-  await requireFeature(request, "party");
+  await requireMiniApp(request, "party");
   const partyId = docId(request.data?.partyId, "party"), guest = validateGuest(request.data);
   await loadParty(partyId);
   const count = (await guestsOf(partyId).count().get()).data().count;
@@ -126,12 +118,12 @@ export const addGuest = onCall(callable, async (request) => {
   return { success: true, guestId: ref.id };
 });
 /**
- * Bulk add (staff only). New names are added. A name already on the party (first + last, any case) is never duplicated:
+ * Bulk add. New names are added. A name already on the party (first + last, any case) is never duplicated:
  * its blank "invited by / type", company, notes or plus-ones (0) is filled in from the import, existing values are never overwritten, and status and check-in
  * data are never touched. Returns { added, updated, skipped }.
  */
 export const importGuests = onCall(callable, async (request) => {
-  const staff = await requireFeature(request, "party");
+  const actor = await requireMiniApp(request, "party");
   const partyId = docId(request.data?.partyId, "party"), guests = validateGuestBatch(request.data?.guests);
   await loadParty(partyId);
   const docs = (await guestsOf(partyId).select("firstName", "lastName", "company", "invitedBy", "notes", "plusOnes").limit(LIMITS.guestsPerParty).get()).docs;
@@ -157,7 +149,7 @@ export const importGuests = onCall(callable, async (request) => {
   }
   for (let start = 0; start < toAdd.length; start += 400) {
     const batch = db.batch();
-    for (const guest of toAdd.slice(start, start + 400)) batch.set(guestsOf(partyId).doc(), { schemaVersion: 1, ...guest, ...notCheckedIn(), importedBy: staff.email, createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() });
+    for (const guest of toAdd.slice(start, start + 400)) batch.set(guestsOf(partyId).doc(), { schemaVersion: 1, ...guest, ...notCheckedIn(), importedBy: actor.email, createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() });
     await batch.commit();
   }
   return { success: true, added: toAdd.length, updated, skipped: skipped + (updates.length - updated) };
@@ -167,7 +159,7 @@ export const importGuests = onCall(callable, async (request) => {
  * Door edits never touch names or company and never touch check-in. A full edit writes every guest field.
  */
 export const updateGuest = onCall(warm, async (request) => {
-  await requireFeature(request, "party");
+  await requireMiniApp(request, "party");
   const partyId = docId(request.data?.partyId, "party"), guestId = docId(request.data?.guestId, "guest");
   if (request.data?.patch === true) {
     const patch = validateGuestPatch(request.data), ref = guestsOf(partyId).doc(guestId);
@@ -186,24 +178,24 @@ export const updateGuest = onCall(warm, async (request) => {
 });
 /** A walk-in: creates a "coming" guest and checks them in, in one step. Returns the new guest. */
 export const addWalkIn = onCall(warm, async (request) => {
-  const staff = await requireFeature(request, "party");
+  const actor = await requireMiniApp(request, "party");
   const partyId = docId(request.data?.partyId, "party"), guest = validateWalkIn(request.data);
   await loadParty(partyId);
   const count = (await guestsOf(partyId).count().get()).data().count;
   if (count >= LIMITS.guestsPerParty) throw new HttpsError("resource-exhausted", `A party can have up to ${LIMITS.guestsPerParty} guests.`);
   const ref = guestsOf(partyId).doc();
-  await ref.set({ schemaVersion: 1, ...guest, walkIn: true, ...checkedInNow(FieldValue.serverTimestamp(), staff.email, guest.plusOnesArrived), createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() });
+  await ref.set({ schemaVersion: 1, ...guest, walkIn: true, ...checkedInNow(FieldValue.serverTimestamp(), actor.email, guest.plusOnesArrived), createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() });
   return { success: true, guest: guestView(await ref.get()) };
 });
 export const setGuestStatus = onCall(callable, async (request) => {
-  await requireFeature(request, "party");
+  await requireMiniApp(request, "party");
   const partyId = docId(request.data?.partyId, "party"), guestId = docId(request.data?.guestId, "guest"), next = status(request.data?.status);
   await guestSnapshot(partyId, guestId);
   await guestsOf(partyId).doc(guestId).update({ status: next, updatedAt: FieldValue.serverTimestamp() });
   return { success: true };
 });
 export const deleteGuest = onCall(callable, async (request) => {
-  await requireFeature(request, "party");
+  await requireMiniApp(request, "party");
   const partyId = docId(request.data?.partyId, "party"), guestId = docId(request.data?.guestId, "guest");
   await guestSnapshot(partyId, guestId);
   await guestsOf(partyId).doc(guestId).delete();
@@ -212,19 +204,19 @@ export const deleteGuest = onCall(callable, async (request) => {
 
 /** Works for any status. Records how many plus-ones arrived (default 0). If the guest is already checked in, nothing changes and the original time is returned. */
 export const checkInGuest = onCall(warm, async (request) => {
-  const staff = await requireFeature(request, "party");
+  const actor = await requireMiniApp(request, "party");
   const partyId = docId(request.data?.partyId, "party"), guestId = docId(request.data?.guestId, "guest"), ref = guestsOf(partyId).doc(guestId), arrived = plusOnes(request.data?.plusOnesArrived, "plus-ones who arrived");
   const alreadyCheckedIn = await db.runTransaction(async (transaction) => {
     const snapshot = await transaction.get(ref);
     if (!snapshot.exists) throw new HttpsError("not-found", "That guest no longer exists.");
     if (snapshot.data().checkedIn) return true;
-    transaction.update(ref, { ...checkedInNow(FieldValue.serverTimestamp(), staff.email, arrived), updatedAt: FieldValue.serverTimestamp() });
+    transaction.update(ref, { ...checkedInNow(FieldValue.serverTimestamp(), actor.email, arrived), updatedAt: FieldValue.serverTimestamp() });
     return false;
   });
   return { success: true, alreadyCheckedIn, guest: guestView(await ref.get()) };
 });
 export const undoCheckIn = onCall(warm, async (request) => {
-  await requireFeature(request, "party");
+  await requireMiniApp(request, "party");
   const partyId = docId(request.data?.partyId, "party"), guestId = docId(request.data?.guestId, "guest"), ref = guestsOf(partyId).doc(guestId);
   // One write instead of read-then-write: update() fails with NOT_FOUND (code 5) when the guest is gone.
   try { await ref.update({ ...notCheckedIn(), updatedAt: FieldValue.serverTimestamp() }); }

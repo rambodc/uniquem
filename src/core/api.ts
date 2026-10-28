@@ -1,6 +1,6 @@
 import { httpsCallable } from "firebase/functions";
 import { functions } from "./firebase";
-import type { Feature, Role } from "../auth/permissions";
+import type { MiniAppId, UserType } from "../auth/miniApps";
 async function invoke<TRequest, TResponse>(name: string, data?: TRequest) { return (await httpsCallable<TRequest, TResponse>(functions, name)(data as TRequest)).data; }
 export type Inquiry = { id: string; inquiryType: string; productName?: string; name: string; email?: string; company?: string; phone?: string; message: string; createdAt: string | null; archived: boolean };
 export type InquiryList = { inquiries: Inquiry[]; total: number; nextCursor: number | null };
@@ -20,9 +20,20 @@ export type GuestDoorPatch = Partial<Pick<GuestInput, "notes" | "status" | "vip"
 /** A walk-in is added and checked in at the door in one step. */
 export type WalkInInput = { firstName: string; lastName: string; company: string; invitedBy: string; notes: string; plusOnes: number; vip?: boolean };
 export type GuestList = { party: Party; guests: Guest[]; serverTime: string };
-/** What the server says the signed-in account may use. `role` is null when the account has no active staff document. */
-export type StaffAccess = { role: Role | null; features: Feature[] };
-export const getStaffAccess = () => invoke<undefined, StaffAccess>("getStaffAccess");
+/** What the server says the signed-in account may open. `type` is null when the account has no active access record. */
+export type Access = { type: UserType | null; miniApps: MiniAppId[] };
+export const getAccess = () => invoke<undefined, Access>("getAccess");
+
+// ---- Users mini app (super admins only) ----
+export type UserRecord = { uid: string; email: string; type: UserType; miniApps: MiniAppId[]; active: boolean; createdAt: string | null; updatedAt: string | null; createdBy: string; lastSignInAt: string | null; you: boolean };
+export type UserAccessInput = { type: UserType; miniApps: MiniAppId[] };
+export const listUsers = () => invoke<undefined, { users: UserRecord[] }>("listUsers");
+/** Returns a one-time link the new user opens to choose a password. Nothing is emailed. */
+export const createUser = (data: UserAccessInput & { email: string }) => invoke<typeof data, { uid: string; email: string; link: string }>("createUser", data);
+export const updateUser = (uid: string, data: UserAccessInput) => invoke("updateUser", { uid, ...data });
+export const setUserActive = (uid: string, active: boolean) => invoke("setUserActive", { uid, active });
+export const deleteUser = (uid: string) => invoke("deleteUser", { uid });
+export const createSignInLink = (uid: string) => invoke<{ uid: string }, { link: string }>("createSignInLink", { uid });
 export const listParties = (archived = false) => invoke<{ archived: boolean }, { parties: Party[] }>("listParties", { archived });
 export const getParty = (partyId: string) => invoke<{ partyId: string }, { party: Party }>("getParty", { partyId });
 export const createParty = (data: PartyInput) => invoke<PartyInput, { partyId: string }>("createParty", data);

@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFile, readdir } from "node:fs/promises";
 import { join } from "node:path";
 import { JSDOM } from "jsdom";
+import { MINI_APPS } from "../functions/miniApps.js";
 
 // Run against build output, the Hosting emulator, or production after deployment.
 const base = process.argv[2]?.replace(/\/$/, "");
@@ -117,7 +118,7 @@ for (const url of urls) {
     }
   }
 }
-for (const pathname of ["/signin", "/contact-inbox", "/dashboard", "/party"]) {
+for (const pathname of ["/signin", "/dashboard", ...MINI_APPS.map((app) => app.route)]) {
   const { html, headers } = await read(pathname);
   const doc = new JSDOM(html).window.document;
   assert.equal(doc.querySelector('meta[name="robots"]').content, "noindex, nofollow");

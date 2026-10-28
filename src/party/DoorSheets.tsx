@@ -1,20 +1,10 @@
-import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
-import { Star, X } from "lucide-react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
+import { Star } from "lucide-react";
 import type { Guest, GuestDoorPatch, GuestStatus, WalkInInput } from "../core/api";
 import { STATUS_LABEL, clampPlusOnes, guestName } from "./logic";
-import { messageOf } from "./Workspace";
+import { Sheet, messageOf } from "./Workspace";
 import { Stepper } from "./DoorBits";
 
-/** Bottom sheet on phones, centred card on tablets and laptops. Esc and the backdrop close it. */
-function Sheet({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
-  useEffect(() => { const key = (event: KeyboardEvent) => { if (event.key === "Escape") onClose(); }; window.addEventListener("keydown", key); return () => window.removeEventListener("keydown", key); }, [onClose]);
-  return <div className="ws-sheet-wrap" onClick={onClose}>
-    <div className="ws-sheet" role="dialog" aria-modal="true" aria-label={title} onClick={(event) => event.stopPropagation()}>
-      <div className="ws-sheet-head"><h2>{title}</h2><button className="ws-icon-btn" onClick={onClose} aria-label="Close"><X size={20} /></button></div>
-      {children}
-    </div>
-  </div>;
-}
 const VipToggle = ({ value, onChange }: { value: boolean; onChange: (next: boolean) => void }) => <button type="button" className={`ws-vip-toggle${value ? " on" : ""}`} aria-pressed={value} onClick={() => onChange(!value)}><Star size={18} fill={value ? "currentColor" : "none"} /> VIP{value ? " (on)" : ""}</button>;
 
 /** Walk-in: someone not on the list. One button creates them as "coming" and checks them in. */

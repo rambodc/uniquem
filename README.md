@@ -5,7 +5,7 @@ Uniquem’s public website and private contact inbox. The site uses Vite/React, 
 ## One-time Firebase setup
 
 1. Enable Email/Password sign-in in Firebase Authentication.
-2. Create the first admin by hand (see "Users, roles and features" below): Auth user, verified email, and a `staff/{email}` document with `role: "admin"`.
+2. Create the first super admin by hand (see "Users and mini apps" below): Auth user, verified email, and a `users/{uid}` record with `type: "super_admin"`.
 3. Add the repository secrets below to the `Prod` GitHub environment.
 
 ## GitHub Actions secrets
@@ -39,7 +39,7 @@ The existing `google-site-verification` meta tag in `index.html` must stay. Extr
 
 ## Private workspace: dashboard and Party
 
-After sign-in everyone lands on `/dashboard`, which shows one card per feature their role includes (today: Contact Form, Party). Party lives at `/party`
+After sign-in everyone lands on `/dashboard`, which shows one tile per mini app the account may open (today: Party, Contact form, and Users for super admins). Party lives at `/party`
 (list, create/edit, guest list, `/party/:id/check-in` door screen).
 All pages are private (`noindex`, no analytics, no screensaver) and every read/write goes through callable
 functions in `functions/party-functions.js`; Firestore and Storage rules stay deny-all for browsers.
@@ -47,7 +47,7 @@ functions in `functions/party-functions.js`; Firestore and Storage rules stay de
 - Data: `parties/{partyId}` (name, startsAt, location, description, capacity, hostNotes, photoPath, thumbDataUrl, timestamps)
   and `parties/{partyId}/guests/{guestId}` (firstName, lastName, company, invitedBy ("Invited by / Type"), notes (optional, max 500), status `coming|pending|notComing`,
   plusOnes (0-10), vip, every field always written, checkedIn, checkedInAt, plusOnesArrived (0-10, reset by undo), searchKey, timestamps; walk-ins also have walkIn: true). Theme photos are stored in Storage under `party-photos/{partyId}/`
-  and returned only to signed-in staff through `getPartyPhoto`.
+  and returned only to signed-in accounts with the Party mini app through `getPartyPhoto`.
 - Bulk import (party page, "Import guests"): one guest per line, fields separated by commas or tabs (spreadsheet paste) in the
   order first name, last name, company, invited by / type, status, notes, plus-ones (0-10). Only the names are required (notes can only contain commas in a tab/spreadsheet paste); status is coming, pending or not coming
   (friendly variants like "yes" or "not-coming" work; blank means pending). A header row is ignored. Guests whose first + last
@@ -66,32 +66,37 @@ functions in `functions/party-functions.js`; Firestore and Storage rules stay de
   - Check in, Undo and edits show at once and roll back with an error if the server call fails; the 10-second poll never overwrites a row that is mid-action. The door callables (`listGuests`, `checkInGuest`, `undoCheckIn`, `updateGuest`, `addWalkIn`) keep one warm instance (`minInstances: 1`).
 - Times are entered and shown in Calgary time (America/Edmonton).
 
-## Users, roles and features
+## Users and mini apps
 
-Access is role based and has no hardcoded accounts. Who can sign in and what they can open comes only from Firestore:
-`staff/{email in lowercase}` = `{ active: true, role: "admin" | "staff" }`. The account must also have a **verified** email.
-A missing or unknown `role` means `staff`; `active: false` (or no document) means no access.
+The private workspace (sign-in, `/dashboard`) is made of **mini apps**. Who can sign in and what they can open comes only from Firestore,
+one record per person: `users/{Firebase Auth uid}` =
 
-| Feature (key)           | admin | staff |
-| ----------------------- | :---: | :---: |
-| Contact form inbox (`contact`) | yes | yes |
-| Party (`party`)         | yes   | yes   |
+| Field | Meaning |
+| --- | --- |
+| `email` | lowercase; must equal the signed-in account's (verified) email |
+| `type` | `"super_admin"` or `"staff"` |
+| `miniApps` | staff only: the ids of the mini apps they may open. Always `[]` for a super admin (they get every mini app automatically, including ones added later) |
+| `active` | `false` blocks everything; the Auth account is also disabled |
+| `createdAt`, `createdBy`, `updatedAt`, `updatedBy` | who and when (emails) |
 
-Admins always get every feature in `FEATURES`, so anything added later reaches admins automatically. Roles live in one
-place per side, kept identical by tests: `functions/permissions.js` (enforced on the server) and `src/auth/permissions.ts`
-(decides which dashboard cards and routes are shown). The server (`requireFeature(request, "<feature>")` in `functions/core.js`)
-checks the role on every callable; the browser only hides screens. `getStaffAccess` returns `{ role, features }` for the signed-in account.
+A missing, inactive, mismatched or unknown-type record means no access; nothing is guessed or defaulted. There is no hardcoded owner.
 
-**Add a user:** (1) create the Email/Password user in Firebase Authentication; (2) make the email verified by using
-"Reset password" on that user and setting the password through the emailed link; (3) in Firestore create the document
-`staff/{their email in lowercase}` with `active` (boolean `true`) and `role` (string `admin` or `staff`).
-To change a role, edit `role`; to remove access set `active` to `false` or delete the document. The very first admin has to be
-created this way in the console, since nobody can sign in before an admin document exists.
+**Mini apps** are listed once, in `functions/miniApps.js` (`id`, `name`, `description`, `route`, `icon`, `superAdminOnly`), which both the Cloud Functions and the
+browser read. Current mini apps: `party` (Party), `contact` (Contact form), `users` (Users, `superAdminOnly`: staff can never be given it). The dashboard tiles,
+route guards (`<RequireMiniApp app="...">` in `src/App.tsx`), private-path lists (analytics, SEO, `?next=`) and server checks all come from that list.
+The server checks every call: `requireMiniApp(request, "<id>")` for a mini app's callables and `requireSuperAdmin(request)` for the Users callables (`functions/core.js`);
+the browser only hides screens. `getAccess` returns `{ type, miniApps }` for the signed-in account.
 
-**Add a feature:** (1) add its key to `FEATURES` in both permissions files and list it under the roles that get it in
-`ROLE_FEATURES` (admin gets all features automatically; add it to `staff` only if staff should have it); (2) guard its callables with
-`await requireFeature(request, "<feature>")`; (3) add its card in `src/auth/Dashboard.tsx` and wrap its routes in
-`<RequireFeature feature="<feature>" />` in `src/App.tsx`; (4) run `npm test` and `npm test --prefix functions`, which fail if the two permission maps differ.
-To add a role, add it to `ROLES` and `ROLE_FEATURES` in both files.
-- Local testing without touching production: run the Firebase emulators (auth, functions, firestore, storage) with a
-  `demo-` project id and start the site with `VITE_USE_EMULATORS=true VITE_FIREBASE_PROJECT_ID=demo-uniquem npm run dev`.
+**Add a mini app:** (1) add one entry to `MINI_APPS` in `functions/miniApps.js`; (2) guard its callables with `requireMiniApp(request, "<id>")`;
+(3) wrap its routes in `<RequireMiniApp app="<id>" />` in `src/App.tsx` and add `/<route>` and `/<route>/**` X-Robots-Tag noindex headers in `firebase.json`;
+(4) add its icon to `ICONS` in `src/auth/miniApps.ts` if it is a new icon. `npm test` and `npm test --prefix functions` fail if any step is missed.
+
+**Users mini app** (`/users`, super admins only; `functions/users-functions.js`): list users, add a user (email, type, mini apps), edit type and mini apps,
+deactivate / reactivate, delete (only after deactivating), and make a new one-time sign-in link.
+- **Adding a user** creates the Firebase Auth account (random password nobody knows, email marked verified) and the `users/{uid}` record together, then shows the super admin a
+  one-time password-setup link. Nothing is emailed from here; the super admin sends the link privately. The link works for about an hour; "Sign-in link" on a user makes a new one.
+- A super admin cannot edit, deactivate or delete their own account, and the last active super admin can never be demoted, deactivated or deleted.
+- Deactivating takes effect on the next call (access is read from Firestore every time), disables the Auth account and revokes its sessions.
+
+**First super admin / recovery:** if every super admin is locked out, create the record by hand in the console: Firestore `users/{uid of the Auth account}` with
+`email` (lowercase), `type: "super_admin"`, `miniApps: []`, `active: true` plus the four audit fields.

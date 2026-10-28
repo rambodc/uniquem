@@ -1,7 +1,7 @@
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { execSync } from "node:child_process";
-import { routes, head, renderPage, verificationCodes } from "../.seo-build/entry-seo.js";
+import { routes, head, renderPage, verificationCodes, PRIVATE_ROOTS } from "../.seo-build/entry-seo.js";
 
 let shell = await readFile("dist/index.html", "utf8");
 // Extra Search Console verification tags (src/core/analyticsConfig.ts or VITE_SEARCH_CONSOLE_VERIFICATION).
@@ -25,7 +25,7 @@ for (const route of routes) {
 }
 
 // Separate shells prevent private routes from inheriting homepage indexing tags.
-for (const route of ["signin", "contact-inbox", "dashboard", "party"]) {
+for (const route of PRIVATE_ROOTS) {
   await mkdir(`dist/${route}`, { recursive: true });
   await writeFile(`dist/${route}/index.html`, cleanShell.replace("</head>", '<title>Uniquem | Private page</title><meta name="robots" content="noindex, nofollow"></head>'));
 }

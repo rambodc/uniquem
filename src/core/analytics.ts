@@ -1,10 +1,11 @@
 import { GA_MEASUREMENT_ID_DEFAULT } from "./analyticsConfig";
+import { isPrivatePage } from "../auth/privatePaths";
 
 // Lightweight GA4 (gtag.js) wrapper.
 // - Inactive until a measurement ID is configured (see analyticsConfig.ts).
 // - gtag.js is injected after the page has loaded and the browser is idle, so it
 //   never competes with the page's own critical resources.
-// - Private pages (/signin, /contact-inbox, /dashboard, /party) are never tracked and never load GA.
+// - Private pages (/signin, /dashboard and every mini app route in functions/miniApps.js) are never tracked and never load GA.
 // - Only whitelisted, non-personal event parameters are sent: no names,
 //   emails, phone numbers or messages.
 
@@ -20,7 +21,7 @@ export function measurementId(): string {
 // Only the live site reports to GA, so local builds, previews and tests never pollute the data.
 const LIVE_HOSTS = new Set(["uniquem.ca", "www.uniquem.ca"]);
 export const isLiveHost = (host: string) => LIVE_HOSTS.has(host);
-export const isPrivatePath = (path: string) => /^\/(signin|contact-inbox|dashboard|party)(\/|$)/.test(path);
+export const isPrivatePath = isPrivatePage;
 
 export type AnalyticsEvent =
   | "sandweb_presentation_start"
