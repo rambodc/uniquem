@@ -19,8 +19,7 @@ export type GuestInput = { firstName: string; lastName: string; company: string;
 export type GuestDoorPatch = Partial<Pick<GuestInput, "notes" | "status" | "vip" | "plusOnes">> & { plusOnesArrived?: number };
 /** A walk-in is added and checked in at the door in one step. */
 export type WalkInInput = { firstName: string; lastName: string; company: string; invitedBy: string; notes: string; plusOnes: number; vip?: boolean };
-export type PartySummary = { invited: number; coming: number; pending: number; notComing: number; checkedIn: number; checkedInNotComing: number; checkedInPending: number; plusOnes: number; headcount: number; arrivedPeople: number; capacity: number | null; capacityLeft: number | null };
-export type GuestList = { party: Party; guests: Guest[]; summary: PartySummary; serverTime: string };
+export type GuestList = { party: Party; guests: Guest[]; serverTime: string };
 /** What the server says the signed-in account may use. `role` is null when the account has no active staff document. */
 export type StaffAccess = { role: Role | null; features: Feature[] };
 export const getStaffAccess = () => invoke<undefined, StaffAccess>("getStaffAccess");

@@ -32,16 +32,6 @@ export function mergePolled(current: Guest[], next: Guest[], busyIds: ReadonlySe
 
 export const MAX_PLUS_ONES = 10;
 export const clampPlusOnes = (value: number) => Math.min(MAX_PLUS_ONES, Math.max(0, Math.round(Number.isFinite(value) ? value : 0)));
-/** Door counters, worked out from the guests on screen so they follow every optimistic check-in and undo.
- *  expected = coming guests + their plus-ones; arrived = checked-in guests + the plus-ones who arrived with them. */
-export function doorCounts(guests: Guest[]) {
-  let expected = 0, arrived = 0, checkedIn = 0;
-  for (const guest of guests) {
-    if (guest.status === "coming") expected += 1 + guest.plusOnes;
-    if (guest.checkedIn) { checkedIn += 1; arrived += 1 + guest.plusOnesArrived; }
-  }
-  return { expected, arrived, checkedIn, total: guests.length };
-}
 /** Search results at the door: matches in A–Z order with guests who have not arrived first, so the person you want is on top. */
 export function searchResults(guests: Guest[], query: string): Guest[] {
   const found = filterGuests(sortGuests(guests), query, "all", true);

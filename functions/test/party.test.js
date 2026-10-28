@@ -1,7 +1,9 @@
 import { Buffer } from "node:buffer";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { URL } from "node:url";
 import { test } from "node:test";
-import { plusOnes, flag, validateGuestPatch, validateWalkIn, validateParty, validateGuest, validateGuestBatch, planImport, fillBlanks, guestKey, LIMITS, validatePhoto, summarize, docId, status, capacity, sniffImage, PHOTO, sortGuestList, compareGuests } from "../party.js";
+import { plusOnes, flag, validateGuestPatch, validateWalkIn, validateParty, validateGuest, validateGuestBatch, planImport, fillBlanks, guestKey, LIMITS, validatePhoto, notCheckedIn, checkedInNow, doorPatchFor, docId, status, capacity, sniffImage, PHOTO, sortGuestList, compareGuests } from "../party.js";
 
 
 const party = { name: "  Winter   Mixer ", startsAt: "2026-12-04T02:30:00.000Z", location: " Calgary Petroleum Club ", description: "  Drinks\r\nand food ", capacity: 120, hostNotes: "Reserve table 4" };
@@ -76,30 +78,31 @@ test("rejects photos over the size limits", () => {
   assert.throws(() => validatePhoto({ photo: png.toString("base64"), thumb: bigThumb.toString("base64") }), /thumbnail/);
 });
 
-test("summarizes guest counts, check-ins by status and capacity left", () => {
-  const guests = [
-    { status: "coming", checkedIn: true }, { status: "coming", checkedIn: false }, { status: "pending", checkedIn: true },
-    { status: "notComing", checkedIn: true }, { status: "notComing", checkedIn: false },
-  ].map((guest) => ({ plusOnes: 0, plusOnesArrived: 0, ...guest }));
-  assert.deepEqual(summarize(guests, 10), { invited: 5, coming: 2, pending: 1, notComing: 2, checkedIn: 3, checkedInNotComing: 1, checkedInPending: 1, plusOnes: 0, headcount: 2, arrivedPeople: 3, capacity: 10, capacityLeft: 10 - 2 - 2 });
-  assert.equal(summarize(guests, null).capacityLeft, null);
-  assert.equal(summarize(guests, 2).capacityLeft, -2);
-  assert.equal(summarize([], 5).invited, 0);
+test("check-in fields only ever have two shapes: not checked in (nobody arrived) or checked in (0 to 10 plus-ones arrived)", () => {
+  assert.deepEqual(notCheckedIn(), { checkedIn: false, checkedInAt: null, checkedInBy: null, plusOnesArrived: 0 });
+  assert.deepEqual(checkedInNow("T", "door@uniquem.ca", 2), { checkedIn: true, checkedInAt: "T", checkedInBy: "door@uniquem.ca", plusOnesArrived: 2 });
+  assert.equal(checkedInNow("T", "x", undefined).plusOnesArrived, 0);
+  for (const bad of [-1, 11, 1.5, "2", NaN]) assert.throws(() => checkedInNow("T", "x", bad), /plus-ones who arrived/);
 });
-test("summary counts plus-ones: headcount, people arrived and capacity left by headcount", () => {
-  const guests = [
-    { status: "coming", plusOnes: 2, checkedIn: true, plusOnesArrived: 1 }, // 3 expected, 2 arrived
-    { status: "coming", plusOnes: 1, checkedIn: false, plusOnesArrived: 0 }, // 2 expected
-    { status: "coming", plusOnes: 0, checkedIn: false, plusOnesArrived: 0 }, // no plus-ones: 1 expected
-    { status: "notComing", plusOnes: 4, checkedIn: false, plusOnesArrived: 0 }, // not expected, plus-ones do not count
-    { status: "pending", plusOnes: 1, checkedIn: true, plusOnesArrived: 1 }, // arrived without being marked coming: takes 2 spaces
-    { status: "coming", plusOnes: 3, checkedIn: false, plusOnesArrived: 3 }, // arrivals are ignored until checked in
-  ];
-  const summary = summarize(guests, 20);
-  assert.equal(summary.plusOnes, 6); assert.equal(summary.headcount, 3 + 2 + 1 + 4 /* last coming guest */);
-  assert.equal(summary.arrivedPeople, 2 + 2);
-  assert.equal(summary.checkedIn, 2);
-  assert.equal(summary.capacityLeft, 20 - summary.headcount - 2);
+test("a door edit can change plus-ones who arrived only while the guest is checked in", () => {
+  const patch = { notes: "VIP", plusOnesArrived: 3 };
+  assert.deepEqual(doorPatchFor({ checkedIn: true }, patch), { notes: "VIP", plusOnesArrived: 3 });
+  assert.deepEqual(doorPatchFor({ checkedIn: false }, patch), { notes: "VIP" });
+  assert.deepEqual(patch, { notes: "VIP", plusOnesArrived: 3 }); // input untouched
+});
+test("a door edit bounds plus-ones who arrived to 0-10", () => {
+  assert.equal(validateGuestPatch({ plusOnesArrived: 10 }).plusOnesArrived, 10);
+  for (const bad of [-1, 11, 2.5, "1"]) assert.throws(() => validateGuestPatch({ plusOnesArrived: bad }), /plus-ones who arrived/);
+});
+test("walk-ins arrive as one checked-in shape: plus-ones who arrived default to the plus-ones, always 0-10", () => {
+  assert.equal(validateWalkIn({ firstName: "A", lastName: "B", plusOnes: 2 }).plusOnesArrived, 2);
+  assert.equal(validateWalkIn({ firstName: "A", lastName: "B", plusOnes: 2, plusOnesArrived: 1 }).plusOnesArrived, 1);
+  assert.throws(() => validateWalkIn({ firstName: "A", lastName: "B", plusOnesArrived: 11 }), /plus-ones who arrived/);
+});
+test("the server no longer works out counts (the screens derive them from the guest list in one place)", async () => {
+  const party = await import("../party.js"), functions = readFileSync(new URL("../party-functions.js", import.meta.url), "utf8");
+  assert.equal("summarize" in party, false);
+  assert.doesNotMatch(functions, /summar/i);
 });
 
 test("plus-ones are whole numbers from 0 to 10; blank means 0", () => {

@@ -5,7 +5,8 @@ import { groupChips, inGroup, letterSections } from "./logic";
 /** Browse all: group chips (from the data), everyone A–Z by first name in letter sections, and a jump rail on the right. */
 export default function DoorBrowse({ guests, group, onGroup, renderRow }: { guests: Guest[]; group: string | null; onGroup: (key: string | null) => void; renderRow: (guest: Guest) => ReactNode }) {
   const chips = groupChips(guests), sections = letterSections(guests.filter((guest) => inGroup(guest, group)));
-  const jump = (letter: string) => document.getElementById(`door-letter-${letter === "#" ? "other" : letter}`)?.scrollIntoView({ block: "start", behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+  /** Instant, not smooth: with every guest card expanded the list is many screens long, and a smooth scroll over that distance takes seconds. */
+  const jump = (letter: string) => document.getElementById(`door-letter-${letter === "#" ? "other" : letter}`)?.scrollIntoView({ block: "start", behavior: "auto" });
   return <div className="ws-browse-wrap">
     {chips.length > 0 && <div className="ws-chips" role="group" aria-label="Filter by Invited by / Type">
       <button className={`ws-filter${group === null ? " on" : ""}`} aria-pressed={group === null} onClick={() => onGroup(null)}>All <small>{guests.length}</small></button>
