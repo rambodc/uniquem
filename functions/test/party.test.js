@@ -45,6 +45,7 @@ test("guest needs first and last name, and only the three statuses are allowed",
   assert.throws(() => validateGuest({ firstName: "X", lastName: " " }), /last name/);
   assert.throws(() => validateGuest({ firstName: "X", lastName: "Y", status: "maybe" }), /Status/);
   assert.throws(() => validateGuest({ firstName: "x".repeat(81), lastName: "Y" }), /too long/);
+  assert.throws(() => validateGuest({ firstName: "X", lastName: "Y", invitedBy: "x".repeat(121) }), /invited by \/ type is too long/);
   assert.throws(() => validateGuest({ firstName: 5, lastName: "Y" }), /valid first name/);
   for (const ok of ["coming", "pending", "notComing"]) assert.equal(status(ok), ok);
   assert.equal(validateGuest({ firstName: "X", lastName: "Y" }).company, "");

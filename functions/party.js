@@ -68,7 +68,7 @@ export function validateGuest(value) {
     firstName: line(value.firstName, "first name", LIMITS.firstName),
     lastName: line(value.lastName, "last name", LIMITS.lastName),
     company: line(value.company, "company", LIMITS.company, { required: false }),
-    invitedBy: line(value.invitedBy, "invited by", LIMITS.invitedBy, { required: false }),
+    invitedBy: line(value.invitedBy, "invited by / type", LIMITS.invitedBy, { required: false }),
     status: value.status == null ? "pending" : status(value.status),
   };
   return { ...guest, searchKey: searchKey(guest) };

@@ -28,8 +28,12 @@ describe("parseGuestImport", () => {
     expect(toAdd[1]).toMatchObject({ firstName: "Grace", company: "", status: "pending" });
   });
   it("ignores a header row", () => {
-    const { toAdd, problems } = parseGuestImport("First name\tLast name\tCompany\tInvited by\tStatus\nAda\tLovelace");
+    const { toAdd, problems } = parseGuestImport("First name\tLast name\tCompany\tInvited by / Type\tStatus\nAda\tLovelace");
     expect(problems).toEqual([]); expect(toAdd).toHaveLength(1);
+  });
+  it("names the invited by / type field when it is too long", () => {
+    const { problems } = parseGuestImport("Ada, Lovelace, Co, " + "x".repeat(121));
+    expect(problems[0].reason).toBe("The invited by / type is too long (max 120 characters).");
   });
   it("reports problem lines with their line number and does not add them", () => {
     const { toAdd, problems } = parseGuestImport("Ada, Lovelace\nMadonna\nJohn Smith\nBob, Jones, Co, Me, whenever\n, Nobody\nA, B, C, D, coming, extra\n" + "x".repeat(81) + ", Long");
@@ -38,6 +42,7 @@ describe("parseGuestImport", () => {
     expect(problems[1].reason).toMatch(/comma or tab/);
     expect(problems[2].reason).toMatch(/Status/);
     expect(problems[4].reason).toMatch(/Too many fields/);
+    expect(problems[4].reason).toContain("invited by / type");
     expect(problems[5].reason).toMatch(/too long/);
   });
   it("skips names already on the list and repeats within the paste, ignoring case", () => {

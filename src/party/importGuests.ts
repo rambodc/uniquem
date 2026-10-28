@@ -30,7 +30,7 @@ const HEADER = /^(first\s*name|firstname|first)$/i;
 
 /**
  * One guest per line. Fields are separated by tabs (pasted from a spreadsheet) or commas:
- * first name, last name, company, invited by, status (the last three are optional).
+ * first name, last name, company, invited by / type, status (the last three are optional).
  * A header row ("First name, Last name, …") and blank lines are ignored.
  * `existing` are guests already on the party. A matching line (first + last name, any case) is never added twice:
  * if the line has an "invited by" (or company) and the existing guest's is blank it fills it in, otherwise the line is skipped.
@@ -53,12 +53,12 @@ export function parseGuestImport(text: string, existing: ExistingGuest[] = []): 
     if (wasFirstContent && HEADER.test(cells[0] ?? "")) return;
     const problem = (reason: string) => problems.push({ line, text: original.trim(), reason });
     const [firstName = "", lastName = "", company = "", invitedBy = "", statusText = ""] = cells;
-    if (cells.length > 5) return problem("Too many fields. Use: first name, last name, company, invited by, status. Put the company in one field without commas.");
+    if (cells.length > 5) return problem("Too many fields. Use: first name, last name, company, invited by / type, status. Put the company in one field without commas.");
     if (!firstName || !lastName) return problem(cells.length === 1 && firstName.includes(" ") ? "Needs a first and last name separated by a comma or tab." : "Needs both a first name and a last name.");
     const status = parseStatus(statusText);
     if (!status) return problem(`Status “${statusText}” isn't coming, pending or not coming.`);
     const tooLong = (value: string, max: number, label: string) => (value.length > max ? `The ${label} is too long (max ${max} characters).` : "");
-    const long = tooLong(firstName, IMPORT_LIMITS.firstName, "first name") || tooLong(lastName, IMPORT_LIMITS.lastName, "last name") || tooLong(company, IMPORT_LIMITS.company, "company") || tooLong(invitedBy, IMPORT_LIMITS.invitedBy, "invited by");
+    const long = tooLong(firstName, IMPORT_LIMITS.firstName, "first name") || tooLong(lastName, IMPORT_LIMITS.lastName, "last name") || tooLong(company, IMPORT_LIMITS.company, "company") || tooLong(invitedBy, IMPORT_LIMITS.invitedBy, "invited by / type");
     if (long) return problem(long);
     const guest: GuestInput = { firstName, lastName, company, invitedBy, status }, key = nameKey(guest);
     const current = onList.get(key);

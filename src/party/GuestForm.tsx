@@ -15,7 +15,7 @@ export default function GuestForm({ initial = emptyGuest, submitLabel, onSubmit,
     <label>First name<input ref={first} value={guest.firstName} onChange={set("firstName")} maxLength={80} required autoComplete="off" /></label>
     <label>Last name<input value={guest.lastName} onChange={set("lastName")} maxLength={80} required autoComplete="off" /></label>
     <label>Company<input value={guest.company} onChange={set("company")} maxLength={120} autoComplete="off" /></label>
-    <label>Invited by<input value={guest.invitedBy} onChange={set("invitedBy")} maxLength={120} autoComplete="off" /></label>
+    <label>Invited by / Type<input value={guest.invitedBy} onChange={set("invitedBy")} maxLength={120} autoComplete="off" /></label>
     <label>Status<select value={guest.status} onChange={(event) => setGuest((current) => ({ ...current, status: event.target.value as GuestStatus }))}>{(Object.keys(STATUS_LABEL) as GuestStatus[]).map((status) => <option key={status} value={status}>{STATUS_LABEL[status]}</option>)}</select></label>
     <div className="ws-row"><button className="ws-button" disabled={busy}>{busy ? "Saving…" : submitLabel}</button>{onCancel && <button type="button" className="ws-button ghost" onClick={onCancel} disabled={busy}>Cancel</button>}</div>
   </form>;
