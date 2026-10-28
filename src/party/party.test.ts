@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 import type { Guest, Party } from "../core/api";
-import { filterGuests, mergePolled, optimisticGuest, sortGuests, splitParties } from "./logic";
-import { edmontonInputToIso, formatClock, isoToEdmontonInput } from "./time";
+import { arrivedGuests, checkedInMessage, clampPlusOnes, doorCounts, filterGuests, groupChips, inGroup, letterOf, letterSections, mergePolled, optimisticGuest, searchResults, sortGuests, splitName, splitParties } from "./logic";
+import { edmontonInputToIso, formatClock, formatClockShort, isoToEdmontonInput } from "./time";
 import { checkPhotoFile } from "./photo";
 
-const guest = (over: Partial<Guest>): Guest => ({ id: "g", firstName: "Ada", lastName: "Lovelace", company: "Engines Ltd", invitedBy: "", notes: "", status: "pending", checkedIn: false, checkedInAt: null, createdAt: null, updatedAt: null, ...over });
+const guest = (over: Partial<Guest>): Guest => ({ id: "g", firstName: "Ada", lastName: "Lovelace", company: "Engines Ltd", invitedBy: "", notes: "", status: "pending", plusOnes: 0, vip: false, plusOnesArrived: 0, checkedIn: false, checkedInAt: null, createdAt: null, updatedAt: null, ...over });
 const party = (id: string, startsAt: string): Party => ({ id, name: id, startsAt, location: "", description: "", capacity: null, hostNotes: "", hasPhoto: false, archived: false, archivedAt: null, thumbDataUrl: null, createdAt: null, updatedAt: null });
 
 describe("Calgary time", () => {
@@ -84,5 +84,57 @@ describe("door optimistic updates", () => {
     const merged = mergePolled(current, polled, new Set(["1"]));
     expect(merged.map((g) => g.checkedIn)).toEqual([false, true, false]);
     expect(mergePolled(current, polled, new Set())).toBe(polled);
+  });
+});
+
+describe("door tools", () => {
+  const list = [
+    guest({ id: "1", firstName: "Sam", lastName: "Hughes", invitedBy: "Client", status: "coming", plusOnes: 2 }),
+    guest({ id: "2", firstName: "Ada", lastName: "Lovelace", invitedBy: "client ", status: "coming", checkedIn: true, checkedInAt: "2026-07-11T01:30:00.000Z", plusOnesArrived: 1, plusOnes: 1 }),
+    guest({ id: "3", firstName: "éric", lastName: "Zed", invitedBy: "Work", status: "pending" }),
+    guest({ id: "4", firstName: "Bob", lastName: "Ray", invitedBy: "", status: "notComing", checkedIn: true, checkedInAt: "2026-07-11T02:10:00.000Z", plusOnesArrived: 0 }),
+    guest({ id: "5", firstName: "7th", lastName: "Heaven", invitedBy: "Work", vip: true }),
+    guest({ id: "6", firstName: "Ann", lastName: "Lee", invitedBy: "Walk-in", status: "coming" }),
+  ];
+  it("counts people: expected = coming guests + plus-ones, arrived = checked-in guests + plus-ones who arrived", () => {
+    expect(doorCounts(list)).toEqual({ expected: 3 + 2 + 1, arrived: 2 + 1, checkedIn: 2, total: 6 });
+    expect(doorCounts([])).toEqual({ expected: 0, arrived: 0, checkedIn: 0, total: 0 });
+  });
+  it("search puts guests who have not arrived first, A–Z, then arrived ones", () => {
+    const all = searchResults(list.map((g) => ({ ...g, notes: "e" })), "e");
+    expect(all.map((g) => g.checkedIn)).toEqual([false, false, false, false, true, true]);
+    expect(all.slice(0, 4).map((g) => g.firstName)).toEqual(["7th", "Ann", "éric", "Sam"]);
+  });
+  it("search finds VIPs and walk-ins by word", () => {
+    expect(searchResults(list, "vip").map((g) => g.id)).toEqual(["5"]);
+    expect(searchResults(list, "walk-in").map((g) => g.id)).toEqual(["6"]);
+  });
+  it("arrived list is latest first", () => { expect(arrivedGuests(list).map((g) => g.id)).toEqual(["4", "2"]); });
+  it("groups the browse chips from the data (case-insensitive), most common first", () => {
+    expect(groupChips(list)).toEqual([{ key: "client", label: "Client", count: 2 }, { key: "work", label: "Work", count: 2 }, { key: "walk-in", label: "Walk-in", count: 1 }]);
+    expect(list.filter((g) => inGroup(g, "client")).map((g) => g.id)).toEqual(["1", "2"]);
+    expect(list.filter((g) => inGroup(g, null))).toHaveLength(6);
+  });
+  it("letter sections are A–Z by first name with # last for non-letters", () => {
+    expect(letterOf({ firstName: "éric" })).toBe("E"); expect(letterOf({ firstName: "7th" })).toBe("#"); expect(letterOf({ firstName: "" })).toBe("#");
+    expect(letterSections(list).map((s) => s.letter)).toEqual(["A", "B", "E", "S", "#"]);
+    expect(letterSections(list)[0].guests.map((g) => g.firstName)).toEqual(["Ada", "Ann"]);
+  });
+  it("splits a typed name for the walk-in form", () => {
+    expect(splitName("  sam   van der berg ")).toEqual({ firstName: "sam", lastName: "van der berg" });
+    expect(splitName("Cher")).toEqual({ firstName: "Cher", lastName: "" }); expect(splitName("")).toEqual({ firstName: "", lastName: "" });
+  });
+  it("clamps plus-ones to 0–10 whole numbers", () => { expect([clampPlusOnes(-3), clampPlusOnes(2.6), clampPlusOnes(40), clampPlusOnes(NaN)]).toEqual([0, 3, 10, 0]); });
+  it("check-in keeps how many plus-ones arrived and undo resets it", () => {
+    const base = guest({ id: "1", plusOnes: 2 });
+    const inn = optimisticGuest(base, true, "2026-07-11T01:30:15.000Z", 2);
+    expect(inn.plusOnesArrived).toBe(2);
+    expect(optimisticGuest(inn, false, "").plusOnesArrived).toBe(0);
+    expect(optimisticGuest(base, true, "2026-07-11T01:30:15.000Z").plusOnesArrived).toBe(0);
+  });
+  it("formats the confirmation line and a short clock", () => {
+    expect(formatClockShort("2026-07-11T01:42:30.000Z")).toBe("7:42 PM");
+    expect(checkedInMessage(guest({ firstName: "Sam", lastName: "Hughes", plusOnesArrived: 2 }), "7:42 PM")).toBe("Checked in Sam Hughes +2 · 7:42 PM");
+    expect(checkedInMessage(guest({ firstName: "Sam", lastName: "Hughes" }), "7:42 PM")).toBe("Checked in Sam Hughes · 7:42 PM");
   });
 });

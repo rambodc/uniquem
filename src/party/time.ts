@@ -22,3 +22,5 @@ export function edmontonInputToIso(input: string): string {
 export const formatPartyDateTime = (iso: string | null) => iso ? new Intl.DateTimeFormat("en-CA", { timeZone: PARTY_TZ, weekday: "short", year: "numeric", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }).format(new Date(iso)) : "";
 export const formatPartyDate = (iso: string | null) => iso ? new Intl.DateTimeFormat("en-CA", { timeZone: PARTY_TZ, month: "short", day: "numeric", year: "numeric" }).format(new Date(iso)) : "";
 export const formatClock = (iso: string | null) => iso ? new Intl.DateTimeFormat("en-CA", { timeZone: PARTY_TZ, hour: "numeric", minute: "2-digit", second: "2-digit" }).format(new Date(iso)) : "";
+/** "7:42 PM" (no seconds), for banners and badges. */
+export const formatClockShort = (iso: string | null) => iso ? new Intl.DateTimeFormat("en-US", { timeZone: PARTY_TZ, hour: "numeric", minute: "2-digit" }).format(new Date(iso)) : "";

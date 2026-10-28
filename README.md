@@ -40,18 +40,26 @@ The existing `google-site-verification` meta tag in `index.html` must stay. Extr
 ## Private workspace: dashboard and Party
 
 After sign-in everyone lands on `/dashboard`, which shows one card per feature their role includes (today: Contact Form, Party). Party lives at `/party`
-(list, create/edit, guest list, `/party/:id/check-in` door screen, `/party/:id/summary`).
+(list, create/edit, guest list, `/party/:id/check-in` door screen).
 All pages are private (`noindex`, no analytics, no screensaver) and every read/write goes through callable
 functions in `functions/party-functions.js`; Firestore and Storage rules stay deny-all for browsers.
 
 - Data: `parties/{partyId}` (name, startsAt, location, description, capacity, hostNotes, photoPath, thumbDataUrl, timestamps)
   and `parties/{partyId}/guests/{guestId}` (firstName, lastName, company, invitedBy ("Invited by / Type"), notes (optional, max 500), status `coming|pending|notComing`,
-  checkedIn, checkedInAt, searchKey, timestamps). Theme photos are stored in Storage under `party-photos/{partyId}/`
+  plusOnes (0-10, default 0), vip (default false), checkedIn, checkedInAt, plusOnesArrived (0-10, reset by undo), searchKey, timestamps; walk-ins also have walkIn: true). Theme photos are stored in Storage under `party-photos/{partyId}/`
   and returned only to signed-in staff through `getPartyPhoto`.
 - Bulk import (party page, "Import guests"): one guest per line, fields separated by commas or tabs (spreadsheet paste) in the
-  order first name, last name, company, invited by / type, status, notes. Only the names are required (notes can only contain commas in a tab/spreadsheet paste); status is coming, pending or not coming
+  order first name, last name, company, invited by / type, status, notes, plus-ones (0-10). Only the names are required (notes can only contain commas in a tab/spreadsheet paste); status is coming, pending or not coming
   (friendly variants like "yes" or "not-coming" work; blank means pending). A header row is ignored. Guests whose first + last
-  name already exist on the party (any case) are never duplicated; their blank invited by / type, company or notes is filled in, existing values never overwritten. Max 200 per `importGuests` call; the page sends longer lists in chunks.
+  name already exist on the party (any case) are never duplicated; their blank invited by / type, company, notes or plus-ones (0) is filled in, existing values never overwritten. VIP is not imported. Max 200 per `importGuests` call; the page sends longer lists in chunks.
+- Door check-in (`/party/:id/check-in`, phones, tablets and laptops):
+  - **Find** tab: search (name, company, group, notes, "vip"; Enter or ↓ jumps to the first result's Check in button, Esc and the big Clear button empty it) plus **browse all** (A–Z by first name, jump rail, group chips built from the guests' "Invited by / Type"). After a check-in from search the box clears and refocuses, and a 3-second toast offers Undo.
+  - **Arrived** tab (side by side with Find on screens 1000px and wider): everyone checked in, latest first. Undo is two taps. Arrived guests are green everywhere and sort to the bottom of search results.
+  - **Plus-ones**: `plusOnes` is planned; at the door a stepper records `plusOnesArrived` (default = planned). Counters: people arrived = checked-in guests + plus-ones who arrived, versus expected = coming guests + their plus-ones.
+    On the party page, capacity left = capacity − (coming guests + their plus-ones) − anyone who arrived without being marked coming.
+  - **Walk-in**: `addWalkIn` creates a "coming" guest (Invited by / Type defaults to "Walk-in") and checks them in in one call.
+  - **Edit at the door**: `updateGuest` with `patch: true` can only change notes, status, VIP, plus-ones and (checked-in guests) plus-ones who arrived. Names and company are never changed from the door.
+  - Check in, Undo and edits show at once and roll back with an error if the server call fails; the 10-second poll never overwrites a row that is mid-action. The door callables (`listGuests`, `checkInGuest`, `undoCheckIn`, `updateGuest`, `addWalkIn`) keep one warm instance (`minInstances: 1`).
 - Times are entered and shown in Calgary time (America/Edmonton).
 
 ## Users, roles and features

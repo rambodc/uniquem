@@ -1,10 +1,11 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useCallback, useEffect, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
-import { Archive, ArchiveRestore, DoorOpen, MapPin, Pencil, Search, Trash2, Upload, UserPlus } from "lucide-react";
+import { Archive, ArchiveRestore, DoorOpen, MapPin, Pencil, Search, StickyNote, Trash2, Upload, UserPlus } from "lucide-react";
 import { addGuest, archiveParty, deleteGuest, restoreParty, getPartyPhoto, listGuests, setGuestStatus, updateGuest, type Guest, type GuestInput, type GuestList, type GuestStatus } from "../core/api";
 import { Confirm, Page, messageOf } from "./Workspace";
 import GuestForm from "./GuestForm";
+import { PlusChip, VipBadge } from "./DoorBits";
 import ImportGuests from "./ImportGuests";
 import { STATUS_LABEL, filterGuests, guestName, sortGuests } from "./logic";
 import { formatClock, formatPartyDateTime } from "./time";
@@ -26,21 +27,22 @@ export default function PartyDetail() {
     catch (cause) { setError(messageOf(cause, confirm.kind === "party" ? "The party could not be archived. Try again." : "That could not be deleted. Try again.")); setConfirm(null); } finally { setBusy(false); }
   }
   const left = summary?.capacityLeft;
-  const stats: [string, string | number, string?][] = summary ? [["Invited", summary.invited], ["Coming", summary.coming], ["Pending", summary.pending], ["Not coming", summary.notComing], ["Checked in", summary.checkedIn], ["Capacity left", left == null ? "No limit" : left < 0 ? `Over by ${-left}` : left, left != null && left < 0 ? "warn" : undefined]] : [];
+  const people = (count: number) => `${count} ${count === 1 ? "person" : "people"}`;
+  const stats: [string, string | number, string?, string?][] = summary ? [["Invited", summary.invited], ["Coming", summary.coming, undefined, summary.plusOnes > 0 ? `+${summary.plusOnes} plus-ones · ${people(summary.headcount)}` : undefined], ["Pending", summary.pending], ["Not coming", summary.notComing], ["Checked in", summary.checkedIn, undefined, summary.arrivedPeople !== summary.checkedIn ? `${people(summary.arrivedPeople)} with plus-ones` : undefined], ["Capacity left", left == null ? "No limit" : left < 0 ? `Over by ${-left}` : left, left != null && left < 0 ? "warn" : undefined, left == null ? undefined : "by headcount, with plus-ones"]] : [];
   if (!data) return <Page title="Party" back={{ to: "/party", label: "Parties" }}>{error ? <div className="ws-status error" role="alert">{error}</div> : <div className="ws-empty">Loading…</div>}</Page>;
   return <Page title={party!.name} subtitle={<><span>{formatPartyDateTime(party!.startsAt)}</span> · <span><MapPin size={14} /> {party!.location}</span></>} back={{ to: "/party", label: "Parties" }}
     actions={<><Link className="ws-button" to={`/party/${partyId}/check-in`}><DoorOpen size={18} /> Door check-in</Link><Link className="ws-button ghost" to={`/party/${partyId}/edit`}><Pencil size={18} /> Edit</Link>{party!.archived ? <button className="ws-button ghost" onClick={() => void act(() => restoreParty(partyId), "The party could not be restored. Try again.")}><ArchiveRestore size={18} /> Restore party</button> : <button className="ws-button ghost danger-text" onClick={() => setConfirm({ kind: "party" })}><Archive size={18} /> Archive party</button>}</>}>
     {party!.archived && <div className="ws-status error" role="status">This party is archived, so it is hidden from the party list. Use Restore party to bring it back.</div>}
     {notice && <div className="ws-status error" role="status">{notice}</div>}
     {error && <div className="ws-status error" role="alert">{error}</div>}
-    <section className="ws-stats" aria-label="Party summary">{stats.map(([label, value, tone]) => <div key={label} className={`ws-stat ${tone ?? ""}`}><b>{value}</b><span>{label}</span></div>)}</section>
+    <section className="ws-stats" aria-label="Party summary">{stats.map(([label, value, tone, sub]) => <div key={label} className={`ws-stat ${tone ?? ""}`}><b>{value}</b><span>{label}</span>{sub && <small>{sub}</small>}</div>)}</section>
     {(summary!.checkedInNotComing > 0 || summary!.checkedInPending > 0) && <p className="ws-meta">Of those checked in, {summary!.checkedInPending} were marked pending and {summary!.checkedInNotComing} were marked not coming.</p>}
     <section className="ws-info">
       {photo && <img className="ws-photo" src={photo} alt={`Theme for ${party!.name}`} />}
       <div>
         {party!.description && <><h2 className="ws-h2">About</h2><p className="ws-pre">{party!.description}</p></>}
         {party!.hostNotes && <><h2 className="ws-h2">Host notes <em>(private)</em></h2><p className="ws-pre">{party!.hostNotes}</p></>}
-        <p className="ws-meta">Capacity: {party!.capacity ?? "no limit set"}</p>
+        <p className="ws-meta">Capacity: {party!.capacity ?? "no limit set"}{party!.capacity != null && " people (coming guests plus their plus-ones)"}</p>
       </div>
     </section>
     <section>
@@ -53,8 +55,8 @@ export default function PartyDetail() {
       </div>
       {data.guests.length === 0 ? <div className="ws-empty">No guests yet. Add the first one.</div> : visible.length === 0 ? <div className="ws-empty">No guests match.</div> : <ul className="ws-guests">{visible.map((guest) => <li key={guest.id}>
         {editing === guest.id
-          ? <GuestForm initial={{ firstName: guest.firstName, lastName: guest.lastName, company: guest.company, invitedBy: guest.invitedBy, notes: guest.notes, status: guest.status }} submitLabel="Save" onSubmit={async (next: GuestInput) => { await updateGuest(partyId, guest.id, next); setEditing(null); await load(); }} onCancel={() => setEditing(null)} />
-          : <><div className="ws-guest-main"><b>{guestName(guest)}</b><small>{[guest.company, guest.invitedBy].filter(Boolean).join(" · ") || "—"}</small>{guest.notes && <p className="ws-guest-note">{guest.notes}</p>}{guest.checkedIn && <span className="ws-badge ok">Checked in {formatClock(guest.checkedInAt)}</span>}</div>
+          ? <GuestForm initial={{ firstName: guest.firstName, lastName: guest.lastName, company: guest.company, invitedBy: guest.invitedBy, notes: guest.notes, status: guest.status, plusOnes: guest.plusOnes, vip: guest.vip }} submitLabel="Save" onSubmit={async (next: GuestInput) => { await updateGuest(partyId, guest.id, next); setEditing(null); await load(); }} onCancel={() => setEditing(null)} />
+          : <><div className="ws-guest-main"><b className="ws-guest-name">{guestName(guest)}{guest.vip && <VipBadge />}<PlusChip count={guest.plusOnes} />{guest.notes && <span className="ws-note-icon" role="img" aria-label="Has a note"><StickyNote size={15} /></span>}</b><small>{[guest.company, guest.invitedBy].filter(Boolean).join(" · ") || "—"}</small>{guest.notes && <p className="ws-guest-note">{guest.notes}</p>}{guest.checkedIn && <span className="ws-badge ok">Checked in {formatClock(guest.checkedInAt)}</span>}</div>
             <select aria-label={`Status for ${guestName(guest)}`} className={`ws-status-select ${guest.status}`} value={guest.status} onChange={(event) => void act(() => setGuestStatus(partyId, guest.id, event.target.value as GuestStatus), "The status could not be changed.")}>{(Object.keys(STATUS_LABEL) as GuestStatus[]).map((status) => <option key={status} value={status}>{STATUS_LABEL[status]}</option>)}</select>
             <div className="ws-guest-actions"><button className="ws-chip" onClick={() => { setEditing(guest.id); setAdding(false); }}><Pencil size={15} /> Edit</button><button className="ws-chip danger-text" onClick={() => setConfirm({ kind: "guest", guest })}><Trash2 size={15} /> Delete</button></div></>}
       </li>)}</ul>}

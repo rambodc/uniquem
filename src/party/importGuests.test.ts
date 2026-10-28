@@ -10,14 +10,32 @@ describe("parseStatus", () => {
   });
 });
 
+describe("plus-ones in the import", () => {
+  it("reads an optional 7th field and treats blank as 0", () => {
+    const { toAdd, problems } = parseGuestImport("Ada\tLovelace\tCo\tClient\tcoming\tVegan\t2\nGrace\tHopper\t\t\t\t\t\nAlan, Turing");
+    expect(problems).toEqual([]);
+    expect(toAdd.map((guest) => guest.plusOnes)).toEqual([2, 0, 0]);
+  });
+  it("rejects plus-ones that are not whole numbers from 0 to 10", () => {
+    const { problems, toAdd } = parseGuestImport("A, B, C, D, coming, n, 11\nA, C, C, D, coming, n, -1\nA, D, C, D, coming, n, two");
+    expect(toAdd).toEqual([]);
+    expect(problems.map((problem) => problem.reason)).toEqual(Array(3).fill(expect.stringMatching(/Plus-ones .* whole number from 0 to 10/)));
+  });
+  it("fills plus-ones on a guest already on the list only when they have none, and never overwrites", () => {
+    const preview = parseGuestImport("Ada, Lovelace, , , , , 2\nGrace, Hopper, , , , , 3", [{ firstName: "Ada", lastName: "Lovelace", plusOnes: 0, company: "Co", invitedBy: "x", notes: "y" }, { firstName: "Grace", lastName: "Hopper", plusOnes: 1, company: "Co", invitedBy: "x", notes: "y" }]);
+    expect(preview.rows.map((row) => row.fills)).toEqual([["plusOnes"], []]);
+    expect(preview.toUpdate.map((guest) => guest.firstName)).toEqual(["Ada"]); expect(preview.skipped).toBe(1);
+  });
+});
+
 describe("parseGuestImport", () => {
   it("reads comma separated lines with optional trailing fields", () => {
     const { rows, problems, toAdd } = parseGuestImport("Ada, Lovelace, Engines Ltd, Rambod, coming\nGrace,Hopper\n\n  Alan , Turing , , , not coming  ");
     expect(problems).toEqual([]);
     expect(toAdd).toEqual([
-      { firstName: "Ada", lastName: "Lovelace", company: "Engines Ltd", invitedBy: "Rambod", notes: "", status: "coming" },
-      { firstName: "Grace", lastName: "Hopper", company: "", invitedBy: "", notes: "", status: "pending" },
-      { firstName: "Alan", lastName: "Turing", company: "", invitedBy: "", notes: "", status: "notComing" },
+      { firstName: "Ada", lastName: "Lovelace", company: "Engines Ltd", invitedBy: "Rambod", notes: "", status: "coming", plusOnes: 0, vip: false },
+      { firstName: "Grace", lastName: "Hopper", company: "", invitedBy: "", notes: "", status: "pending", plusOnes: 0, vip: false },
+      { firstName: "Alan", lastName: "Turing", company: "", invitedBy: "", notes: "", status: "notComing", plusOnes: 0, vip: false },
     ]);
     expect(rows.map((row) => row.line)).toEqual([1, 2, 4]);
   });
@@ -52,7 +70,7 @@ describe("parseGuestImport", () => {
     expect(problems[0].reason).toBe("The invited by / type is too long (max 120 characters).");
   });
   it("reports problem lines with their line number and does not add them", () => {
-    const { toAdd, problems } = parseGuestImport("Ada, Lovelace\nMadonna\nJohn Smith\nBob, Jones, Co, Me, whenever\n, Nobody\nA, B, C, D, coming, note, extra\n" + "x".repeat(81) + ", Long");
+    const { toAdd, problems } = parseGuestImport("Ada, Lovelace\nMadonna\nJohn Smith\nBob, Jones, Co, Me, whenever\n, Nobody\nA, B, C, D, coming, note, 1, extra\n" + "x".repeat(81) + ", Long");
     expect(toAdd.map((guest) => guest.firstName)).toEqual(["Ada"]);
     expect(problems.map((problem) => problem.line)).toEqual([2, 3, 4, 5, 6, 7]);
     expect(problems[1].reason).toMatch(/comma or tab/);
