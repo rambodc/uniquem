@@ -4,7 +4,7 @@ import type { Guest } from "../core/api";
 import DoorGuestInfo from "./DoorGuestInfo";
 
 const guest = (over: Partial<Guest>): Guest => ({ id: "g", firstName: "Ada", lastName: "Lovelace", company: "Engines Ltd", invitedBy: "Client", notes: "Vegan, plus-one", status: "coming", checkedIn: false, checkedInAt: null, createdAt: null, updatedAt: null, ...over });
-const html = (over: Partial<Guest> = {}) => renderToStaticMarkup(<DoorGuestInfo guest={guest(over)} />);
+const html = (over: Partial<Guest> = {}, busy?: "in" | "out") => renderToStaticMarkup(<DoorGuestInfo guest={guest(over)} busy={busy} />);
 
 describe("door guest info", () => {
   it("shows every field with labels", () => {
@@ -25,5 +25,9 @@ describe("door guest info", () => {
     const out = html({ checkedIn: true, checkedInAt: "2026-07-11T01:30:15.000Z" });
     expect(out).toContain("Checked in"); expect(out).toMatch(/7:30:15/);
     for (const text of ["Engines Ltd", "Client", "Vegan, plus-one", "Coming"]) expect(out).toContain(text);
+  });
+  it("shows Checking in… instead of a time while a check-in is being confirmed", () => {
+    const out = html({ checkedIn: true, checkedInAt: "2026-07-11T01:30:15.000Z" }, "in");
+    expect(out).toContain("Checking in…"); expect(out).not.toMatch(/7:30:15/);
   });
 });

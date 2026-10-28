@@ -6,6 +6,8 @@ import { FieldValue, Timestamp } from "firebase-admin/firestore";
 import { db, callable, resolveAccess, requireFeature } from "./core.js";
 import { LIMITS, sortGuestList, docId, status, validateParty, validateGuest, validateGuestBatch, planImport, fillBlanks, searchKey, guestKey, validatePhoto, summarize } from "./party.js";
 
+/** Door-screen callables stay warm (one idle instance) so the first tap is not delayed by a cold start. */
+const warm = { ...callable, minInstances: 1 };
 const parties = () => db.collection("parties");
 const guestsOf = (partyId) => parties().doc(partyId).collection("guests");
 const iso = (value) => value?.toDate?.().toISOString() ?? null;
@@ -108,7 +110,7 @@ export const getPartyPhoto = onCall({ ...callable, memory: "512MiB" }, async (re
   return { dataUrl: `data:${metadata.contentType || "image/jpeg"};base64,${buffer.toString("base64")}` };
 });
 
-export const listGuests = onCall(callable, async (request) => {
+export const listGuests = onCall(warm, async (request) => {
   await requireFeature(request, "party");
   const partyId = docId(request.data?.partyId, "party"), party = await loadParty(partyId), docs = await listGuestDocs(partyId), guests = sortGuestList(docs.map(guestView));
   return { party: partyView(party), guests, summary: summarize(guests, party.data().capacity ?? null), serverTime: new Date().toISOString() };
@@ -183,7 +185,7 @@ export const deleteGuest = onCall(callable, async (request) => {
 });
 
 /** Works for any status. If the guest is already checked in, nothing changes and the original time is returned. */
-export const checkInGuest = onCall(callable, async (request) => {
+export const checkInGuest = onCall(warm, async (request) => {
   const staff = await requireFeature(request, "party");
   const partyId = docId(request.data?.partyId, "party"), guestId = docId(request.data?.guestId, "guest"), ref = guestsOf(partyId).doc(guestId);
   const alreadyCheckedIn = await db.runTransaction(async (transaction) => {
@@ -195,10 +197,11 @@ export const checkInGuest = onCall(callable, async (request) => {
   });
   return { success: true, alreadyCheckedIn, guest: guestView(await ref.get()) };
 });
-export const undoCheckIn = onCall(callable, async (request) => {
+export const undoCheckIn = onCall(warm, async (request) => {
   await requireFeature(request, "party");
   const partyId = docId(request.data?.partyId, "party"), guestId = docId(request.data?.guestId, "guest"), ref = guestsOf(partyId).doc(guestId);
-  await guestSnapshot(partyId, guestId);
-  await ref.update({ checkedIn: false, checkedInAt: null, checkedInBy: null, updatedAt: FieldValue.serverTimestamp() });
+  // One write instead of read-then-write: update() fails with NOT_FOUND (code 5) when the guest is gone.
+  try { await ref.update({ checkedIn: false, checkedInAt: null, checkedInBy: null, updatedAt: FieldValue.serverTimestamp() }); }
+  catch (error) { if (error?.code === 5) throw new HttpsError("not-found", "That guest no longer exists."); throw error; }
   return { success: true, guest: guestView(await ref.get()) };
 });
