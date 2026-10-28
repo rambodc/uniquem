@@ -137,6 +137,24 @@
         ]
       },
       {
+        "source": "/profile",
+        "headers": [
+          {
+            "key": "X-Robots-Tag",
+            "value": "noindex, nofollow"
+          }
+        ]
+      },
+      {
+        "source": "/profile/**",
+        "headers": [
+          {
+            "key": "X-Robots-Tag",
+            "value": "noindex, nofollow"
+          }
+        ]
+      },
+      {
         "source": "/audio/**",
         "headers": [
           {

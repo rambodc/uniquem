@@ -15,6 +15,7 @@ const PartyForm = lazy(() => import("./party/PartyForm"));
 const PartyDetail = lazy(() => import("./party/PartyDetail"));
 const CheckIn = lazy(() => import("./party/CheckIn"));
 const UsersApp = lazy(() => import("./users/UsersApp"));
+const ProfileApp = lazy(() => import("./profile/ProfileApp"));
 function SummaryRedirect() { const { partyId = "" } = useParams(); return <Navigate to={`/party/${partyId}`} replace />; }
 function ScrollToTop() { const { pathname } = useLocation(); useEffect(() => { if ("scrollRestoration" in window.history) window.history.scrollRestoration = "manual"; }, []); useEffect(() => { window.scrollTo(0, 0); }, [pathname]); return null; }
 export default function App() { return <><SeoMetadata /><AnalyticsTracker /><ScrollToTop /><Routes>
@@ -28,6 +29,7 @@ export default function App() { return <><SeoMetadata /><AnalyticsTracker /><Scr
       <Route path="/party/:partyId/check-in" element={<CheckIn />} /><Route path="/party/:partyId/summary" element={<SummaryRedirect />} />
     </Route>
     <Route element={<RequireMiniApp app="users" />}><Route path="/users" element={<UsersApp />} /></Route>
+    <Route element={<RequireMiniApp app="profile" />}><Route path="/profile" element={<ProfileApp />} /></Route>
   </Route>
   <Route path="/" element={<PublicSite />} /><Route path="/about-us" element={<PublicSite />} /><Route path="/chemicals" element={<PublicSite />} /><Route path="/chemicals/*" element={<PublicSite />} /><Route path="/contact-us" element={<PublicSite />} /><Route path="/service-areas/alberta" element={<PublicSite />} />
   <Route path="*" element={<PublicSite notFound />} />

@@ -1,18 +1,16 @@
 import { useEffect, type ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { LogOut, X } from "lucide-react";
-import { useAuth } from "../auth/AuthContext";
-import { USER_TYPE_LABELS } from "../auth/miniApps";
+import { X } from "lucide-react";
+import AccountBar from "../auth/AccountBar";
 import "./party.css";
 
-/** Shared page frame for the private workspace pages. The account block with the only Sign out button is shown on the dashboard alone (account). */
-export function Page({ eyebrow = "Private workspace", title, subtitle, back, actions, children, narrow = false, account = false }: { eyebrow?: string; title: string; subtitle?: ReactNode; back?: { to: string; label: string }; actions?: ReactNode; children: ReactNode; narrow?: boolean; account?: boolean }) {
-  const { user, type, logout } = useAuth();
+/** Shared page frame for the private workspace pages: the account bar, then the page heading. */
+export function Page({ eyebrow = "Private workspace", title, subtitle, back, actions, children, narrow = false }: { eyebrow?: string; title: string; subtitle?: ReactNode; back?: { to: string; label: string }; actions?: ReactNode; children: ReactNode; narrow?: boolean }) {
   useEffect(() => { document.title = `${title} | Uniquem private`; }, [title]);
   return <main className={`ws-page${narrow ? " ws-narrow" : ""}`}>
+    <AccountBar />
     <header className="ws-header">
       <div>{back && <Link className="ws-back" to={back.to}>← {back.label}</Link>}<span className="ws-eyebrow">{eyebrow}</span><h1>{title}</h1>{subtitle && <p>{subtitle}</p>}</div>
-      {account && <div className="ws-user"><span className="ws-email">{user?.email}</span>{type && <span className="ws-user-type">{USER_TYPE_LABELS[type]}</span>}<button className="ws-chip" onClick={() => void logout()}><LogOut size={16} /> Sign out</button></div>}
     </header>
     {actions && <div className="ws-actions">{actions}</div>}
     {children}

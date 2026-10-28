@@ -3,7 +3,8 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { URL } from "node:url";
 import { test } from "node:test";
-import { plusOnes, flag, validateGuestPatch, validateWalkIn, validateParty, validateGuest, validateGuestBatch, planImport, fillBlanks, guestKey, LIMITS, validatePhoto, notCheckedIn, checkedInNow, doorPatchFor, docId, status, capacity, sniffImage, PHOTO, sortGuestList, compareGuests } from "../party.js";
+import { plusOnes, flag, validateGuestPatch, validateWalkIn, validateParty, validateGuest, validateGuestBatch, planImport, fillBlanks, guestKey, LIMITS, validatePhoto, notCheckedIn, checkedInNow, doorPatchFor, docId, status, capacity, PHOTO, sortGuestList, compareGuests } from "../party.js";
+import { sniffImage } from "../images.js";
 
 
 const party = { name: "  Winter   Mixer ", startsAt: "2026-12-04T02:30:00.000Z", location: " Calgary Petroleum Club ", description: "  Drinks\r\nand food ", capacity: 120, hostNotes: "Reserve table 4" };

@@ -3,26 +3,29 @@ import { useCallback, useEffect, useState } from "react";
 import { Mail, Pencil, Plus, Trash2 } from "lucide-react";
 import { deleteUser, listUsers, sendUserInvite, type UserRecord } from "../core/api";
 import { SUPER_ADMIN, USER_TYPE_LABELS, miniAppById } from "../auth/miniApps";
+import Avatar from "../auth/Avatar";
 import { Confirm, Page, messageOf } from "../party/Workspace";
 import { formatPartyDateTime } from "../party/time";
 import { UserSheet } from "./UserSheets";
 import "./users.css";
 
-const appNames = (user: UserRecord) => user.type === SUPER_ADMIN ? "Every mini app" : user.miniApps.length ? user.miniApps.map((id) => miniAppById(id).name).join(", ") : "No mini apps yet";
+const appNames = (user: UserRecord) => user.type === SUPER_ADMIN ? "Every mini app" : user.miniApps.length ? `${user.miniApps.map((id) => miniAppById(id).name).join(", ")} (and Profile)` : "Profile only";
 
 function UserCard({ user, busy, onEdit, onInvite, onDelete }: { user: UserRecord; busy: boolean; onEdit: () => void; onInvite: () => void; onDelete: () => void }) {
   return <article className="ws-user-card">
+    <Avatar src={user.thumbDataUrl} firstName={user.firstName} lastName={user.lastName} size={52} />
     <div className="ws-user-main">
-      <b className="ws-user-email">{user.email}</b>
+      <b className="ws-user-name">{user.firstName} {user.lastName}</b>
+      <span className="ws-user-email">{user.email}</span>
       <span className="ws-user-tags"><span className={`ws-user-type${user.type === SUPER_ADMIN ? " strong" : ""}`}>{USER_TYPE_LABELS[user.type]}</span>{user.you && <span className="ws-badge ok">You</span>}</span>
       <small>{appNames(user)}</small>
       <small>{user.lastSignInAt ? `Last sign-in ${formatPartyDateTime(user.lastSignInAt)}` : "Has not signed in yet"}</small>
     </div>
-    {!user.you && <div className="ws-user-actions">
+    <div className="ws-user-actions">
       <button className="ws-chip" disabled={busy} onClick={onEdit}><Pencil size={15} /> Edit</button>
-      <button className="ws-chip" disabled={busy} onClick={onInvite}><Mail size={15} /> Resend invite</button>
-      <button className="ws-chip danger-text" disabled={busy} onClick={onDelete}><Trash2 size={15} /> Delete</button>
-    </div>}
+      {!user.you && <button className="ws-chip" disabled={busy} onClick={onInvite}><Mail size={15} /> Resend invite</button>}
+      {!user.you && <button className="ws-chip danger-text" disabled={busy} onClick={onDelete}><Trash2 size={15} /> Delete</button>}
+    </div>
   </article>;
 }
 
@@ -34,13 +37,13 @@ export default function UsersApp() {
   useEffect(() => { void load(); }, [load]);
   async function run(task: () => Promise<string>, fallback: string) { setBusy(true); setError(""); setNotice(""); try { setNotice(await task()); await load(); } catch (cause) { setError(messageOf(cause, fallback)); } finally { setBusy(false); setDeleting(null); } }
   const invite = (user: UserRecord) => run(async () => { await sendUserInvite(user.uid); return `A new invite email was sent to ${user.email}.`; }, "The invite email could not be sent. Try again.");
-  const remove = (user: UserRecord) => run(async () => { await deleteUser(user.uid); return `${user.email} was deleted.`; }, "The user could not be deleted. Try again.");
-  return <Page title="Users" subtitle="Create users, choose their type and pick the mini apps each person can open." back={{ to: "/dashboard", label: "Dashboard" }} actions={<button className="ws-button" onClick={() => setSheet({ user: null })}><Plus size={18} /> Add user</button>}>
+  const remove = (user: UserRecord) => run(async () => { await deleteUser(user.uid); return `${user.firstName} ${user.lastName} (${user.email}) was deleted.`; }, "The user could not be deleted. Try again.");
+  return <Page title="Users" subtitle="Add people, edit their name and email, and choose the mini apps each can open. Photos and passwords are theirs alone." back={{ to: "/dashboard", label: "Dashboard" }} actions={<button className="ws-button" onClick={() => setSheet({ user: null })}><Plus size={18} /> Add user</button>}>
     {error && <div className="ws-status error" role="alert">{error}</div>}
     {notice && <div className="ws-status ok" role="status">{notice}</div>}
     {!users && !error && <div className="ws-empty">Loading users…</div>}
     {users && <div className="ws-user-list">{users.map((user) => <UserCard key={user.uid} user={user} busy={busy} onEdit={() => setSheet({ user })} onInvite={() => void invite(user)} onDelete={() => setDeleting(user)} />)}</div>}
     {sheet && <UserSheet user={sheet.user} onClose={() => setSheet(null)} onDone={(message) => { setSheet(null); setNotice(message); void load(); }} />}
-    {deleting && <Confirm title="Delete this user?" body={<>This permanently removes <b>{deleting.email}</b> and their sign-in. It can't be undone.</>} confirmLabel="Delete user" busy={busy} onConfirm={() => void remove(deleting)} onCancel={() => setDeleting(null)} />}
+    {deleting && <Confirm title="Delete this user?" body={<>This permanently removes <b>{deleting.firstName} {deleting.lastName}</b> ({deleting.email}), their sign-in and their photo. It can't be undone.</>} confirmLabel="Delete user" busy={busy} onConfirm={() => void remove(deleting)} onCancel={() => setDeleting(null)} />}
   </Page>;
 }

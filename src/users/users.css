@@ -1,9 +1,9 @@
 .ws-user-list{display:grid;gap:12px}
-.ws-user-card{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:14px;padding:16px 18px;border:1px solid var(--line2);border-radius:18px;background:#fff}
-.ws-user-main{display:grid;gap:5px;min-width:0}.ws-user-main small{color:var(--mute);font-size:13px}
-.ws-user-email{font-size:17px;overflow-wrap:anywhere}
+.ws-user-card{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:14px 16px;padding:16px 18px;border:1px solid var(--line2);border-radius:18px;background:#fff}
+.ws-user-main{display:grid;gap:4px;min-width:0;flex:1 1 240px}.ws-user-main small{color:var(--mute);font-size:13px}
+.ws-user-name{font-size:18px;letter-spacing:-.02em;overflow-wrap:anywhere}.ws-user-email{color:var(--mute);font-size:14px;overflow-wrap:anywhere}
 .ws-user-tags{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.ws-user-tags .ws-badge{margin-top:0}
 .ws-user-type.strong{background:var(--green);border-color:var(--green);color:#fff}
 .ws-user-actions{display:flex;flex-wrap:wrap;gap:8px}
 .ws-seg.two{grid-template-columns:repeat(2,1fr)}
-.ws-app-pick{align-items:flex-start;padding:6px 0}.ws-app-pick span{display:grid;gap:2px}.ws-app-pick small{color:var(--mute);font-size:13px;font-weight:400}
+.ws-sheet-form .ws-app-pick{display:flex;align-items:flex-start;gap:12px;padding:6px 0}.ws-app-pick input{margin-top:1px;flex:none}.ws-app-pick span{display:grid;gap:2px}.ws-app-pick small{color:var(--mute);font-size:13px;font-weight:400}
