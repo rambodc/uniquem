@@ -1,5 +1,5 @@
 import { Buffer } from "node:buffer";
-// Validation and pure helpers for the Party feature. No Firebase calls here, so everything is unit-testable.
+// Validation and pure helpers for the Party mini app. No Firebase calls here, so everything is unit-testable.
 import { HttpsError } from "firebase-functions/v2/https";
 
 export const STATUSES = ["coming", "pending", "notComing"];

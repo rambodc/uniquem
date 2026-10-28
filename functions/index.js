@@ -1,9 +1,6 @@
 import { onCall } from "firebase-functions/v2/https";
-import { defineSecret } from "firebase-functions/params";
-import { db, callable, resolveAccess, requireMiniApp, validateInquiry, text } from "./core.js";
+import { db, callable, resendApiKey, resolveAccess, requireMiniApp, validateInquiry, text } from "./core.js";
 import { sendInquiryNotification } from "./mailer.js";
-
-const resendApiKey = defineSecret("RESEND_API_KEY");
 
 export const submitContactInquiry = onCall({ ...callable, secrets: [resendApiKey] }, async (request) => {
   const inquiry = validateInquiry(request.data);

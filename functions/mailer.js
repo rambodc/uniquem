@@ -43,19 +43,44 @@ export function buildInquiryEmail(inquiry) {
   return { from: EMAIL_FROM, to: [EMAIL_TO], reply_to: inquiry.email || EMAIL_TO, subject, text: formatInquiryEmail(inquiry) };
 }
 
-/**
- * Sends the notification. `inquiryId` makes the Resend idempotency key so a
- * retried call never sends a duplicate. Throws on any non-2xx response.
- */
-export async function sendInquiryNotification(inquiry, apiKey, { inquiryId, fetchImpl = globalThis.fetch } = {}) {
+/** Posts one message to Resend. `idempotencyKey` makes a retried call safe. Throws on any non-2xx response; the key and message are never logged. */
+async function sendEmail(message, apiKey, { idempotencyKey, fetchImpl = globalThis.fetch } = {}) {
   if (!apiKey) throw new Error("RESEND_API_KEY is not configured");
   const headers = { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" };
-  if (inquiryId) headers["Idempotency-Key"] = `contact-inquiry/${inquiryId}`;
-  const response = await fetchImpl(RESEND_ENDPOINT, { method: "POST", headers, body: JSON.stringify(buildInquiryEmail(inquiry)) });
+  if (idempotencyKey) headers["Idempotency-Key"] = idempotencyKey;
+  const response = await fetchImpl(RESEND_ENDPOINT, { method: "POST", headers, body: JSON.stringify(message) });
   if (!response.ok) {
     let detail = "";
     try { const body = await response.json(); detail = body?.message ? `: ${body.message}` : ""; } catch { /* ignore non-JSON bodies */ }
     throw new Error(`Resend responded ${response.status}${detail}`);
   }
   return response.json();
+}
+
+/**
+ * Sends the notification. `inquiryId` makes the Resend idempotency key so a
+ * retried call never sends a duplicate. Throws on any non-2xx response.
+ */
+export function sendInquiryNotification(inquiry, apiKey, { inquiryId, fetchImpl } = {}) {
+  return sendEmail(buildInquiryEmail(inquiry), apiKey, { idempotencyKey: inquiryId ? `contact-inquiry/${inquiryId}` : undefined, fetchImpl });
+}
+
+/** The invite a new user receives: a one-time link to choose their own password. */
+export function buildInviteEmail({ to, invitedBy, link }) {
+  const text = [
+    "You have been added to the Uniquem private workspace.",
+    "",
+    `${invitedBy} created an account for you. Open this link to choose your password:`,
+    "",
+    link,
+    "",
+    "After that, sign in at https://uniquem.ca/signin with this email address and your new password.",
+    "The link works for about an hour. If it has expired, ask the person who invited you to send a new invite.",
+    "If you were not expecting this, you can ignore this email.",
+  ].join("\n");
+  return { from: EMAIL_FROM, to: [to], reply_to: invitedBy, subject: "Your Uniquem workspace account", text };
+}
+
+export function sendInviteEmail(invite, apiKey, { fetchImpl } = {}) {
+  return sendEmail(buildInviteEmail(invite), apiKey, { fetchImpl });
 }

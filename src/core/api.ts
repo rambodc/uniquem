@@ -25,15 +25,14 @@ export type Access = { type: UserType | null; miniApps: MiniAppId[] };
 export const getAccess = () => invoke<undefined, Access>("getAccess");
 
 // ---- Users mini app (super admins only) ----
-export type UserRecord = { uid: string; email: string; type: UserType; miniApps: MiniAppId[]; active: boolean; createdAt: string | null; updatedAt: string | null; createdBy: string; lastSignInAt: string | null; you: boolean };
+export type UserRecord = { uid: string; email: string; type: UserType; miniApps: MiniAppId[]; createdAt: string | null; updatedAt: string | null; createdBy: string; lastSignInAt: string | null; you: boolean };
 export type UserAccessInput = { type: UserType; miniApps: MiniAppId[] };
 export const listUsers = () => invoke<undefined, { users: UserRecord[] }>("listUsers");
-/** Returns a one-time link the new user opens to choose a password. Nothing is emailed. */
-export const createUser = (data: UserAccessInput & { email: string }) => invoke<typeof data, { uid: string; email: string; link: string }>("createUser", data);
+/** Creates the user and emails them an invite (a one-time link to choose their own password). `emailSent` is false if only the email failed. */
+export const createUser = (data: UserAccessInput & { email: string }) => invoke<typeof data, { uid: string; email: string; emailSent: boolean }>("createUser", data);
 export const updateUser = (uid: string, data: UserAccessInput) => invoke("updateUser", { uid, ...data });
-export const setUserActive = (uid: string, active: boolean) => invoke("setUserActive", { uid, active });
 export const deleteUser = (uid: string) => invoke("deleteUser", { uid });
-export const createSignInLink = (uid: string) => invoke<{ uid: string }, { link: string }>("createSignInLink", { uid });
+export const sendUserInvite = (uid: string) => invoke("sendUserInvite", { uid });
 export const listParties = (archived = false) => invoke<{ archived: boolean }, { parties: Party[] }>("listParties", { archived });
 export const getParty = (partyId: string) => invoke<{ partyId: string }, { party: Party }>("getParty", { partyId });
 export const createParty = (data: PartyInput) => invoke<PartyInput, { partyId: string }>("createParty", data);

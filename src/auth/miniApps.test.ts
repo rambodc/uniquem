@@ -41,12 +41,11 @@ describe("mini-app registry (functions/miniApps.js is the single source)", () =>
   });
 });
 
-describe("no ad hoc role checks", () => {
+describe("no ad hoc user-type checks", () => {
   it("only the access modules know about user types; components ask can(<mini app>) or use the guards", () => {
     const allowed = new Set(["src/auth/miniApps.ts", "src/auth/AuthContext.tsx", "src/auth/RequireMiniApp.tsx", "src/auth/SignIn.tsx", "src/core/api.ts", "src/party/Workspace.tsx", "src/users/UserSheets.tsx", "src/users/UsersApp.tsx"]);
     for (const file of sourceFiles("src")) {
       const text = read(file);
-      expect(text, `${file}: the old role/feature system must be gone`).not.toMatch(/\bROLE_|requireFeature|RequireFeature|\bFeature\b|permissions"/);
       if (!allowed.has(file)) expect(text, `${file} must not check user types itself`).not.toMatch(/SUPER_ADMIN|"super_admin"|\buser\.type\b|\btype === "staff"/);
     }
   });

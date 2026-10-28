@@ -1,26 +1,25 @@
-// Users mini app (super admins only): create users, choose their type and mini apps, deactivate, reactivate, delete.
-// Source of truth: Firestore users/{Firebase Auth uid} = { email, type, miniApps, active, createdAt, createdBy, updatedAt, updatedBy }.
+// Users mini app (super admins only): create users, choose their type and mini apps, delete them, resend an invite.
+// Source of truth: Firestore users/{Firebase Auth uid} = { email, type, miniApps, createdAt, createdBy, updatedAt, updatedBy }.
 // Browsers never touch Firestore; these callables are the only way in. Passwords are never read, stored, logged or returned.
 import { randomBytes } from "node:crypto";
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { getAuth } from "firebase-admin/auth";
 import { FieldValue } from "firebase-admin/firestore";
-import { db, callable, requireSuperAdmin, email, text } from "./core.js";
+import { db, callable, resendApiKey, requireSuperAdmin, email, text } from "./core.js";
+import { sendInviteEmail } from "./mailer.js";
 import { assertSuperAdminRemains, notYourself, userView, validateAccess } from "./users.js";
 
 const users = () => db.collection("users");
+const withEmail = { ...callable, secrets: [resendApiKey] };
 const SIGN_IN_URL = "https://uniquem.ca/signin";
 const notFound = () => new HttpsError("not-found", "That user no longer exists.");
 const isMissing = (error) => error?.code === "auth/user-not-found";
 
-/** A one-time link that lets the person choose their own password (and then sign in). It is returned to the super admin
- * who asked for it, never emailed from here and never logged. Firebase expires it after about an hour. */
-const signInLink = (address) => getAuth().generatePasswordResetLink(address, { url: SIGN_IN_URL });
-
-async function recordOf(uid) {
-  const snapshot = await users().doc(uid).get();
-  if (!snapshot.exists) throw notFound();
-  return snapshot;
+/** Emails the person a one-time link to choose their own password (Firebase expires it after about an hour).
+ * The link goes only into that email: it is never returned to the browser or logged. */
+async function sendInvite(address, invitedBy) {
+  const link = await getAuth().generatePasswordResetLink(address, { url: SIGN_IN_URL });
+  await sendInviteEmail({ to: address, invitedBy, link }, resendApiKey.value());
 }
 async function lastSignIns(uids) {
   const result = new Map();
@@ -47,71 +46,55 @@ export const listUsers = onCall(callable, async (request) => {
   return { users: list };
 });
 
-/** Creates the sign-in account and the access record together. Returns a one-time link for the new user to set a password. */
-export const createUser = onCall(callable, async (request) => {
+/** Creates the sign-in account and the access record together, then emails the invite once.
+ * If only the email fails, the user still exists and `emailSent` is false: use sendUserInvite to try again. */
+export const createUser = onCall(withEmail, async (request) => {
   const actor = await requireSuperAdmin(request);
   const address = email(request.data?.email), access = validateAccess(request.data);
   const existing = await getAuth().getUserByEmail(address).then(() => true, (error) => { if (isMissing(error)) return false; throw error; });
   if (existing) throw new HttpsError("already-exists", "A user with that email already exists.");
-  // Nobody knows this password: the person sets their own through the link. emailVerified is true because a super admin vouches for the address.
+  // Nobody knows this password: the person sets their own through the invite link. emailVerified is true because a super admin vouches for the address.
   const account = await getAuth().createUser({ email: address, password: randomBytes(32).toString("base64url"), emailVerified: true, disabled: false });
   try {
-    const link = await signInLink(address);
     const now = FieldValue.serverTimestamp();
-    await users().doc(account.uid).create({ email: address, ...access, active: true, createdAt: now, createdBy: actor.email, updatedAt: now, updatedBy: actor.email });
-    return { uid: account.uid, email: address, link };
+    await users().doc(account.uid).create({ email: address, ...access, createdAt: now, createdBy: actor.email, updatedAt: now, updatedBy: actor.email });
   } catch (error) {
     await getAuth().deleteUser(account.uid); // never leave a sign-in account without an access record
     throw error;
   }
+  let emailSent = true;
+  try { await sendInvite(address, actor.email); } catch (error) { emailSent = false; globalThis.console.error("Invite email failed", error instanceof Error ? error.message : error); }
+  return { uid: account.uid, email: address, emailSent };
 });
 
-/** Changes a user's type and mini apps. Super admins can't change themselves. */
+/** Changes a user's type and mini apps. Super admins can change each other but never themselves. */
 export const updateUser = onCall(callable, async (request) => {
   const actor = await requireSuperAdmin(request);
   const uid = text(request.data?.uid, "user", 128), access = validateAccess(request.data);
   notYourself(actor, uid, "change");
-  await changeRecord(uid, ({ transaction, ref, current, records }) => {
-    assertSuperAdminRemains(records, uid, { type: access.type, active: current.active });
+  await changeRecord(uid, ({ transaction, ref, records }) => {
+    assertSuperAdminRemains(records, uid, access.type);
     transaction.update(ref, { ...access, updatedAt: FieldValue.serverTimestamp(), updatedBy: actor.email });
   });
   return { success: true };
 });
 
-/** Deactivating blocks every sign-in and API call at once (access is checked on each call); reactivating restores the record as it was. */
-export const setUserActive = onCall(callable, async (request) => {
-  const actor = await requireSuperAdmin(request);
-  const uid = text(request.data?.uid, "user", 128);
-  if (typeof request.data?.active !== "boolean") throw new HttpsError("invalid-argument", "Choose whether the user is active.");
-  const active = request.data.active;
-  notYourself(actor, uid, "deactivate");
-  await changeRecord(uid, ({ transaction, ref, current, records }) => {
-    assertSuperAdminRemains(records, uid, { type: current.type, active });
-    transaction.update(ref, { active, updatedAt: FieldValue.serverTimestamp(), updatedBy: actor.email });
-  });
-  await getAuth().updateUser(uid, { disabled: !active });
-  if (!active) await getAuth().revokeRefreshTokens(uid);
-  return { success: true };
-});
-
-/** Permanently removes the sign-in account and the record. Only a deactivated user can be deleted. */
+/** Permanently removes the sign-in account and the access record (access ends on the user's next call). Super admins can't delete themselves. */
 export const deleteUser = onCall(callable, async (request) => {
   const actor = await requireSuperAdmin(request);
   const uid = text(request.data?.uid, "user", 128);
   notYourself(actor, uid, "delete");
-  await changeRecord(uid, ({ current, records }) => {
-    if (current.active) throw new HttpsError("failed-precondition", "Deactivate this user before deleting them.");
-    assertSuperAdminRemains(records, uid, null);
-  });
-  await getAuth().deleteUser(uid).catch((error) => { if (!isMissing(error)) throw error; });
+  await changeRecord(uid, ({ records }) => assertSuperAdminRemains(records, uid, null));
+  await getAuth().deleteUser(uid).catch((error) => { if (!isMissing(error)) throw error; }); // first, so a failed attempt can simply be repeated
   await users().doc(uid).delete();
   return { success: true };
 });
 
-/** A fresh one-time link for an active user who has not set a password yet or has forgotten it. */
-export const createSignInLink = onCall(callable, async (request) => {
-  await requireSuperAdmin(request);
-  const uid = text(request.data?.uid, "user", 128), record = (await recordOf(uid)).data();
-  if (record.active !== true) throw new HttpsError("failed-precondition", "Reactivate this user first.");
-  return { link: await signInLink(record.email) };
+/** Emails a fresh invite (a new one-time link to choose a password) to an existing user. */
+export const sendUserInvite = onCall(withEmail, async (request) => {
+  const actor = await requireSuperAdmin(request);
+  const snapshot = await users().doc(text(request.data?.uid, "user", 128)).get();
+  if (!snapshot.exists) throw notFound();
+  try { await sendInvite(snapshot.data().email, actor.email); } catch (error) { globalThis.console.error("Invite email failed", error instanceof Error ? error.message : error); throw new HttpsError("unavailable", "The invite email could not be sent. Try again."); }
+  return { success: true };
 });

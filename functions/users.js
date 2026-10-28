@@ -19,18 +19,17 @@ export function validateAccess(value) {
   return { type: STAFF, miniApps: ASSIGNABLE_MINI_APP_IDS.filter((id) => miniApps.includes(id)) };
 }
 
-/** A super admin can't change, deactivate or delete their own account (that could lock everyone out). */
+/** A super admin can't change or delete their own account (that could lock everyone out). */
 export function notYourself(actor, uid, what) { if (actor.uid === uid) throw new HttpsError("failed-precondition", `You can't ${what} your own account.`); }
 
-/** `records` are every user record ({ uid, type, active }). `after` is how the changed account will look ({ type, active }),
- * or null when it is being deleted. Throws unless at least one active super admin is left. */
+/** `records` are every user record ({ uid, type }). `after` is the changed account's new type, or null when it is being deleted.
+ * Throws unless at least one super admin is left. */
 export function assertSuperAdminRemains(records, uid, after) {
-  const others = records.filter((record) => record.uid !== uid && record.active === true && record.type === SUPER_ADMIN).length;
-  const changed = after && after.active === true && after.type === SUPER_ADMIN ? 1 : 0;
-  if (others + changed === 0) throw new HttpsError("failed-precondition", "There must always be at least one active super admin.");
+  const others = records.filter((record) => record.uid !== uid && record.type === SUPER_ADMIN).length;
+  if (others + (after === SUPER_ADMIN ? 1 : 0) === 0) throw new HttpsError("failed-precondition", "There must always be at least one super admin.");
 }
 
 /** What the Users screen needs about one record. */
 export function userView(uid, data, lastSignInAt) {
-  return { uid, email: data.email, type: data.type, miniApps: data.miniApps, active: data.active, createdAt: data.createdAt?.toDate?.().toISOString() ?? null, updatedAt: data.updatedAt?.toDate?.().toISOString() ?? null, createdBy: data.createdBy, lastSignInAt: lastSignInAt ?? null };
+  return { uid, email: data.email, type: data.type, miniApps: data.miniApps, createdAt: data.createdAt?.toDate?.().toISOString() ?? null, updatedAt: data.updatedAt?.toDate?.().toISOString() ?? null, createdBy: data.createdBy, lastSignInAt: lastSignInAt ?? null };
 }
