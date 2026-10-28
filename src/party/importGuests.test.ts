@@ -15,9 +15,9 @@ describe("parseGuestImport", () => {
     const { rows, problems, toAdd } = parseGuestImport("Ada, Lovelace, Engines Ltd, Rambod, coming\nGrace,Hopper\n\n  Alan , Turing , , , not coming  ");
     expect(problems).toEqual([]);
     expect(toAdd).toEqual([
-      { firstName: "Ada", lastName: "Lovelace", company: "Engines Ltd", invitedBy: "Rambod", status: "coming" },
-      { firstName: "Grace", lastName: "Hopper", company: "", invitedBy: "", status: "pending" },
-      { firstName: "Alan", lastName: "Turing", company: "", invitedBy: "", status: "notComing" },
+      { firstName: "Ada", lastName: "Lovelace", company: "Engines Ltd", invitedBy: "Rambod", notes: "", status: "coming" },
+      { firstName: "Grace", lastName: "Hopper", company: "", invitedBy: "", notes: "", status: "pending" },
+      { firstName: "Alan", lastName: "Turing", company: "", invitedBy: "", notes: "", status: "notComing" },
     ]);
     expect(rows.map((row) => row.line)).toEqual([1, 2, 4]);
   });
@@ -31,12 +31,28 @@ describe("parseGuestImport", () => {
     const { toAdd, problems } = parseGuestImport("First name\tLast name\tCompany\tInvited by / Type\tStatus\nAda\tLovelace");
     expect(problems).toEqual([]); expect(toAdd).toHaveLength(1);
   });
+  it("reads an optional 6th field as notes and keeps 5-field lines working", () => {
+    const { toAdd, problems } = parseGuestImport("Ada, Lovelace, Co, Work, coming, Allergic to nuts\nGrace, Hopper, Navy, Friends, pending\nAlan\tTuring\t\tClient\tcoming\tVIP, plus-one, vegan\nLinus, Torvalds, , , , ");
+    expect(problems).toEqual([]);
+    expect(toAdd.map((guest) => guest.notes)).toEqual(["Allergic to nuts", "", "VIP, plus-one, vegan", ""]);
+    expect(toAdd[0]).toMatchObject({ invitedBy: "Work", status: "coming" });
+  });
+  it("rejects notes that are too long", () => {
+    const { problems } = parseGuestImport("Ada, Lovelace, , , , " + "x".repeat(501));
+    expect(problems[0].reason).toBe("The notes is too long (max 500 characters).");
+  });
+  it("fills blank notes on an existing guest but never overwrites", () => {
+    const { rows, toUpdate } = parseGuestImport("Ada, Lovelace, , , , Nut allergy\nGrace, Hopper, , , , New note", [
+      { firstName: "Ada", lastName: "Lovelace", notes: "" }, { firstName: "Grace", lastName: "Hopper", notes: "VIP" }]);
+    expect(rows.map((row) => row.fills)).toEqual([["notes"], []]);
+    expect(toUpdate).toHaveLength(1);
+  });
   it("names the invited by / type field when it is too long", () => {
     const { problems } = parseGuestImport("Ada, Lovelace, Co, " + "x".repeat(121));
     expect(problems[0].reason).toBe("The invited by / type is too long (max 120 characters).");
   });
   it("reports problem lines with their line number and does not add them", () => {
-    const { toAdd, problems } = parseGuestImport("Ada, Lovelace\nMadonna\nJohn Smith\nBob, Jones, Co, Me, whenever\n, Nobody\nA, B, C, D, coming, extra\n" + "x".repeat(81) + ", Long");
+    const { toAdd, problems } = parseGuestImport("Ada, Lovelace\nMadonna\nJohn Smith\nBob, Jones, Co, Me, whenever\n, Nobody\nA, B, C, D, coming, note, extra\n" + "x".repeat(81) + ", Long");
     expect(toAdd.map((guest) => guest.firstName)).toEqual(["Ada"]);
     expect(problems.map((problem) => problem.line)).toEqual([2, 3, 4, 5, 6, 7]);
     expect(problems[1].reason).toMatch(/comma or tab/);

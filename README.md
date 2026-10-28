@@ -45,13 +45,13 @@ All pages are private (`noindex`, no analytics, no screensaver) and every read/w
 functions in `functions/party-functions.js`; Firestore and Storage rules stay deny-all for browsers.
 
 - Data: `parties/{partyId}` (name, startsAt, location, description, capacity, hostNotes, photoPath, thumbDataUrl, timestamps)
-  and `parties/{partyId}/guests/{guestId}` (firstName, lastName, company, invitedBy, status `coming|pending|notComing`,
+  and `parties/{partyId}/guests/{guestId}` (firstName, lastName, company, invitedBy ("Invited by / Type"), notes (optional, max 500), status `coming|pending|notComing`,
   checkedIn, checkedInAt, searchKey, timestamps). Theme photos are stored in Storage under `party-photos/{partyId}/`
   and returned only to signed-in staff through `getPartyPhoto`.
 - Bulk import (party page, "Import guests"): one guest per line, fields separated by commas or tabs (spreadsheet paste) in the
-  order first name, last name, company, invited by, status. Only the names are required; status is coming, pending or not coming
+  order first name, last name, company, invited by / type, status, notes. Only the names are required (notes can only contain commas in a tab/spreadsheet paste); status is coming, pending or not coming
   (friendly variants like "yes" or "not-coming" work; blank means pending). A header row is ignored. Guests whose first + last
-  name already exist on the party (any case) are skipped. Max 200 per `importGuests` call; the page sends longer lists in chunks.
+  name already exist on the party (any case) are never duplicated; their blank invited by / type, company or notes is filled in, existing values never overwritten. Max 200 per `importGuests` call; the page sends longer lists in chunks.
 - Times are entered and shown in Calgary time (America/Edmonton).
 
 ## Users, roles and features

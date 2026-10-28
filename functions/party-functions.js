@@ -17,7 +17,7 @@ function partyView(doc) {
 }
 function guestView(doc) {
   const data = doc.data();
-  return { id: doc.id, firstName: data.firstName, lastName: data.lastName, company: data.company ?? "", invitedBy: data.invitedBy ?? "", status: data.status, checkedIn: data.checkedIn === true, checkedInAt: iso(data.checkedInAt), createdAt: iso(data.createdAt), updatedAt: iso(data.updatedAt) };
+  return { id: doc.id, firstName: data.firstName, lastName: data.lastName, company: data.company ?? "", invitedBy: data.invitedBy ?? "", notes: data.notes ?? "", status: data.status, checkedIn: data.checkedIn === true, checkedInAt: iso(data.checkedInAt), createdAt: iso(data.createdAt), updatedAt: iso(data.updatedAt) };
 }
 async function loadParty(partyId) {
   const snapshot = await parties().doc(partyId).get();
@@ -125,15 +125,15 @@ export const addGuest = onCall(callable, async (request) => {
 });
 /**
  * Bulk add (staff only). New names are added. A name already on the party (first + last, any case) is never duplicated:
- * its blank "invited by" / company is filled in from the import, existing values are never overwritten, and status and check-in
+ * its blank "invited by / type", company or notes is filled in from the import, existing values are never overwritten, and status and check-in
  * data are never touched. Returns { added, updated, skipped }.
  */
 export const importGuests = onCall(callable, async (request) => {
   const staff = await requireFeature(request, "party");
   const partyId = docId(request.data?.partyId, "party"), guests = validateGuestBatch(request.data?.guests);
   await loadParty(partyId);
-  const docs = (await guestsOf(partyId).select("firstName", "lastName", "company", "invitedBy").limit(LIMITS.guestsPerParty).get()).docs;
-  const existing = docs.map((doc) => ({ id: doc.id, key: guestKey({ firstName: String(doc.get("firstName") ?? ""), lastName: String(doc.get("lastName") ?? "") }), company: String(doc.get("company") ?? ""), invitedBy: String(doc.get("invitedBy") ?? "") }));
+  const docs = (await guestsOf(partyId).select("firstName", "lastName", "company", "invitedBy", "notes").limit(LIMITS.guestsPerParty).get()).docs;
+  const existing = docs.map((doc) => ({ id: doc.id, key: guestKey({ firstName: String(doc.get("firstName") ?? ""), lastName: String(doc.get("lastName") ?? "") }), company: String(doc.get("company") ?? ""), invitedBy: String(doc.get("invitedBy") ?? ""), notes: String(doc.get("notes") ?? "") }));
   const { toAdd, updates, skipped } = planImport(guests, existing);
   if (existing.length + toAdd.length > LIMITS.guestsPerParty) throw new HttpsError("resource-exhausted", `A party can have up to ${LIMITS.guestsPerParty} guests.`);
   let updated = 0;
