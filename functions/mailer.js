@@ -66,8 +66,10 @@ export function sendInquiryNotification(inquiry, apiKey, { inquiryId, fetchImpl 
 }
 
 /** The invite a new user receives: a one-time link to choose their own password. */
-export function buildInviteEmail({ to, invitedBy, link }) {
+export function buildInviteEmail({ to, firstName, invitedBy, link }) {
   const text = [
+    `Hi ${firstName},`,
+    "",
     "You have been added to the Uniquem private workspace.",
     "",
     `${invitedBy} created an account for you. Open this link to choose your password:`,

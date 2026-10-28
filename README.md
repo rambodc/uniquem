@@ -39,7 +39,7 @@ The existing `google-site-verification` meta tag in `index.html` must stay. Extr
 
 ## Private workspace: dashboard and Party
 
-After sign-in everyone lands on `/dashboard`, which shows one tile per mini app the account may open (today: Party, Contact form, and Users for super admins). Party lives at `/party`
+After sign-in everyone lands on `/dashboard`, which shows one tile per mini app the account may open (today: Party, Contact form, Profile for everyone, and Users for super admins). Party lives at `/party`
 (list, create/edit, guest list, `/party/:id/check-in` door screen).
 All pages are private (`noindex`, no analytics, no screensaver) and every read/write goes through callable
 functions in `functions/party-functions.js`; Firestore and Storage rules stay deny-all for browsers.
@@ -74,30 +74,39 @@ one record per person: `users/{Firebase Auth uid}` =
 | Field | Meaning |
 | --- | --- |
 | `email` | lowercase; must equal the signed-in account's (verified) email |
+| `firstName`, `lastName` | required, 1 to 60 characters; set only by a super admin (the person can't change them) |
 | `type` | `"super_admin"` or `"staff"` |
-| `miniApps` | staff only: the ids of the mini apps they may open. Always `[]` for a super admin (they get every mini app automatically, including ones added later) |
+| `miniApps` | staff only: the ids of the *assignable* mini apps they may open. Always `[]` for a super admin (they get every mini app automatically, including ones added later) |
+| `photoPath`, `thumbDataUrl` | the person's own profile photo: full 256px JPEG in Storage at `profile-photos/{uid}/`, 96px thumbnail kept here; both `null` without a photo. Set only by the person |
 | `createdAt`, `createdBy`, `updatedAt`, `updatedBy` | who and when (emails) |
 
-A missing, mismatched or unknown-type record means no access; nothing is guessed or defaulted. There is no hardcoded owner.
+A missing record, a mismatched email, an unknown type or missing names means no access; nothing is guessed or defaulted. There is no hardcoded owner.
 
-**Mini apps** are listed once, in `functions/miniApps.js` (`id`, `name`, `description`, `route`, `icon`, `superAdminOnly`), which both the Cloud Functions and the
-browser read. Current mini apps: `party` (Party), `contact` (Contact form), `users` (Users, `superAdminOnly`: staff can never be given it). The dashboard tiles,
+**Mini apps** are listed once, in `functions/miniApps.js` (`id`, `name`, `description`, `route`, `icon`, `accent`, `superAdminOnly`, `everyone`), which both the Cloud Functions and the
+browser read. Current mini apps: `party` (Party), `contact` (Contact form), `users` (Users, `superAdminOnly`: staff can never be given it), `profile` (Profile, `everyone`: every user has it automatically; it is never assigned and never a checkbox in the Users screen). `accent` is the tile colour on the dashboard (green-led palette, no yellow). The dashboard tiles,
 route guards (`<RequireMiniApp app="...">` in `src/App.tsx`), private-path lists (analytics, SEO, `?next=`) and server checks all come from that list.
 The server checks every call: `requireMiniApp(request, "<id>")` for a mini app's callables and `requireSuperAdmin(request)` for the Users callables (`functions/core.js`);
-the browser only hides screens. `getAccess` returns `{ type, miniApps }` for the signed-in account.
+the browser only hides screens. `getAccess` returns `{ type, miniApps, profile: { firstName, lastName, email, thumbDataUrl } }` for the signed-in account.
 
 **Add a mini app:** (1) add one entry to `MINI_APPS` in `functions/miniApps.js`; (2) guard its callables with `requireMiniApp(request, "<id>")`;
 (3) wrap its routes in `<RequireMiniApp app="<id>" />` in `src/App.tsx` and add `/<route>` and `/<route>/**` X-Robots-Tag noindex headers in `firebase.json`;
-(4) add its icon to `ICONS` in `src/auth/miniApps.ts` if it is a new icon. `npm test` and `npm test --prefix functions` fail if any step is missed.
+(4) add its icon to `ICONS` in `src/auth/miniApps.ts` if it is a new icon. The dashboard tile (icon, accent colour) comes from the registry entry. `npm test` and `npm test --prefix functions` fail if any step is missed.
 
-**Users mini app** (`/users`, super admins only; `functions/users-functions.js`): list users, add a user (email, type, mini apps), edit type and mini apps,
+**Users mini app** (`/users`, super admins only; `functions/users-functions.js`): list users (name, small avatar, email), add a user (first and last name, email, type, mini apps), edit names, email, type and mini apps,
 resend an invite, and delete a user (with a confirm step; removes the `users/{uid}` record and the Firebase Auth account, so access ends on their next call).
 - **Adding a user** creates the Firebase Auth account (random password nobody knows, email marked verified) and the `users/{uid}` record together, then emails the
   person an invite once through Resend (from `Uniquem Website <website@irobotx.io>`, same `RESEND_API_KEY` secret as the contact form). The email holds a one-time
   Firebase link where they choose their own password, then they sign in at `/signin`. The link works for about an hour; "Resend invite" sends a new one. The link is only ever
   in that email: it is not shown in the app and not logged. If the email fails, the user still exists and the screen says so.
-- Super admins can edit or delete each other, but never their own account, and the last super admin can never be demoted or deleted.
+- Super admins can edit or delete each other. They can fix their own name, but their own email, type and mini apps need another super admin, and nobody can delete themselves. The last super admin can never be demoted or deleted.
+- **Changing an email** updates the Firebase Auth account first (it must stay unique; the record's email must equal the account's), then the record; if the record can't be saved the account is put back. The person's sessions are revoked, so they sign in again with the new email.
+- **Super admins can't change a password or a profile photo**: no callable does it. The photo and the password belong to the person (see Profile). Deleting a user also deletes their photo.
 - Staff can never be given the Users mini app: the server rejects `users` in a staff mini-app list, and every Users callable requires a super admin.
 
+**Profile mini app** (`/profile`, everyone; `functions/profile-functions.js`): shows the person's first name, last name and email (read-only), their photo, and a change-password form.
+- **Photo:** the browser centre-crops to a 256px JPEG plus a 96px JPEG thumbnail (the file may be JPEG, PNG or WebP up to 5 MB). `setMyPhoto` re-checks both on the server (real JPEG bytes, at most 200 KB and 16 KB), saves the full one in Storage under `profile-photos/{uid}/` and keeps the thumbnail on the record. `getMyPhoto` returns the person's own photo as a data URL; `removeMyPhoto` deletes it. These callables only ever act on the caller (they take no uid), Storage rules stay deny-all, and the photo never has a public URL.
+- **Password:** done in the browser with Firebase Auth (`reauthenticateWithCredential` with the current password, then `updatePassword`; at least 8 characters). Passwords never touch our functions or logs.
+- **Forgot password** on `/signin` calls Firebase's `sendPasswordResetEmail` (link returns to `https://uniquem.ca/signin`) and always shows the same neutral confirmation, whether or not the account exists.
+
 **First super admin / recovery:** if every super admin is locked out, create the record by hand in the console: Firestore `users/{uid of the Auth account}` with
-`email` (lowercase), `type: "super_admin"`, `miniApps: []` plus the four audit fields.
+`email` (lowercase), `firstName`, `lastName`, `type: "super_admin"`, `miniApps: []`, `photoPath: null`, `thumbDataUrl: null` plus the four audit fields.

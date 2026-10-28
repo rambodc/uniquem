@@ -1,19 +1,23 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { onAuthStateChanged, signOut, type User } from "firebase/auth";
 import { auth, authReady } from "../core/firebase";
-import { getAccess, type Access } from "../core/api";
+import { getAccess, type Access, type Profile } from "../core/api";
 import type { MiniAppId, UserType } from "./miniApps";
 type AuthState = {
   user: User | null; loading: boolean;
   /** The signed-in account's user type, or null while loading / when the account has no access. */
   type: UserType | null; miniApps: MiniAppId[];
+  /** Names, email and small avatar of the signed-in account; null while loading or without access. */
+  profile: Profile | null;
+  /** Asks the server again who this account is (after the photo changes, so the header avatar updates). */
+  refreshAccess: () => Promise<void>;
   /** True while the server is still being asked what this account may open. */
   accessLoading: boolean;
   /** Whether the signed-in account may open a mini app. The server enforces this again on every call. */
   can: (app: MiniAppId) => boolean;
   logout: () => Promise<void>;
 };
-const NO_ACCESS: Access = { type: null, miniApps: [] };
+const NO_ACCESS: Access = { type: null, miniApps: [], profile: null };
 const Context = createContext<AuthState | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null), [loading, setLoading] = useState(true), [access, setAccess] = useState<Access | null>(null), [accessLoading, setAccessLoading] = useState(false);
@@ -28,7 +32,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [uid, verified]);
   const value = useMemo<AuthState>(() => {
     const miniApps = access?.miniApps ?? [];
-    return { user, loading, type: access?.type ?? null, miniApps, accessLoading: Boolean(user && verified && (accessLoading || !access)), can: (app) => miniApps.includes(app), logout: () => signOut(auth) };
+    return { user, loading, type: access?.type ?? null, miniApps, profile: access?.profile ?? null, refreshAccess: async () => setAccess(await getAccess()), accessLoading: Boolean(user && verified && (accessLoading || !access)), can: (app) => miniApps.includes(app), logout: () => signOut(auth) };
   }, [user, loading, verified, access, accessLoading]);
   return <Context.Provider value={value}>{children}</Context.Provider>;
 }

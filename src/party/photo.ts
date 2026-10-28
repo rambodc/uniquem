@@ -14,7 +14,7 @@ async function render(bitmap: ImageBitmap, maxSide: number, type: string, qualit
   if (!blob) throw new Error("This image could not be prepared.");
   return blob;
 }
-const toBase64 = (blob: Blob) => new Promise<string>((resolve, reject) => { const reader = new FileReader(); reader.onerror = () => reject(new Error("This image could not be read.")); reader.onload = () => resolve(String(reader.result).split(",")[1] ?? ""); reader.readAsDataURL(blob); });
+export const toBase64 = (blob: Blob) => new Promise<string>((resolve, reject) => { const reader = new FileReader(); reader.onerror = () => reject(new Error("This image could not be read.")); reader.onload = () => resolve(String(reader.result).split(",")[1] ?? ""); reader.readAsDataURL(blob); });
 /** Resizes in the browser (also strips camera metadata): a 1600px photo and a small thumbnail, as base64. */
 export async function preparePhoto(file: File): Promise<{ photo: string; thumb: string; previewUrl: string }> {
   const problem = checkPhotoFile(file); if (problem) throw new Error(problem);

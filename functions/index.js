@@ -19,13 +19,16 @@ export const listContactInquiries = onCall(callable, async (request) => { await 
 export const archiveContactInquiry = onCall(callable, async (request) => { await requireMiniApp(request, "contact"); const id = text(request.data?.inquiryId, "inquiry", 100), ref = db.collection("contactInquiries").doc(id); await ref.update({ archived: true }); return { success: true }; });
 export const restoreContactInquiry = onCall(callable, async (request) => { await requireMiniApp(request, "contact"); const id = text(request.data?.inquiryId, "inquiry", 100), ref = db.collection("contactInquiries").doc(id); await ref.update({ archived: false }); return { success: true }; });
 
-/** What the signed-in account may open: its type and the mini apps (ids from miniApps.js) it has. type is null without access. */
+/** What the signed-in account may open (its type and the mini app ids from miniApps.js) and who it is (names, email, small avatar).
+ * type is null and profile is null without access. */
 export const getAccess = onCall(callable, async (request) => {
   const access = await resolveAccess(request);
-  return { type: access?.type ?? null, miniApps: access?.miniApps ?? [] };
+  return { type: access?.type ?? null, miniApps: access?.miniApps ?? [], profile: access?.profile ?? null };
 });
 
 // Party mini app: see party-functions.js
 export * from "./party-functions.js";
+// Profile mini app (everyone, own photo only): see profile-functions.js
+export * from "./profile-functions.js";
 // Users mini app (super admins only): see users-functions.js
 export * from "./users-functions.js";

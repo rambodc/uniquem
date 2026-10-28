@@ -1,10 +1,10 @@
-import { Buffer } from "node:buffer";
 // Validation and pure helpers for the Party mini app. No Firebase calls here, so everything is unit-testable.
 import { HttpsError } from "firebase-functions/v2/https";
+import { decodeImage } from "./images.js";
 
 export const STATUSES = ["coming", "pending", "notComing"];
 export const LIMITS = { name: 120, location: 200, description: 2000, hostNotes: 2000, firstName: 80, lastName: 80, company: 120, invitedBy: 120, notes: 500, plusOnesMax: 10, capacityMax: 100000, guestsPerParty: 2000, importPerCall: 200 };
-export const PHOTO = { maxBytes: 5 * 1024 * 1024, thumbMaxBytes: 30 * 1024, types: { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" } };
+export const PHOTO = { maxBytes: 5 * 1024 * 1024, thumbMaxBytes: 30 * 1024 };
 const MIN_TIME = Date.UTC(2020, 0, 1), MAX_TIME = Date.UTC(2100, 0, 1);
 const invalid = (message) => new HttpsError("invalid-argument", message);
 const isObject = (value) => Boolean(value) && typeof value === "object" && !Array.isArray(value);
@@ -168,22 +168,6 @@ export function planImport(guests, existing) {
   return { toAdd, updates: updated, skipped: guests.length - toAdd.length - updated.length };
 }
 
-const hasBytes = (buffer, bytes, offset = 0) => bytes.every((byte, index) => buffer[offset + index] === byte);
-/** Checks the real file signature, not just the type the browser claims. */
-export function sniffImage(buffer) {
-  if (buffer.length > 12 && hasBytes(buffer, [0xff, 0xd8, 0xff])) return "image/jpeg";
-  if (buffer.length > 12 && hasBytes(buffer, [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])) return "image/png";
-  if (buffer.length > 12 && hasBytes(buffer, [0x52, 0x49, 0x46, 0x46]) && hasBytes(buffer, [0x57, 0x45, 0x42, 0x50], 8)) return "image/webp";
-  return null;
-}
-function decodeImage(base64, label, maxBytes) {
-  if (typeof base64 !== "string" || !base64 || base64.length > Math.ceil(maxBytes * 4 / 3) + 8 || !/^[A-Za-z0-9+/]+={0,2}$/.test(base64)) throw invalid(`The ${label} is invalid or too large.`);
-  const buffer = Buffer.from(base64, "base64");
-  if (buffer.length > maxBytes) throw invalid(`The ${label} is too large.`);
-  const type = sniffImage(buffer);
-  if (!type) throw invalid("Photos must be JPEG, PNG or WebP images.");
-  return { buffer, type, ext: PHOTO.types[type] };
-}
 /** A full-size photo plus a small thumbnail (both made by the browser, both re-checked here). */
 export function validatePhoto(value) {
   if (!isObject(value)) throw invalid("The photo is invalid.");

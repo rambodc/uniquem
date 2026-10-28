@@ -53,3 +53,5 @@
   .about-hero .home-well-depth{right:10px;top:38%;height:36%}
   .about-hero .home-well-scene::after{background:linear-gradient(0deg,#03131d 0,rgba(3,19,29,.86) 42%,rgba(3,19,29,.2) 78%),radial-gradient(circle at 50% 36%,rgba(3,19,29,.03),rgba(3,19,29,.35) 54%,rgba(3,19,29,.7) 100%)}
 }
+
+.auth-link{display:block;margin:18px auto 0;padding:6px 4px;border:0;background:none;color:#7fe6cf;font-size:14px;text-decoration:underline;text-underline-offset:3px}.auth-link:hover,.auth-link:focus-visible{color:#fff}.auth-card .status{margin-top:16px}

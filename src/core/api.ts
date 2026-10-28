@@ -20,19 +20,29 @@ export type GuestDoorPatch = Partial<Pick<GuestInput, "notes" | "status" | "vip"
 /** A walk-in is added and checked in at the door in one step. */
 export type WalkInInput = { firstName: string; lastName: string; company: string; invitedBy: string; notes: string; plusOnes: number; vip?: boolean };
 export type GuestList = { party: Party; guests: Guest[]; serverTime: string };
-/** What the server says the signed-in account may open. `type` is null when the account has no active access record. */
-export type Access = { type: UserType | null; miniApps: MiniAppId[] };
+/** Who the signed-in account is: names and email (changed only by a super admin) and the small avatar (changed only by the person). */
+export type Profile = { firstName: string; lastName: string; email: string; thumbDataUrl: string | null };
+/** What the server says the signed-in account may open and who it is. `type` and `profile` are null when the account has no active access record. */
+export type Access = { type: UserType | null; miniApps: MiniAppId[]; profile: Profile | null };
 export const getAccess = () => invoke<undefined, Access>("getAccess");
 
 // ---- Users mini app (super admins only) ----
-export type UserRecord = { uid: string; email: string; type: UserType; miniApps: MiniAppId[]; createdAt: string | null; updatedAt: string | null; createdBy: string; lastSignInAt: string | null; you: boolean };
+export type UserRecord = { uid: string; firstName: string; lastName: string; thumbDataUrl: string | null; email: string; type: UserType; miniApps: MiniAppId[]; createdAt: string | null; updatedAt: string | null; createdBy: string; lastSignInAt: string | null; you: boolean };
 export type UserAccessInput = { type: UserType; miniApps: MiniAppId[] };
+/** Everything a super admin sets about a person. The password and the photo are never part of it: only the person changes those. */
+export type UserInput = UserAccessInput & { firstName: string; lastName: string; email: string };
 export const listUsers = () => invoke<undefined, { users: UserRecord[] }>("listUsers");
 /** Creates the user and emails them an invite (a one-time link to choose their own password). `emailSent` is false if only the email failed. */
-export const createUser = (data: UserAccessInput & { email: string }) => invoke<typeof data, { uid: string; email: string; emailSent: boolean }>("createUser", data);
-export const updateUser = (uid: string, data: UserAccessInput) => invoke("updateUser", { uid, ...data });
+export const createUser = (data: UserInput) => invoke<typeof data, { uid: string; email: string; emailSent: boolean }>("createUser", data);
+export const updateUser = (uid: string, data: UserInput) => invoke("updateUser", { uid, ...data });
 export const deleteUser = (uid: string) => invoke("deleteUser", { uid });
 export const sendUserInvite = (uid: string) => invoke("sendUserInvite", { uid });
+
+// ---- Profile mini app (everyone, own photo only) ----
+/** `photo` is a 256px JPEG and `thumb` a 96px JPEG, both base64 and both made in the browser. */
+export const setMyPhoto = (photo: { photo: string; thumb: string }) => invoke<typeof photo, { thumbDataUrl: string }>("setMyPhoto", photo);
+export const removeMyPhoto = () => invoke("removeMyPhoto");
+export const getMyPhoto = () => invoke<undefined, { dataUrl: string | null }>("getMyPhoto");
 export const listParties = (archived = false) => invoke<{ archived: boolean }, { parties: Party[] }>("listParties", { archived });
 export const getParty = (partyId: string) => invoke<{ partyId: string }, { party: Party }>("getParty", { partyId });
 export const createParty = (data: PartyInput) => invoke<PartyInput, { partyId: string }>("createParty", data);
