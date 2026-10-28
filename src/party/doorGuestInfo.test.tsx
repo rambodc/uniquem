@@ -21,13 +21,14 @@ describe("door guest info", () => {
     expect(html({ status: "notComing" })).toContain("Marked not coming");
     expect(html({ status: "pending" })).toContain("Marked pending");
   });
-  it("shows VIP, plus-ones (planned and arrived) and a note icon when collapsed", () => {
+  it("shows VIP and plus-ones (planned and arrived)", () => {
     const out = html({ vip: true, plusOnes: 2, checkedIn: true, checkedInAt: "2026-07-11T01:30:15.000Z", plusOnesArrived: 1 });
     expect(out).toContain("VIP"); expect(out).toContain("+2"); expect(out).toContain("2 planned · 1 arrived");
-    const collapsed = renderToStaticMarkup(<DoorGuestInfo guest={guest({ vip: true, plusOnes: 1 })} expanded={false} />);
-    expect(collapsed).toContain("Has a note"); expect(collapsed).toContain("VIP"); expect(collapsed).toContain("Engines Ltd · Client");
-    expect(collapsed).not.toContain("Vegan"); expect(collapsed).not.toContain("<dl");
-    expect(renderToStaticMarkup(<DoorGuestInfo guest={guest({ notes: "" })} expanded={false} />)).not.toContain("Has a note");
+  });
+  it("always shows the full info and the whole note: there is no collapsed state", () => {
+    const note = "Severe nut allergy. Arriving with her sister and the CEO of Cenovus; seat near the exit. ".repeat(5).trim();
+    const out = html({ notes: note, vip: true, plusOnes: 1 });
+    expect(out).toContain(note); expect(out).toContain("<dl"); expect(out).not.toContain("Has a note"); expect(out).not.toContain("aria-expanded");
   });
   it("shows no VIP or plus-one marks for a plain guest", () => { const out = html(); expect(out).not.toContain("VIP"); expect(out).not.toContain("Plus-ones"); });
   it("still shows all info plus the check-in time after check-in", () => {

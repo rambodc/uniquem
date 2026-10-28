@@ -4,7 +4,8 @@ import { Link, useParams } from "react-router-dom";
 import { Search, UserPlus, X } from "lucide-react";
 import { addWalkIn, checkInGuest, listGuests, undoCheckIn, updateGuestAtDoor, type Guest, type GuestDoorPatch, type GuestList, type WalkInInput } from "../core/api";
 import { messageOf } from "./Workspace";
-import { arrivedGuests, checkedInMessage, doorCounts, guestName, mergePolled, optimisticGuest, searchResults, splitName } from "./logic";
+import { arrivedGuests, checkedInMessage, guestName, mergePolled, optimisticGuest, searchResults, splitName } from "./logic";
+import { summarize } from "./summary";
 import { formatClockShort } from "./time";
 import DoorRow, { type RowBusy } from "./DoorRow";
 import DoorBrowse from "./DoorBrowse";
@@ -64,15 +65,14 @@ export default function CheckIn() {
   }
   const openFirst = () => (resultsRef.current?.querySelector<HTMLButtonElement>(".ws-checkin:not(:disabled)") ?? resultsRef.current?.querySelector<HTMLButtonElement>(".ws-undo:not(:disabled)"))?.focus();
 
-  const guests = data?.guests ?? [], term = query.trim(), counts = doorCounts(guests), arrived = arrivedGuests(guests), results = term ? searchResults(guests, term) : [];
+  const guests = data?.guests ?? [], term = query.trim(), summary = summarize(guests, data?.party.capacity ?? null), arrived = arrivedGuests(guests), results = term ? searchResults(guests, term) : [];
   const editingGuest = editing ? guests.find((guest) => guest.id === editing) ?? null : null;
-  const rowFor = (compact: boolean, fromSearch = false) => (guest: Guest) => <DoorRow key={guest.id} guest={guest} busy={pending.get(guest.id)} armed={armed === guest.id} arriving={arrivingFor(guest)} compact={compact}
+  const rowFor = (fromSearch = false) => (guest: Guest) => <DoorRow key={guest.id} guest={guest} busy={pending.get(guest.id)} armed={armed === guest.id} arriving={arrivingFor(guest)}
     onArriving={(count) => setArriving((current) => new Map(current).set(guest.id, count))} onCheckIn={() => void checkIn(guest, fromSearch)} onUndo={() => undo(guest)} onEdit={() => setEditing(guest.id)} />;
-  const arrivedPeople = arrived.reduce((sum, guest) => sum + 1 + guest.plusOnesArrived, 0);
 
   return <main className="ws-door">
     <header className="ws-door-head"><Link to={`/party/${partyId}`} className="ws-back">← {data?.party.name ?? "Party"}</Link>
-      <div className="ws-count" aria-live="polite" aria-label={`${counts.arrived} people arrived of ${counts.expected} expected`}><b>{counts.arrived}</b> / {counts.expected}<small>people arrived · {counts.checkedIn} of {counts.total} guests</small></div></header>
+      <div className="ws-count" aria-live="polite" aria-label={`${summary.arrivedPeople} people arrived of ${summary.expectedHeadcount} expected`}><b>{summary.arrivedPeople}</b> / {summary.expectedHeadcount}<small>people arrived · {summary.checkedIn} of {summary.invited} guests</small></div></header>
     <div className="ws-door-body">
       {error && <div className="ws-status error" role="alert">{error}</div>}
       {note && <div className="ws-status ok" role="status">{note}</div>}
@@ -80,7 +80,7 @@ export default function CheckIn() {
       {data && <>
         <div className="ws-door-tabs" role="tablist" aria-label="Door views">
           <button role="tab" aria-selected={tab === "find"} className={tab === "find" ? "on" : ""} onClick={() => setTab("find")}>Find</button>
-          <button role="tab" aria-selected={tab === "arrived"} className={tab === "arrived" ? "on" : ""} onClick={() => setTab("arrived")}>Arrived <span className="ws-badge-count">{arrived.length}</span></button>
+          <button role="tab" aria-selected={tab === "arrived"} className={tab === "arrived" ? "on" : ""} onClick={() => setTab("arrived")}>Arrived <span className="ws-badge-count">{summary.checkedIn}</span></button>
         </div>
         <div className="ws-door-grid">
           <section className={`ws-door-panel find${tab === "find" ? " active" : ""}`} aria-label="Find a guest">
@@ -97,14 +97,14 @@ export default function CheckIn() {
                 ? results.length === 0
                   ? <div className="ws-empty ws-nomatch">No guest found for “{term}”. Check the spelling, or add them as a walk-in.<div className="ws-row"><button className="ws-button big" onClick={() => setWalkIn(splitName(query))}><UserPlus size={20} /> Add “{term}” as a walk-in</button><button className="ws-button ghost big" onClick={() => { setQuery(""); focusSearch(); }}>Clear search</button></div></div>
                   : <><p className="ws-results-meta">{results.length} {results.length === 1 ? "match" : "matches"}{results.some((guest) => guest.checkedIn) && " · already arrived are at the bottom"}</p>
-                    <ul className="ws-door-list">{results.slice(0, MAX_RESULTS).map(rowFor(false, true))}{results.length > MAX_RESULTS && <li className="ws-hint">Showing {MAX_RESULTS} of {results.length}. Type more to narrow it down.</li>}</ul></>
-                : guests.length === 0 ? <div className="ws-empty">No guests on this list yet. Use Add walk-in for people who turn up.</div> : <DoorBrowse guests={guests} group={group} onGroup={setGroup} renderRow={rowFor(true)} />}
+                    <ul className="ws-door-list">{results.slice(0, MAX_RESULTS).map(rowFor(true))}{results.length > MAX_RESULTS && <li className="ws-hint">Showing {MAX_RESULTS} of {results.length}. Type more to narrow it down.</li>}</ul></>
+                : guests.length === 0 ? <div className="ws-empty">No guests on this list yet. Use Add walk-in for people who turn up.</div> : <DoorBrowse guests={guests} group={group} onGroup={setGroup} renderRow={rowFor()} />}
             </div>
           </section>
           <section className={`ws-door-panel arrived${tab === "arrived" ? " active" : ""}`} aria-label="Arrived guests">
-            <h2 className="ws-panel-title">Arrived <span className="ws-badge-count">{arrived.length}</span></h2>
-            <p className="ws-results-meta">{arrived.length} {arrived.length === 1 ? "guest" : "guests"} · {arrivedPeople} {arrivedPeople === 1 ? "person" : "people"} including plus-ones · latest first</p>
-            {arrived.length === 0 ? <div className="ws-empty">Nobody has checked in yet.</div> : <ul className="ws-door-list">{arrived.map(rowFor(true))}</ul>}
+            <h2 className="ws-panel-title">Arrived <span className="ws-badge-count">{summary.checkedIn}</span></h2>
+            <p className="ws-results-meta">{summary.checkedIn} {summary.checkedIn === 1 ? "guest" : "guests"} · {summary.arrivedPeople} {summary.arrivedPeople === 1 ? "person" : "people"} including plus-ones · latest first</p>
+            {summary.checkedIn === 0 ? <div className="ws-empty">Nobody has checked in yet.</div> : <ul className="ws-door-list">{arrived.map(rowFor())}</ul>}
           </section>
         </div>
       </>}

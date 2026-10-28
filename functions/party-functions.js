@@ -4,7 +4,7 @@ import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { getStorage } from "firebase-admin/storage";
 import { FieldValue, Timestamp } from "firebase-admin/firestore";
 import { db, callable, resolveAccess, requireFeature } from "./core.js";
-import { LIMITS, sortGuestList, docId, status, validateParty, validateGuest, validateGuestBatch, validateGuestPatch, validateWalkIn, plusOnes, planImport, fillBlanks, searchKey, guestKey, validatePhoto, summarize } from "./party.js";
+import { LIMITS, sortGuestList, docId, status, validateParty, validateGuest, validateGuestBatch, validateGuestPatch, validateWalkIn, plusOnes, planImport, fillBlanks, searchKey, guestKey, validatePhoto, notCheckedIn, checkedInNow, doorPatchFor } from "./party.js";
 
 /** Door-screen callables stay warm (one idle instance) so the first tap is not delayed by a cold start. */
 const warm = { ...callable, minInstances: 1 };
@@ -113,7 +113,7 @@ export const getPartyPhoto = onCall({ ...callable, memory: "512MiB" }, async (re
 export const listGuests = onCall(warm, async (request) => {
   await requireFeature(request, "party");
   const partyId = docId(request.data?.partyId, "party"), party = await loadParty(partyId), docs = await listGuestDocs(partyId), guests = sortGuestList(docs.map(guestView));
-  return { party: partyView(party), guests, summary: summarize(guests, party.data().capacity ?? null), serverTime: new Date().toISOString() };
+  return { party: partyView(party), guests, serverTime: new Date().toISOString() };
 });
 export const addGuest = onCall(callable, async (request) => {
   await requireFeature(request, "party");
@@ -122,7 +122,7 @@ export const addGuest = onCall(callable, async (request) => {
   const count = (await guestsOf(partyId).count().get()).data().count;
   if (count >= LIMITS.guestsPerParty) throw new HttpsError("resource-exhausted", `A party can have up to ${LIMITS.guestsPerParty} guests.`);
   const ref = guestsOf(partyId).doc();
-  await ref.set({ schemaVersion: 1, ...guest, plusOnesArrived: 0, checkedIn: false, checkedInAt: null, createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() });
+  await ref.set({ schemaVersion: 1, ...guest, ...notCheckedIn(), createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() });
   return { success: true, guestId: ref.id };
 });
 /**
@@ -157,7 +157,7 @@ export const importGuests = onCall(callable, async (request) => {
   }
   for (let start = 0; start < toAdd.length; start += 400) {
     const batch = db.batch();
-    for (const guest of toAdd.slice(start, start + 400)) batch.set(guestsOf(partyId).doc(), { schemaVersion: 1, ...guest, plusOnesArrived: 0, checkedIn: false, checkedInAt: null, importedBy: staff.email, createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() });
+    for (const guest of toAdd.slice(start, start + 400)) batch.set(guestsOf(partyId).doc(), { schemaVersion: 1, ...guest, ...notCheckedIn(), importedBy: staff.email, createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() });
     await batch.commit();
   }
   return { success: true, added: toAdd.length, updated, skipped: skipped + (updates.length - updated) };
@@ -170,9 +170,13 @@ export const updateGuest = onCall(warm, async (request) => {
   await requireFeature(request, "party");
   const partyId = docId(request.data?.partyId, "party"), guestId = docId(request.data?.guestId, "guest");
   if (request.data?.patch === true) {
-    const patch = validateGuestPatch(request.data), snapshot = await guestSnapshot(partyId, guestId);
-    if (!snapshot.data().checkedIn) delete patch.plusOnesArrived; // arrivals only exist for checked-in guests
-    await guestsOf(partyId).doc(guestId).update({ ...patch, updatedAt: FieldValue.serverTimestamp() });
+    const patch = validateGuestPatch(request.data), ref = guestsOf(partyId).doc(guestId);
+    // In a transaction so a check-in or undo that lands at the same moment cannot leave plus-ones "arrived" on a guest who is not checked in.
+    await db.runTransaction(async (transaction) => {
+      const snapshot = await transaction.get(ref);
+      if (!snapshot.exists) throw new HttpsError("not-found", "That guest no longer exists.");
+      transaction.update(ref, { ...doorPatchFor(snapshot.data(), patch), updatedAt: FieldValue.serverTimestamp() });
+    });
     return { success: true, guest: guestView(await guestsOf(partyId).doc(guestId).get()) };
   }
   const guest = validateGuest(request.data);
@@ -188,7 +192,7 @@ export const addWalkIn = onCall(warm, async (request) => {
   const count = (await guestsOf(partyId).count().get()).data().count;
   if (count >= LIMITS.guestsPerParty) throw new HttpsError("resource-exhausted", `A party can have up to ${LIMITS.guestsPerParty} guests.`);
   const ref = guestsOf(partyId).doc();
-  await ref.set({ schemaVersion: 1, ...guest, walkIn: true, checkedIn: true, checkedInAt: FieldValue.serverTimestamp(), checkedInBy: staff.email, createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() });
+  await ref.set({ schemaVersion: 1, ...guest, walkIn: true, ...checkedInNow(FieldValue.serverTimestamp(), staff.email, guest.plusOnesArrived), createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() });
   return { success: true, guest: guestView(await ref.get()) };
 });
 export const setGuestStatus = onCall(callable, async (request) => {
@@ -214,7 +218,7 @@ export const checkInGuest = onCall(warm, async (request) => {
     const snapshot = await transaction.get(ref);
     if (!snapshot.exists) throw new HttpsError("not-found", "That guest no longer exists.");
     if (snapshot.data().checkedIn) return true;
-    transaction.update(ref, { checkedIn: true, checkedInAt: FieldValue.serverTimestamp(), plusOnesArrived: arrived, checkedInBy: staff.email, updatedAt: FieldValue.serverTimestamp() });
+    transaction.update(ref, { ...checkedInNow(FieldValue.serverTimestamp(), staff.email, arrived), updatedAt: FieldValue.serverTimestamp() });
     return false;
   });
   return { success: true, alreadyCheckedIn, guest: guestView(await ref.get()) };
@@ -223,7 +227,7 @@ export const undoCheckIn = onCall(warm, async (request) => {
   await requireFeature(request, "party");
   const partyId = docId(request.data?.partyId, "party"), guestId = docId(request.data?.guestId, "guest"), ref = guestsOf(partyId).doc(guestId);
   // One write instead of read-then-write: update() fails with NOT_FOUND (code 5) when the guest is gone.
-  try { await ref.update({ checkedIn: false, checkedInAt: null, plusOnesArrived: 0, checkedInBy: null, updatedAt: FieldValue.serverTimestamp() }); }
+  try { await ref.update({ ...notCheckedIn(), updatedAt: FieldValue.serverTimestamp() }); }
   catch (error) { if (error?.code === 5) throw new HttpsError("not-found", "That guest no longer exists."); throw error; }
   return { success: true, guest: guestView(await ref.get()) };
 });

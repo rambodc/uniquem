@@ -102,6 +102,18 @@ export function validateGuestPatch(value) {
   if (Object.keys(patch).length === 0) throw invalid("Nothing to change.");
   return patch;
 }
+/**
+ * The only two shapes a guest's check-in fields can have, so they can never disagree: not checked in (no time, nobody arrived) or checked in
+ * (a time, who did it, and 0 to LIMITS.plusOnesMax plus-ones arrived). Every writer uses one of these. `at` is the check-in timestamp.
+ */
+export const notCheckedIn = () => ({ checkedIn: false, checkedInAt: null, checkedInBy: null, plusOnesArrived: 0 });
+export const checkedInNow = (at, by, arrived) => ({ checkedIn: true, checkedInAt: at, checkedInBy: by, plusOnesArrived: plusOnes(arrived, "plus-ones who arrived") });
+/** A door edit applied to a guest: plus-ones who arrived can only change while the guest is checked in, otherwise that field is dropped (it stays 0). */
+export function doorPatchFor(current, patch) {
+  const result = { ...patch };
+  if (!current.checkedIn) delete result.plusOnesArrived;
+  return result;
+}
 /** A walk-in: a guest who was not on the list, added and checked in at the door in one step. Always "coming". */
 export function validateWalkIn(value) {
   if (!isObject(value)) throw invalid("The guest is invalid.");
@@ -186,26 +198,3 @@ export function compareGuests(a, b) {
   return foldName(a.firstName).localeCompare(foldName(b.firstName), "en") || foldName(a.lastName).localeCompare(foldName(b.lastName), "en") || String(a.id ?? "").localeCompare(String(b.id ?? ""));
 }
 export const sortGuestList = (guests) => [...guests].sort(compareGuests);
-
-/**
- * Counts for one party's guest list. Guests need { status, plusOnes, plusOnesArrived, checkedIn }.
- * `headcount` is the expected number of people: every coming guest plus their plus-ones. `arrivedPeople` is checked-in guests plus the plus-ones who arrived.
- * `capacityLeft` is by headcount: capacity minus the coming headcount minus anyone who arrived without being marked coming (so a pending or not-coming guest who shows up still takes a space).
- */
-export function summarize(guests, partyCapacity) {
-  const summary = { invited: guests.length, coming: 0, pending: 0, notComing: 0, checkedIn: 0, checkedInNotComing: 0, checkedInPending: 0, plusOnes: 0, headcount: 0, arrivedPeople: 0, capacity: partyCapacity ?? null, capacityLeft: null };
-  let extra = 0;
-  for (const guest of guests) {
-    const planned = guest.plusOnes, arrived = guest.checkedIn ? guest.plusOnesArrived : 0;
-    if (guest.status in summary) summary[guest.status] += 1;
-    if (guest.status === "coming") { summary.plusOnes += planned; summary.headcount += 1 + planned; }
-    if (guest.checkedIn) {
-      summary.checkedIn += 1; summary.arrivedPeople += 1 + arrived;
-      if (guest.status === "notComing") summary.checkedInNotComing += 1;
-      if (guest.status === "pending") summary.checkedInPending += 1;
-      if (guest.status !== "coming") extra += 1 + arrived;
-    }
-  }
-  if (partyCapacity != null) summary.capacityLeft = partyCapacity - summary.headcount - extra;
-  return summary;
-}

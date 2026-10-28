@@ -96,7 +96,6 @@ a.ws-card:hover{transform:translateY(-3px);border-color:var(--accent);box-shadow
 .ws-door-main>.ws-door-info,.ws-door-main>.ws-door-note{order:3;flex:0 0 100%;min-width:0}
 .ws-door-tools{display:flex;gap:6px;flex:none}
 .ws-icon-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:48px;min-width:48px;padding:0 12px;border:1px solid var(--line2);border-radius:14px;background:#fff;color:#2c5e57;font:inherit;font-size:14px;cursor:pointer}.ws-icon-btn:hover:not(:disabled){background:var(--soft)}.ws-icon-btn:disabled{opacity:.5}
-.ws-icon-btn svg.flip{transform:rotate(180deg)}
 @media(max-width:560px){.ws-door-tools .ws-icon-btn span{display:none}}
 @media(max-width:600px){
   .ws-door-row{padding:14px 12px 14px 12px;gap:10px}
@@ -105,7 +104,6 @@ a.ws-card:hover{transform:translateY(-3px);border-color:var(--accent);box-shadow
   .ws-browse{gap:10px}.ws-rail{width:28px}
 }
 .ws-door-title{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;min-width:0;min-height:48px}.ws-door-title b{font-size:22px;line-height:1.2;letter-spacing:-.02em;overflow-wrap:anywhere;min-width:0;max-width:100%}
-.ws-door-name>small{color:var(--mute);font-size:15px;overflow-wrap:anywhere}
 .ws-vip{display:inline-flex;align-items:center;gap:4px;padding:3px 10px 3px 8px;border-radius:99px;background:#0f2f2c;color:#fff;font-size:12px;font-weight:700;letter-spacing:.06em;white-space:nowrap}
 .ws-plus{display:inline-flex;align-items:center;padding:2px 10px;border-radius:99px;background:var(--soft);border:1px solid #b9d4ce;color:#16604f;font-size:14px;font-weight:700;white-space:nowrap}
 .ws-note-icon{display:inline-flex;color:var(--accent)}
@@ -180,3 +178,5 @@ a.ws-card:hover{transform:translateY(-3px);border-color:var(--accent);box-shadow
 }
 @media(min-width:700px) and (max-width:999px){.ws-door-searchbar{grid-template-columns:1fr auto}}
 @media (prefers-reduced-motion:reduce){.ws-checkin:active:not(:disabled){transform:none}}
+.ws-page>.ws-meta{margin-left:auto;margin-right:auto}.ws-expected{margin-top:14px}
+.ws-stat.warn b{font-size:26px;line-height:1.2}

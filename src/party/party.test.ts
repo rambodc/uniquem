@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Guest, Party } from "../core/api";
-import { arrivedGuests, checkedInMessage, clampPlusOnes, doorCounts, filterGuests, groupChips, inGroup, letterOf, letterSections, mergePolled, optimisticGuest, searchResults, sortGuests, splitName, splitParties } from "./logic";
+import { arrivedGuests, checkedInMessage, clampPlusOnes, filterGuests, groupChips, inGroup, letterOf, letterSections, mergePolled, optimisticGuest, searchResults, sortGuests, splitName, splitParties } from "./logic";
 import { edmontonInputToIso, formatClock, formatClockShort, isoToEdmontonInput } from "./time";
 import { checkPhotoFile } from "./photo";
 
@@ -96,10 +96,6 @@ describe("door tools", () => {
     guest({ id: "5", firstName: "7th", lastName: "Heaven", invitedBy: "Work", vip: true }),
     guest({ id: "6", firstName: "Ann", lastName: "Lee", invitedBy: "Walk-in", status: "coming" }),
   ];
-  it("counts people: expected = coming guests + plus-ones, arrived = checked-in guests + plus-ones who arrived", () => {
-    expect(doorCounts(list)).toEqual({ expected: 3 + 2 + 1, arrived: 2 + 1, checkedIn: 2, total: 6 });
-    expect(doorCounts([])).toEqual({ expected: 0, arrived: 0, checkedIn: 0, total: 0 });
-  });
   it("search puts guests who have not arrived first, A–Z, then arrived ones", () => {
     const all = searchResults(list.map((g) => ({ ...g, notes: "e" })), "e");
     expect(all.map((g) => g.checkedIn)).toEqual([false, false, false, false, true, true]);
