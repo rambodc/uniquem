@@ -6,7 +6,7 @@
 .ws-eyebrow{display:inline-flex;min-height:28px;align-items:center;padding:0 13px;border:1px solid #b9d4ce;border-radius:99px;background:var(--soft);color:#34786e;font-size:11px;letter-spacing:.08em;text-transform:uppercase}
 .ws-back{display:block;margin-bottom:18px;color:#39736b;font-size:14px;text-decoration:none}
 .ws-user{display:flex;align-items:center;gap:12px;color:#6b817f;font-size:13px}
-.ws-role{padding:2px 9px;border:1px solid #cfe0dc;border-radius:999px;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:#2f6f5e}
+.ws-user-type{padding:2px 9px;border:1px solid #cfe0dc;border-radius:999px;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:#2f6f5e}
 .ws-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:28px}
 .ws-button,.ws-chip{display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:999px;font:inherit;cursor:pointer;text-decoration:none;transition:.15s}
 .ws-button{min-height:46px;padding:0 20px;border:1px solid var(--green);background:var(--green);color:#fff;font-weight:650;font-size:15px}

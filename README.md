@@ -76,10 +76,9 @@ one record per person: `users/{Firebase Auth uid}` =
 | `email` | lowercase; must equal the signed-in account's (verified) email |
 | `type` | `"super_admin"` or `"staff"` |
 | `miniApps` | staff only: the ids of the mini apps they may open. Always `[]` for a super admin (they get every mini app automatically, including ones added later) |
-| `active` | `false` blocks everything; the Auth account is also disabled |
 | `createdAt`, `createdBy`, `updatedAt`, `updatedBy` | who and when (emails) |
 
-A missing, inactive, mismatched or unknown-type record means no access; nothing is guessed or defaulted. There is no hardcoded owner.
+A missing, mismatched or unknown-type record means no access; nothing is guessed or defaulted. There is no hardcoded owner.
 
 **Mini apps** are listed once, in `functions/miniApps.js` (`id`, `name`, `description`, `route`, `icon`, `superAdminOnly`), which both the Cloud Functions and the
 browser read. Current mini apps: `party` (Party), `contact` (Contact form), `users` (Users, `superAdminOnly`: staff can never be given it). The dashboard tiles,
@@ -92,11 +91,13 @@ the browser only hides screens. `getAccess` returns `{ type, miniApps }` for the
 (4) add its icon to `ICONS` in `src/auth/miniApps.ts` if it is a new icon. `npm test` and `npm test --prefix functions` fail if any step is missed.
 
 **Users mini app** (`/users`, super admins only; `functions/users-functions.js`): list users, add a user (email, type, mini apps), edit type and mini apps,
-deactivate / reactivate, delete (only after deactivating), and make a new one-time sign-in link.
-- **Adding a user** creates the Firebase Auth account (random password nobody knows, email marked verified) and the `users/{uid}` record together, then shows the super admin a
-  one-time password-setup link. Nothing is emailed from here; the super admin sends the link privately. The link works for about an hour; "Sign-in link" on a user makes a new one.
-- A super admin cannot edit, deactivate or delete their own account, and the last active super admin can never be demoted, deactivated or deleted.
-- Deactivating takes effect on the next call (access is read from Firestore every time), disables the Auth account and revokes its sessions.
+resend an invite, and delete a user (with a confirm step; removes the `users/{uid}` record and the Firebase Auth account, so access ends on their next call).
+- **Adding a user** creates the Firebase Auth account (random password nobody knows, email marked verified) and the `users/{uid}` record together, then emails the
+  person an invite once through Resend (from `Uniquem Website <website@irobotx.io>`, same `RESEND_API_KEY` secret as the contact form). The email holds a one-time
+  Firebase link where they choose their own password, then they sign in at `/signin`. The link works for about an hour; "Resend invite" sends a new one. The link is only ever
+  in that email: it is not shown in the app and not logged. If the email fails, the user still exists and the screen says so.
+- Super admins can edit or delete each other, but never their own account, and the last super admin can never be demoted or deleted.
+- Staff can never be given the Users mini app: the server rejects `users` in a staff mini-app list, and every Users callable requires a super admin.
 
 **First super admin / recovery:** if every super admin is locked out, create the record by hand in the console: Firestore `users/{uid of the Auth account}` with
-`email` (lowercase), `type: "super_admin"`, `miniApps: []`, `active: true` plus the four audit fields.
+`email` (lowercase), `type: "super_admin"`, `miniApps: []` plus the four audit fields.

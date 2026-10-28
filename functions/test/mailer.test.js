@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { EMAIL_FROM, EMAIL_TO, RESEND_ENDPOINT, formatMountainTimestamp, sendInquiryNotification } from "../mailer.js";
+import { EMAIL_FROM, EMAIL_TO, RESEND_ENDPOINT, buildInviteEmail, formatMountainTimestamp, sendInquiryNotification, sendInviteEmail } from "../mailer.js";
 
 const okFetch = (calls) => async (url, init) => { calls.push({ url, init, body: JSON.parse(init.body) }); return { ok: true, status: 200, json: async () => ({ id: "email_123" }) }; };
 
@@ -67,4 +67,25 @@ test("surfaces Resend API failures so the inquiry stays saved with notificationS
     sendInquiryNotification({ name: "Customer", email: "customer@example.com", message: "Question" }, "re_test_key", { fetchImpl: async () => { throw new Error("network down"); } }),
     /network down/,
   );
+});
+
+test("the user invite goes out from the Uniquem sender to the new user only, with the one-time link and no password", async () => {
+  const calls = [];
+  const link = "https://uniquem-4366e.firebaseapp.com/__/auth/action?mode=resetPassword&oobCode=TESTCODE";
+  await sendInviteEmail({ to: "new.user@example.com", invitedBy: "admin@uniquem.ca", link }, "re_test_key", { fetchImpl: okFetch(calls) });
+  const [{ url, init, body }] = calls;
+  assert.equal(url, RESEND_ENDPOINT);
+  assert.equal(init.headers.Authorization, "Bearer re_test_key");
+  assert.equal(body.from, EMAIL_FROM);
+  assert.deepEqual(body.to, ["new.user@example.com"]);
+  assert.equal(body.reply_to, "admin@uniquem.ca");
+  assert.match(body.text, /oobCode=TESTCODE/);
+  assert.match(body.text, /https:\/\/uniquem\.ca\/signin/);
+  assert.doesNotMatch(body.text, /temporary password|your password is/i);
+  assert.equal(buildInviteEmail({ to: "a@b.co", invitedBy: "x@uniquem.ca", link }).subject, "Your Uniquem workspace account");
+});
+test("an invite fails loudly without a key or when Resend rejects it", async () => {
+  const invite = { to: "a@b.co", invitedBy: "x@uniquem.ca", link: "https://example.com/l" };
+  await assert.rejects(() => sendInviteEmail(invite, ""), /RESEND_API_KEY/);
+  await assert.rejects(() => sendInviteEmail(invite, "k", { fetchImpl: async () => ({ ok: false, status: 403, json: async () => ({ message: "domain not verified" }) }) }), /403: domain not verified/);
 });

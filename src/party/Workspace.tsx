@@ -12,7 +12,7 @@ export function Page({ eyebrow = "Private workspace", title, subtitle, back, act
   return <main className={`ws-page${narrow ? " ws-narrow" : ""}`}>
     <header className="ws-header">
       <div>{back && <Link className="ws-back" to={back.to}>← {back.label}</Link>}<span className="ws-eyebrow">{eyebrow}</span><h1>{title}</h1>{subtitle && <p>{subtitle}</p>}</div>
-      {account && <div className="ws-user"><span className="ws-email">{user?.email}</span>{type && <span className="ws-role">{USER_TYPE_LABELS[type]}</span>}<button className="ws-chip" onClick={() => void logout()}><LogOut size={16} /> Sign out</button></div>}
+      {account && <div className="ws-user"><span className="ws-email">{user?.email}</span>{type && <span className="ws-user-type">{USER_TYPE_LABELS[type]}</span>}<button className="ws-chip" onClick={() => void logout()}><LogOut size={16} /> Sign out</button></div>}
     </header>
     {actions && <div className="ws-actions">{actions}</div>}
     {children}

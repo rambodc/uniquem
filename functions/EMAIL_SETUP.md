@@ -24,3 +24,7 @@ Do not commit the value or place it in a GitHub secret, frontend environment var
 ## Failure behaviour
 
 If the secret is missing, Resend rejects the request (for example 403 for an unverified `from` domain), or the network fails, the inquiry remains saved in Firestore and the function returns success with `notificationSent: false`. The error message (never the key) is logged.
+
+## User invites
+
+The Users mini app (`createUser`, `sendUserInvite` in `users-functions.js`) emails new users a one-time Firebase password-setup link through the same Resend API, secret and `Uniquem Website <website@irobotx.io>` sender. The email goes only to the new user (Reply-To is the super admin who invited them) and is sent once per create, or when a super admin presses "Resend invite". The link is never logged or returned to the browser.

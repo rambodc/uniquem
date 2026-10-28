@@ -1,24 +1,8 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { Copy } from "lucide-react";
 import { createUser, updateUser, type UserAccessInput, type UserRecord } from "../core/api";
 import { ASSIGNABLE_MINI_APP_IDS, STAFF, SUPER_ADMIN, USER_TYPES, USER_TYPE_LABELS, miniAppById, type MiniAppId, type UserType } from "../auth/miniApps";
 import { Sheet, messageOf } from "../party/Workspace";
 import "./users.css";
-
-/** A one-time sign-in link, shown once: the new user opens it to choose their own password. Nothing is emailed from here. */
-export type SharedLink = { email: string; link: string; isNew: boolean };
-export function LinkSheet({ shared, onClose }: { shared: SharedLink; onClose: () => void }) {
-  const [copied, setCopied] = useState(false);
-  async function copy() { try { await navigator.clipboard.writeText(shared.link); setCopied(true); } catch { setCopied(false); } }
-  return <Sheet title={shared.isNew ? "User created" : "Sign-in link"} onClose={onClose}>
-    <div className="ws-sheet-form">
-      <p className="ws-sheet-sub">{shared.isNew ? <>Send this link to <b>{shared.email}</b>. They open it, choose a password and then sign in.</> : <>Send this link to <b>{shared.email}</b> so they can choose a new password.</>}</p>
-      <label>One-time link<textarea className="ws-link-box" readOnly rows={4} value={shared.link} onFocus={(event) => event.currentTarget.select()} /></label>
-      <p className="ws-sheet-sub">This link is shown only now and works for about an hour. It lets whoever opens it set the password, so share it privately (not in a group chat). If it expires, use “Sign-in link” on the user to make a new one.</p>
-      <div className="ws-sheet-buttons"><button type="button" className="ws-button ghost" onClick={onClose}>Done</button><button type="button" className="ws-button big" onClick={() => void copy()}><Copy size={18} /> {copied ? "Copied" : "Copy link"}</button></div>
-    </div>
-  </Sheet>;
-}
 
 function AccessFields({ value, onChange }: { value: UserAccessInput; onChange: (next: UserAccessInput) => void }) {
   const setType = (type: UserType) => onChange({ type, miniApps: type === SUPER_ADMIN ? [] : value.miniApps });
@@ -32,14 +16,14 @@ function AccessFields({ value, onChange }: { value: UserAccessInput; onChange: (
 }
 
 /** Create a user (email + type + mini apps) or edit one's type and mini apps. */
-export function UserSheet({ user, onDone, onClose }: { user: UserRecord | null; onDone: (result: { shared?: SharedLink }) => void; onClose: () => void }) {
+export function UserSheet({ user, onDone, onClose }: { user: UserRecord | null; onDone: (notice: string) => void; onClose: () => void }) {
   const [email, setEmail] = useState(""), [access, setAccess] = useState<UserAccessInput>(user ? { type: user.type, miniApps: user.miniApps } : { type: STAFF, miniApps: [] }), [busy, setBusy] = useState(false), [error, setError] = useState(""), first = useRef<HTMLInputElement>(null);
   useEffect(() => { first.current?.focus(); }, []);
   async function submit(event: FormEvent) {
     event.preventDefault(); if (busy) return; setBusy(true); setError("");
     try {
-      if (user) { await updateUser(user.uid, access); onDone({}); }
-      else { const created = await createUser({ email: email.trim(), ...access }); onDone({ shared: { email: created.email, link: created.link, isNew: true } }); }
+      if (user) { await updateUser(user.uid, access); onDone(`Saved changes for ${user.email}.`); }
+      else { const created = await createUser({ email: email.trim(), ...access }); onDone(created.emailSent ? `User created. An invite email was sent to ${created.email}.` : `User created, but the invite email to ${created.email} could not be sent. Use Resend invite on that user to try again.`); }
     } catch (cause) { setError(messageOf(cause, user ? "The changes could not be saved. Try again." : "The user could not be created. Try again.")); setBusy(false); }
   }
   return <Sheet title={user ? "Edit user" : "Add user"} onClose={busy ? () => undefined : onClose}>
