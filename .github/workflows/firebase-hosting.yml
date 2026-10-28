@@ -2,7 +2,7 @@ name: Production - Firebase Hosting
 on:
   push:
     branches: [production]
-    paths: ["src/**", "public/**", "scripts/**", "index.html", "package.json", "package-lock.json", "vite.config.ts", "tsconfig*.json", "firebase.json", ".firebaserc", ".github/workflows/firebase-hosting.yml"]
+    paths: ["src/**", "public/**", "scripts/**", "functions/miniApps.js", "index.html", "package.json", "package-lock.json", "vite.config.ts", "tsconfig*.json", "firebase.json", ".firebaserc", ".github/workflows/firebase-hosting.yml"]
   workflow_dispatch:
 concurrency: { group: uniquem-hosting-production, cancel-in-progress: false }
 jobs:

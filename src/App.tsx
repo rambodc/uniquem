@@ -8,24 +8,26 @@ import IdleScreensaver from "./public/screensaver/IdleScreensaver";
 const PrivateLayout = lazy(() => import("./auth/PrivateLayout"));
 const SignIn = lazy(() => import("./auth/SignIn"));
 const ContactInbox = lazy(() => import("./contact/ContactInbox"));
-const RequireFeature = lazy(() => import("./auth/RequireFeature"));
+const RequireMiniApp = lazy(() => import("./auth/RequireMiniApp"));
 const Dashboard = lazy(() => import("./auth/Dashboard"));
 const PartyList = lazy(() => import("./party/PartyList"));
 const PartyForm = lazy(() => import("./party/PartyForm"));
 const PartyDetail = lazy(() => import("./party/PartyDetail"));
 const CheckIn = lazy(() => import("./party/CheckIn"));
+const UsersApp = lazy(() => import("./users/UsersApp"));
 function SummaryRedirect() { const { partyId = "" } = useParams(); return <Navigate to={`/party/${partyId}`} replace />; }
 function ScrollToTop() { const { pathname } = useLocation(); useEffect(() => { if ("scrollRestoration" in window.history) window.history.scrollRestoration = "manual"; }, []); useEffect(() => { window.scrollTo(0, 0); }, [pathname]); return null; }
 export default function App() { return <><SeoMetadata /><AnalyticsTracker /><ScrollToTop /><Routes>
   <Route element={<Suspense fallback={<main className="center-state">Opening your Uniquem workspace…</main>}><PrivateLayout /></Suspense>}>
     <Route path="/signin" element={<SignIn />} />
-    <Route element={<RequireFeature />}><Route path="/dashboard" element={<Dashboard />} /></Route>
-    <Route element={<RequireFeature feature="contact" />}><Route path="/contact-inbox" element={<ContactInbox />} /></Route>
-    <Route element={<RequireFeature feature="party" />}>
+    <Route element={<RequireMiniApp />}><Route path="/dashboard" element={<Dashboard />} /></Route>
+    <Route element={<RequireMiniApp app="contact" />}><Route path="/contact-inbox" element={<ContactInbox />} /></Route>
+    <Route element={<RequireMiniApp app="party" />}>
       <Route path="/party" element={<PartyList />} /><Route path="/party/new" element={<PartyForm />} />
       <Route path="/party/:partyId" element={<PartyDetail />} /><Route path="/party/:partyId/edit" element={<PartyForm />} />
       <Route path="/party/:partyId/check-in" element={<CheckIn />} /><Route path="/party/:partyId/summary" element={<SummaryRedirect />} />
     </Route>
+    <Route element={<RequireMiniApp app="users" />}><Route path="/users" element={<UsersApp />} /></Route>
   </Route>
   <Route path="/" element={<PublicSite />} /><Route path="/about-us" element={<PublicSite />} /><Route path="/chemicals" element={<PublicSite />} /><Route path="/chemicals/*" element={<PublicSite />} /><Route path="/contact-us" element={<PublicSite />} /><Route path="/service-areas/alberta" element={<PublicSite />} />
   <Route path="*" element={<PublicSite notFound />} />

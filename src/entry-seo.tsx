@@ -3,6 +3,7 @@ import { StaticRouter } from "react-router-dom";
 import PublicSite from "./public/PublicSite";
 import { SEARCH_CONSOLE_VERIFICATION_CODES } from "./core/analyticsConfig";
 export { routes, head } from "./public/seo";
+export { PRIVATE_ROOTS } from "./auth/privatePaths";
 
 // Render the same public components used by the interactive app, without auth.
 export function renderPage(path: string, notFound = false) {

@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { head, routes, seoSelectors } from "./seo";
+import { isPrivatePage } from "../auth/privatePaths";
 
 export default function SeoMetadata() {
   const { pathname } = useLocation();
@@ -9,7 +10,7 @@ export default function SeoMetadata() {
     const template = document.createElement("template");
     template.innerHTML = route
       ? head(route)
-      : /^\/(signin|contact-inbox|dashboard|party)(\/|$)/.test(pathname)
+      : isPrivatePage(pathname)
         ? '<title>Uniquem | Private page</title><meta name="robots" content="noindex, nofollow">'
         : '<title>Page not found | Uniquem</title><meta name="robots" content="noindex, follow">';
     document.head.querySelectorAll(seoSelectors).forEach((node) => node.remove());
