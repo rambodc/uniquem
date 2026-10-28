@@ -13,9 +13,13 @@ export const restoreContactInquiry = (inquiryId: string) => invoke("restoreConta
 export type GuestStatus = "coming" | "pending" | "notComing";
 export type Party = { id: string; name: string; startsAt: string | null; location: string; description: string; capacity: number | null; hostNotes: string; hasPhoto: boolean; archived: boolean; archivedAt: string | null; thumbDataUrl: string | null; createdAt: string | null; updatedAt: string | null };
 export type PartyInput = { name: string; startsAt: string; location: string; description: string; capacity: number | null; hostNotes: string };
-export type Guest = { id: string; firstName: string; lastName: string; company: string; invitedBy: string; notes: string; status: GuestStatus; checkedIn: boolean; checkedInAt: string | null; createdAt: string | null; updatedAt: string | null };
-export type GuestInput = { firstName: string; lastName: string; company: string; invitedBy: string; notes: string; status: GuestStatus };
-export type PartySummary = { invited: number; coming: number; pending: number; notComing: number; checkedIn: number; checkedInNotComing: number; checkedInPending: number; capacity: number | null; capacityLeft: number | null };
+export type Guest = { id: string; firstName: string; lastName: string; company: string; invitedBy: string; notes: string; status: GuestStatus; plusOnes: number; vip: boolean; plusOnesArrived: number; checkedIn: boolean; checkedInAt: string | null; createdAt: string | null; updatedAt: string | null };
+export type GuestInput = { firstName: string; lastName: string; company: string; invitedBy: string; notes: string; status: GuestStatus; plusOnes: number; vip: boolean };
+/** What staff may change at the door: never names or company. */
+export type GuestDoorPatch = Partial<Pick<GuestInput, "notes" | "status" | "vip" | "plusOnes">> & { plusOnesArrived?: number };
+/** A walk-in is added and checked in at the door in one step. */
+export type WalkInInput = { firstName: string; lastName: string; company: string; invitedBy: string; notes: string; plusOnes: number; vip?: boolean };
+export type PartySummary = { invited: number; coming: number; pending: number; notComing: number; checkedIn: number; checkedInNotComing: number; checkedInPending: number; plusOnes: number; headcount: number; arrivedPeople: number; capacity: number | null; capacityLeft: number | null };
 export type GuestList = { party: Party; guests: Guest[]; summary: PartySummary; serverTime: string };
 /** What the server says the signed-in account may use. `role` is null when the account has no active staff document. */
 export type StaffAccess = { role: Role | null; features: Feature[] };
@@ -33,7 +37,10 @@ export const listGuests = (partyId: string) => invoke<{ partyId: string }, Guest
 export const addGuest = (partyId: string, data: GuestInput) => invoke("addGuest", { partyId, ...data });
 export const importGuests = (partyId: string, guests: GuestInput[]) => invoke<{ partyId: string; guests: GuestInput[] }, { added: number; updated: number; skipped: number }>("importGuests", { partyId, guests });
 export const updateGuest = (partyId: string, guestId: string, data: GuestInput) => invoke("updateGuest", { partyId, guestId, ...data });
+/** Door edit: only notes, status, VIP, plus-ones and (checked-in guests) plus-ones who arrived. Returns the saved guest. */
+export const updateGuestAtDoor = (partyId: string, guestId: string, patch: GuestDoorPatch) => invoke<unknown, { guest: Guest }>("updateGuest", { partyId, guestId, patch: true, ...patch });
+export const addWalkIn = (partyId: string, data: WalkInInput) => invoke<unknown, { guest: Guest }>("addWalkIn", { partyId, ...data });
 export const deleteGuest = (partyId: string, guestId: string) => invoke("deleteGuest", { partyId, guestId });
-export const checkInGuest = (partyId: string, guestId: string) => invoke<{ partyId: string; guestId: string }, { alreadyCheckedIn: boolean; guest: Guest }>("checkInGuest", { partyId, guestId });
+export const checkInGuest = (partyId: string, guestId: string, plusOnesArrived = 0) => invoke<{ partyId: string; guestId: string; plusOnesArrived: number }, { alreadyCheckedIn: boolean; guest: Guest }>("checkInGuest", { partyId, guestId, plusOnesArrived });
 export const undoCheckIn = (partyId: string, guestId: string) => invoke<{ partyId: string; guestId: string }, { guest: Guest }>("undoCheckIn", { partyId, guestId });
 export const setGuestStatus = (partyId: string, guestId: string, status: GuestStatus) => invoke("setGuestStatus", { partyId, guestId, status });
