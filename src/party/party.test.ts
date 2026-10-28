@@ -47,6 +47,14 @@ describe("guest search", () => {
     expect(filterGuests(guests, "").length).toBe(3);
     expect(filterGuests(guests, "zzz")).toEqual([]);
   });
+  it("deep search (door check-in) also matches invited by / type and notes; normal search does not", () => {
+    const list = [guest({ id: "1", invitedBy: "Party Crew", notes: "Vegan, plus-one" }), guest({ id: "2", firstName: "Bob", lastName: "Ray", company: "Acme", invitedBy: "Client" })];
+    expect(filterGuests(list, "crew", "all", true).map((g) => g.id)).toEqual(["1"]);
+    expect(filterGuests(list, "vegan plus", "all", true).map((g) => g.id)).toEqual(["1"]);
+    expect(filterGuests(list, "client acme", "all", true).map((g) => g.id)).toEqual(["2"]);
+    expect(filterGuests(list, "crew")).toEqual([]);
+    expect(filterGuests(list, "vegan")).toEqual([]);
+  });
   it("filters by status", () => { expect(filterGuests(guests, "", "coming").map((g) => g.id)).toEqual(["3"]); expect(filterGuests(guests, "", "notComing").map((g) => g.id)).toEqual(["2"]); });
   it("sorts by first name (then last name), ignoring case and accents", () => {
     const list = [guest({ id: "1", firstName: "zoe", lastName: "Adams" }), guest({ id: "2", firstName: "Éric", lastName: "Zed" }), guest({ id: "3", firstName: "eric", lastName: "Baker" }), guest({ id: "4", firstName: "Ada", lastName: "Young" }), guest({ id: "5", firstName: "ada", lastName: "Brown" })];
