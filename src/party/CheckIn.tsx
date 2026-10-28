@@ -6,6 +6,7 @@ import { checkInGuest, listGuests, undoCheckIn, type Guest, type GuestList } fro
 import { messageOf } from "./Workspace";
 import { filterGuests, guestName, sortGuests } from "./logic";
 import { formatClock } from "./time";
+import DoorGuestInfo from "./DoorGuestInfo";
 import "./party.css";
 
 const POLL_MS = 10_000, MAX_RESULTS = 30;
@@ -29,11 +30,10 @@ export default function CheckIn() {
   const undo = (guest: Guest) => { if (armed !== guest.id) { setArmed(guest.id); return; } setArmed(null); void run(guest, async () => { replace((await undoCheckIn(partyId, guest.id)).guest); setNote(`Undid check-in for ${guestName(guest)}.`); }); };
 
   const guests = data?.guests ?? [], arrived = guests.filter((guest) => guest.checkedIn).length, term = query.trim();
-  const results = term ? filterGuests(sortGuests(guests), term) : [];
+  const results = term ? filterGuests(sortGuests(guests), term, "all", true) : [];
   const recent = guests.filter((guest) => guest.checkedIn && guest.checkedInAt).sort((a, b) => Date.parse(b.checkedInAt!) - Date.parse(a.checkedInAt!)).slice(0, 5);
   const row = (guest: Guest) => <li key={guest.id} className={`ws-door-row${guest.checkedIn ? " done" : ""}`}>
-    <div className="ws-door-name"><b>{guestName(guest)}</b>{guest.company && <small>{guest.company}</small>}{guest.invitedBy && <small>{guest.invitedBy}</small>}{guest.notes && <p className="ws-door-note"><span>Note</span>{guest.notes}</p>}
-      {guest.status !== "coming" && <span className={`ws-flag ${guest.status}`}>{guest.status === "notComing" ? "Marked not coming" : "Marked pending"}</span>}</div>
+    <DoorGuestInfo guest={guest} />
     {guest.checkedIn
       ? <div className="ws-door-done"><span className="ws-checked"><Check size={20} /> Checked in {formatClock(guest.checkedInAt)}</span><button className={`ws-undo${armed === guest.id ? " armed" : ""}`} disabled={pending.has(guest.id)} onClick={() => undo(guest)}><Undo2 size={16} /> {armed === guest.id ? "Tap again to undo" : "Undo"}</button></div>
       : <button className="ws-checkin" disabled={pending.has(guest.id)} onClick={() => void checkIn(guest)}>{pending.has(guest.id) ? "Checking in…" : "Check in"}</button>}
@@ -41,11 +41,11 @@ export default function CheckIn() {
   return <main className="ws-door">
     <header className="ws-door-head"><Link to={`/party/${partyId}`} className="ws-back">← {data?.party.name ?? "Party"}</Link>
       <div className="ws-count" aria-live="polite"><b>{arrived}</b> / {guests.length}<small>checked in</small></div></header>
-    <div className="ws-door-search"><input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search first name, last name or company" aria-label="Search guests" autoComplete="off" autoCorrect="off" autoCapitalize="off" spellCheck={false} /></div>
+    <div className="ws-door-search"><input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search name, company, group or notes" aria-label="Search guests" autoComplete="off" autoCorrect="off" autoCapitalize="off" spellCheck={false} /></div>
     {error && <div className="ws-status error" role="alert">{error}</div>}
     {note && <div className="ws-status ok" role="status">{note}</div>}
     {!data && !error && <div className="ws-empty">Loading guest list…</div>}
     {data && !term && <><p className="ws-hint">Type a name to find a guest.</p>{recent.length > 0 && <><h2 className="ws-h2">Latest check-ins</h2><ul className="ws-door-list">{recent.map(row)}</ul></>}</>}
-    {data && term && (results.length === 0 ? <div className="ws-empty">No guest found for “{term}”. Check the spelling or try the company.</div> : <ul className="ws-door-list">{results.slice(0, MAX_RESULTS).map(row)}{results.length > MAX_RESULTS && <li className="ws-hint">Showing {MAX_RESULTS} of {results.length}. Type more to narrow it down.</li>}</ul>)}
+    {data && term && (results.length === 0 ? <div className="ws-empty">No guest found for “{term}”. Check the spelling or try the company, group or notes.</div> : <ul className="ws-door-list">{results.slice(0, MAX_RESULTS).map(row)}{results.length > MAX_RESULTS && <li className="ws-hint">Showing {MAX_RESULTS} of {results.length}. Type more to narrow it down.</li>}</ul>)}
   </main>;
 }

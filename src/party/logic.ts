@@ -9,11 +9,12 @@ export function splitParties(parties: Party[], now = Date.now()) {
 }
 export const STATUS_LABEL: Record<GuestStatus, string> = { coming: "Coming", pending: "Pending", notComing: "Not coming" };
 export const guestName = (guest: Pick<Guest, "firstName" | "lastName">) => `${guest.firstName} ${guest.lastName}`;
-/** Matches every typed word against first name, last name or company (any order, ignores case and accents). */
-export function filterGuests(guests: Guest[], query: string, status: GuestStatus | "all" = "all") {
+/** Matches every typed word against first name, last name or company (any order, ignores case and accents).
+ *  With `deep` it also matches "invited by / type" and notes (used by the door check-in search). */
+export function filterGuests(guests: Guest[], query: string, status: GuestStatus | "all" = "all", deep = false) {
   const fold = (value: string) => value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
   const words = fold(query).split(/\s+/).filter(Boolean);
-  return guests.filter((guest) => (status === "all" || guest.status === status) && (() => { const key = fold(`${guest.firstName} ${guest.lastName} ${guest.company}`); return words.every((word) => key.includes(word)); })());
+  return guests.filter((guest) => (status === "all" || guest.status === status) && (() => { const key = fold(`${guest.firstName} ${guest.lastName} ${guest.company}${deep ? ` ${guest.invitedBy ?? ""} ${guest.notes ?? ""}` : ""}`); return words.every((word) => key.includes(word)); })());
 }
 const foldName = (value: string) => value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 /** Guests are always listed A to Z by first name, then last name (ignores case and accents). */
