@@ -84,11 +84,40 @@ export function validateGuestBatch(value) {
     try { return validateGuest(entry); } catch (cause) { throw invalid(`Guest ${index + 1}: ${cause?.message ?? "invalid"}`); }
   });
 }
-/** Splits validated guests into the ones to add and the number skipped (already on the list, or repeated within the import). */
-export function planImport(guests, existingKeys) {
-  const seen = new Set(existingKeys), toAdd = [];
-  for (const guest of guests) { const key = guestKey(guest); if (seen.has(key)) continue; seen.add(key); toAdd.push(guest); }
-  return { toAdd, skipped: guests.length - toAdd.length };
+/**
+ * What a pasted guest may fill in on a guest already on the list: "invited by" and company, only where the existing value is blank
+ * and the pasted one is not. Returns null when nothing would change. Never overwrites a value, never touches status or check-in.
+ */
+export function fillBlanks(current, pasted) {
+  const set = {};
+  for (const field of ["invitedBy", "company"]) {
+    if (!String(current?.[field] ?? "").trim() && String(pasted?.[field] ?? "").trim()) set[field] = pasted[field];
+  }
+  return Object.keys(set).length ? set : null;
+}
+/**
+ * Splits validated guests into new guests to add, existing guests to fill in, and the number skipped.
+ * `existing` is [{ id, key, company, invitedBy }] for the guests already on the party (key from guestKey).
+ * Repeats of a new name within the import are skipped; repeats of an existing name can only fill what an earlier row did not.
+ */
+export function planImport(guests, existing) {
+  const byKey = new Map();
+  for (const entry of existing) if (!byKey.has(entry.key)) byKey.set(entry.key, { ...entry });
+  const seen = new Set(), toAdd = [], updates = new Map();
+  for (const guest of guests) {
+    const key = guestKey(guest), current = byKey.get(key);
+    if (current) {
+      const set = fillBlanks(current, guest);
+      if (!set) continue;
+      Object.assign(current, set);
+      updates.set(current.id, { id: current.id, set: { ...(updates.get(current.id)?.set ?? {}), ...set } });
+      continue;
+    }
+    if (seen.has(key)) continue;
+    seen.add(key); toAdd.push(guest);
+  }
+  const updated = [...updates.values()];
+  return { toAdd, updates: updated, skipped: guests.length - toAdd.length - updated.length };
 }
 
 const hasBytes = (buffer, bytes, offset = 0) => bytes.every((byte, index) => buffer[offset + index] === byte);

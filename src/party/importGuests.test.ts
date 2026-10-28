@@ -49,4 +49,21 @@ describe("parseGuestImport", () => {
   it("strips control characters and extra spaces", () => {
     expect(parseGuestImport("Ada\u0007  May,  Love   lace").toAdd[0]).toMatchObject({ firstName: "Ada May", lastName: "Love lace" });
   });
+  it("fills in invited by (and company) on guests already on the list when theirs is blank", () => {
+    const existing = [
+      { firstName: "Ada", lastName: "Lovelace", company: "", invitedBy: "" },
+      { firstName: "Grace", lastName: "Hopper", company: "Navy", invitedBy: "Friends" },
+      { firstName: "Alan", lastName: "Turing", company: "", invitedBy: "Client" },
+    ];
+    const { rows, toAdd, toUpdate, skipped } = parseGuestImport("ADA, lovelace, Engines, Work\nGrace, Hopper, Other, Work\nAlan, Turing, Bletchley\nAlan, Turing, Bletchley\nAda, Lovelace, , Crew\nNew, Person, , Work", existing);
+    expect(toAdd.map((guest) => guest.firstName)).toEqual(["New"]);
+    expect(toUpdate.map((guest) => guest.firstName)).toEqual(["ADA", "Alan"]);
+    expect(rows.map((row) => row.duplicate)).toEqual([null, "list", null, "list", "list", null]);
+    expect(rows.map((row) => row.fills)).toEqual([["invitedBy", "company"], [], ["company"], [], [], []]);
+    expect(skipped).toBe(3);
+  });
+  it("treats a pasted blank invited by as nothing to fill", () => {
+    const { rows, toUpdate, skipped } = parseGuestImport("Ada, Lovelace", [{ firstName: "Ada", lastName: "Lovelace", company: "", invitedBy: "" }]);
+    expect(toUpdate).toEqual([]); expect(skipped).toBe(1); expect(rows[0].duplicate).toBe("list");
+  });
 });

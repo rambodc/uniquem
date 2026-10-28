@@ -1,7 +1,7 @@
 import { Buffer } from "node:buffer";
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { validateParty, validateGuest, validateGuestBatch, planImport, guestKey, LIMITS, validatePhoto, summarize, docId, status, capacity, sniffImage, PHOTO, sortGuestList, compareGuests } from "../party.js";
+import { validateParty, validateGuest, validateGuestBatch, planImport, fillBlanks, guestKey, LIMITS, validatePhoto, summarize, docId, status, capacity, sniffImage, PHOTO, sortGuestList, compareGuests } from "../party.js";
 
 
 const party = { name: "  Winter   Mixer ", startsAt: "2026-12-04T02:30:00.000Z", location: " Calgary Petroleum Club ", description: "  Drinks\r\nand food ", capacity: 120, hostNotes: "Reserve table 4" };
@@ -101,14 +101,37 @@ test("bulk import accepts 1 to 200 guests only", () => {
   assert.throws(() => validateGuestBatch(many(201)), /up to 200/);
   for (const bad of [[], undefined, null, "Ada Lovelace", { length: 1 }]) assert.throws(() => validateGuestBatch(bad), /at least one guest/);
 });
-test("bulk import skips names already on the party (any case) and repeats within the import", () => {
-  const guests = validateGuestBatch([{ firstName: "Ada", lastName: "Lovelace" }, { firstName: "ADA", lastName: "LOVELACE", company: "dup" }, { firstName: "Grace", lastName: "Hopper" }, { firstName: "Alan", lastName: "Turing" }]);
-  const existing = [guestKey({ firstName: "alan", lastName: "TURING" })];
-  const plan = planImport(guests, existing);
+const ex = (id, first, last, company = "", invitedBy = "") => ({ id, key: guestKey({ firstName: first, lastName: last }), company, invitedBy });
+test("bulk import skips repeats and unchanged names already on the party (any case)", () => {
+  const guests = validateGuestBatch([{ firstName: "Ada", lastName: "Lovelace" }, { firstName: "ADA", lastName: "LOVELACE", company: "dup" }, { firstName: "Grace", lastName: "Hopper" }, { firstName: "grace", lastName: "hopper" }, { firstName: "Alan", lastName: "Turing", invitedBy: "Work" }]);
+  const plan = planImport(guests, [ex("t", "alan", "TURING", "", "Friends")]);
   assert.deepEqual(plan.toAdd.map((guest) => `${guest.firstName} ${guest.lastName}`), ["Ada Lovelace", "Grace Hopper"]);
-  assert.equal(plan.skipped, 2);
+  assert.deepEqual(plan.updates, []);
+  assert.equal(plan.skipped, 3);
   assert.equal(plan.toAdd[0].company, "");
-  assert.deepEqual(planImport(guests.slice(0, 1), []).skipped, 0);
+  assert.equal(planImport(guests.slice(0, 1), []).skipped, 0);
+});
+test("fillBlanks only fills blank invited by / company and never overwrites", () => {
+  assert.deepEqual(fillBlanks({ invitedBy: "", company: "" }, { invitedBy: "Work", company: "Acme" }), { invitedBy: "Work", company: "Acme" });
+  assert.deepEqual(fillBlanks({ invitedBy: "  ", company: "Old" }, { invitedBy: "Work", company: "New" }), { invitedBy: "Work" });
+  assert.equal(fillBlanks({ invitedBy: "Me", company: "Old" }, { invitedBy: "Work", company: "New" }), null);
+  assert.equal(fillBlanks({ invitedBy: "", company: "" }, { invitedBy: "", company: "" }), null);
+  assert.equal(fillBlanks({}, {}), null);
+});
+test("bulk import fills in blanks on existing guests without duplicates", () => {
+  const existing = [ex("a", "Ada", "Lovelace"), ex("b", "Grace", "Hopper", "Navy", "Friends"), ex("c", "Alan", "Turing", "", "Client"), ex("d", "Linus", "T")];
+  const guests = validateGuestBatch([
+    { firstName: "ADA", lastName: "lovelace", invitedBy: "Work", company: "Engines" },
+    { firstName: "Grace", lastName: "Hopper", invitedBy: "Work", company: "Other", status: "notComing" },
+    { firstName: "Alan", lastName: "Turing", invitedBy: "Work", company: "Bletchley" },
+    { firstName: "Linus", lastName: "T" },
+    { firstName: "Ada", lastName: "Lovelace", invitedBy: "Crew" },
+    { firstName: "New", lastName: "Person", invitedBy: "Work" },
+  ]);
+  const plan = planImport(guests, existing);
+  assert.deepEqual(plan.toAdd.map((guest) => guest.firstName), ["New"]);
+  assert.deepEqual(plan.updates, [{ id: "a", set: { invitedBy: "Work", company: "Engines" } }, { id: "c", set: { company: "Bletchley" } }]);
+  assert.equal(plan.skipped, 3);
 });
 
 test("guest lists sort by first name, then last name, ignoring case and accents", () => {

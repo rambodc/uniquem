@@ -15,9 +15,13 @@ export function parseStatus(raw: string): GuestStatus | null {
   return STATUS_WORDS[key] ?? null;
 }
 
-export type ImportRow = { line: number; guest: GuestInput; duplicate: "list" | "paste" | null };
+export type FillField = "invitedBy" | "company";
+/** `fills` lists what a row would fill in on a guest already on the list (only blank values are ever filled). */
+export type ImportRow = { line: number; guest: GuestInput; duplicate: "list" | "paste" | null; fills: FillField[] };
 export type ImportProblem = { line: number; text: string; reason: string };
-export type ImportPreview = { rows: ImportRow[]; problems: ImportProblem[]; toAdd: GuestInput[]; skipped: number };
+/** `toAdd` are new guests, `toUpdate` are pasted rows that fill in blanks on existing guests, `skipped` change nothing. */
+export type ImportPreview = { rows: ImportRow[]; problems: ImportProblem[]; toAdd: GuestInput[]; toUpdate: GuestInput[]; skipped: number };
+type ExistingGuest = Pick<GuestInput, "firstName" | "lastName"> & Partial<Pick<GuestInput, "company" | "invitedBy">>;
 
 const nameKey = (guest: Pick<GuestInput, "firstName" | "lastName">) => `${guest.firstName.toLowerCase()}\n${guest.lastName.toLowerCase()}`;
 // eslint-disable-next-line no-control-regex
@@ -28,11 +32,17 @@ const HEADER = /^(first\s*name|firstname|first)$/i;
  * One guest per line. Fields are separated by tabs (pasted from a spreadsheet) or commas:
  * first name, last name, company, invited by, status (the last three are optional).
  * A header row ("First name, Last name, …") and blank lines are ignored.
- * `existing` are names already on the party; matching lines are marked as duplicates and will be skipped.
+ * `existing` are guests already on the party. A matching line (first + last name, any case) is never added twice:
+ * if the line has an "invited by" (or company) and the existing guest's is blank it fills it in, otherwise the line is skipped.
+ * Existing values are never overwritten. The server applies the same rule against the live list.
  */
-export function parseGuestImport(text: string, existing: Pick<GuestInput, "firstName" | "lastName">[] = []): ImportPreview {
-  const onList = new Set(existing.map((guest) => nameKey({ firstName: clean(guest.firstName), lastName: clean(guest.lastName) })));
-  const inPaste = new Set<string>(), rows: ImportRow[] = [], problems: ImportProblem[] = [], toAdd: GuestInput[] = [];
+export function parseGuestImport(text: string, existing: ExistingGuest[] = []): ImportPreview {
+  const onList = new Map<string, { company: string; invitedBy: string }>();
+  for (const guest of existing) {
+    const key = nameKey({ firstName: clean(guest.firstName), lastName: clean(guest.lastName) });
+    if (!onList.has(key)) onList.set(key, { company: clean(guest.company), invitedBy: clean(guest.invitedBy) });
+  }
+  const inPaste = new Set<string>(), rows: ImportRow[] = [], problems: ImportProblem[] = [], toAdd: GuestInput[] = [], toUpdate: GuestInput[] = [];
   let skipped = 0, header = true;
   text.replace(/^\uFEFF/, "").split(/\r\n|\r|\n/).forEach((original, index) => {
     const line = index + 1;
@@ -51,10 +61,19 @@ export function parseGuestImport(text: string, existing: Pick<GuestInput, "first
     const long = tooLong(firstName, IMPORT_LIMITS.firstName, "first name") || tooLong(lastName, IMPORT_LIMITS.lastName, "last name") || tooLong(company, IMPORT_LIMITS.company, "company") || tooLong(invitedBy, IMPORT_LIMITS.invitedBy, "invited by");
     if (long) return problem(long);
     const guest: GuestInput = { firstName, lastName, company, invitedBy, status }, key = nameKey(guest);
-    const duplicate = onList.has(key) ? "list" : inPaste.has(key) ? "paste" : null;
-    rows.push({ line, guest, duplicate });
+    const current = onList.get(key);
+    if (current) {
+      const fills = (["invitedBy", "company"] as const).filter((field) => !current[field] && guest[field]);
+      rows.push({ line, guest, duplicate: fills.length ? null : "list", fills: [...fills] });
+      if (!fills.length) { skipped += 1; return; }
+      for (const field of fills) current[field] = guest[field];
+      toUpdate.push(guest);
+      return;
+    }
+    const duplicate = inPaste.has(key) ? "paste" : null;
+    rows.push({ line, guest, duplicate, fills: [] });
     if (duplicate) { skipped += 1; return; }
     inPaste.add(key); toAdd.push(guest);
   });
-  return { rows, problems, toAdd, skipped };
+  return { rows, problems, toAdd, toUpdate, skipped };
 }
