@@ -46,7 +46,7 @@ functions in `functions/party-functions.js`; Firestore and Storage rules stay de
 
 - Data: `parties/{partyId}` (name, startsAt, location, description, capacity, hostNotes, photoPath, thumbDataUrl, timestamps)
   and `parties/{partyId}/guests/{guestId}` (firstName, lastName, company, invitedBy ("Invited by / Type"), notes (optional, max 500), status `coming|pending|notComing`,
-  plusOnes (0-10, default 0), vip (default false), checkedIn, checkedInAt, plusOnesArrived (0-10, reset by undo), searchKey, timestamps; walk-ins also have walkIn: true). Theme photos are stored in Storage under `party-photos/{partyId}/`
+  plusOnes (0-10), vip, every field always written, checkedIn, checkedInAt, plusOnesArrived (0-10, reset by undo), searchKey, timestamps; walk-ins also have walkIn: true). Theme photos are stored in Storage under `party-photos/{partyId}/`
   and returned only to signed-in staff through `getPartyPhoto`.
 - Bulk import (party page, "Import guests"): one guest per line, fields separated by commas or tabs (spreadsheet paste) in the
   order first name, last name, company, invited by / type, status, notes, plus-ones (0-10). Only the names are required (notes can only contain commas in a tab/spreadsheet paste); status is coming, pending or not coming

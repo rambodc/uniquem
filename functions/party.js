@@ -72,10 +72,7 @@ export function validateParty(value) {
   };
 }
 export function searchKey(guest) { return [guest.firstName, guest.lastName, guest.company].filter(Boolean).join(" ").toLowerCase(); }
-/**
- * The editable fields of a guest. `plusOnes`, `vip` and `plusOnesArrived` are only included when the request has them, so an older page
- * that does not know these fields can never reset them. New guests get defaults from `withGuestDefaults`.
- */
+/** The editable fields of a guest: every one is validated and always returned (blank plus-ones means 0, VIP must be true or false). */
 export function validateGuest(value) {
   if (!isObject(value)) throw invalid("The guest is invalid.");
   const guest = {
@@ -85,13 +82,11 @@ export function validateGuest(value) {
     invitedBy: line(value.invitedBy, "invited by / type", LIMITS.invitedBy, { required: false }),
     notes: block(value.notes, "notes", LIMITS.notes),
     status: value.status == null ? "pending" : status(value.status),
+    plusOnes: plusOnes(value.plusOnes),
+    vip: value.vip == null ? false : flag(value.vip, "VIP flag"),
   };
-  if (value.plusOnes != null) guest.plusOnes = plusOnes(value.plusOnes);
-  if (value.vip != null) guest.vip = flag(value.vip, "VIP flag");
   return { ...guest, searchKey: searchKey(guest) };
 }
-/** Fields a new guest always has, so every stored guest reads the same. */
-export const withGuestDefaults = (guest) => ({ plusOnes: 0, vip: false, ...guest });
 /**
  * Door edit ("patch" mode of updateGuest): only notes, status, VIP, plus-ones and, for a checked-in guest, how many plus-ones arrived.
  * Names and company can never be changed this way. Only the fields present are returned; at least one is required.
@@ -111,8 +106,7 @@ export function validateGuestPatch(value) {
 export function validateWalkIn(value) {
   if (!isObject(value)) throw invalid("The guest is invalid.");
   const guest = validateGuest({ ...value, status: "coming", invitedBy: value.invitedBy == null || value.invitedBy === "" ? "Walk-in" : value.invitedBy });
-  const planned = guest.plusOnes ?? 0;
-  return withGuestDefaults({ ...guest, plusOnes: planned, plusOnesArrived: value.plusOnesArrived == null ? planned : plusOnes(value.plusOnesArrived, "plus-ones who arrived") });
+  return { ...guest, plusOnesArrived: value.plusOnesArrived == null ? guest.plusOnes : plusOnes(value.plusOnesArrived, "plus-ones who arrived") };
 }
 
 /** Two guests are "the same person" on a party when first + last name match, ignoring case and extra spaces. */
@@ -132,9 +126,9 @@ export function validateGuestBatch(value) {
 export function fillBlanks(current, pasted) {
   const set = {};
   for (const field of ["invitedBy", "company", "notes"]) {
-    if (!String(current?.[field] ?? "").trim() && String(pasted?.[field] ?? "").trim()) set[field] = pasted[field];
+    if (field in pasted && !current[field].trim() && pasted[field].trim()) set[field] = pasted[field];
   }
-  if (!(Number(current?.plusOnes) > 0) && Number(pasted?.plusOnes) > 0) set.plusOnes = pasted.plusOnes;
+  if ("plusOnes" in pasted && current.plusOnes === 0 && pasted.plusOnes > 0) set.plusOnes = pasted.plusOnes;
   return Object.keys(set).length ? set : null;
 }
 /**
@@ -194,7 +188,7 @@ export function compareGuests(a, b) {
 export const sortGuestList = (guests) => [...guests].sort(compareGuests);
 
 /**
- * Counts for one party's guest list. Guests need { status, checkedIn } and may have { plusOnes, plusOnesArrived }.
+ * Counts for one party's guest list. Guests need { status, plusOnes, plusOnesArrived, checkedIn }.
  * `headcount` is the expected number of people: every coming guest plus their plus-ones. `arrivedPeople` is checked-in guests plus the plus-ones who arrived.
  * `capacityLeft` is by headcount: capacity minus the coming headcount minus anyone who arrived without being marked coming (so a pending or not-coming guest who shows up still takes a space).
  */
@@ -202,7 +196,7 @@ export function summarize(guests, partyCapacity) {
   const summary = { invited: guests.length, coming: 0, pending: 0, notComing: 0, checkedIn: 0, checkedInNotComing: 0, checkedInPending: 0, plusOnes: 0, headcount: 0, arrivedPeople: 0, capacity: partyCapacity ?? null, capacityLeft: null };
   let extra = 0;
   for (const guest of guests) {
-    const planned = Number(guest.plusOnes) || 0, arrived = guest.checkedIn ? Number(guest.plusOnesArrived) || 0 : 0;
+    const planned = guest.plusOnes, arrived = guest.checkedIn ? guest.plusOnesArrived : 0;
     if (guest.status in summary) summary[guest.status] += 1;
     if (guest.status === "coming") { summary.plusOnes += planned; summary.headcount += 1 + planned; }
     if (guest.checkedIn) {

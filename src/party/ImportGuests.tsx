@@ -19,7 +19,7 @@ export default function ImportGuests({ partyId, existing, onImported, onClose }:
     try {
       for (let start = 0; start < toSend.length; start += IMPORT_LIMITS.perCall) {
         const result = await importGuests(partyId, toSend.slice(start, start + IMPORT_LIMITS.perCall));
-        added += result.added; updated += result.updated ?? 0; alreadyThere += result.skipped;
+        added += result.added; updated += result.updated; alreadyThere += result.skipped;
       }
       setDone({ added, updated, skipped: alreadyThere }); setText("");
     } catch (cause) {

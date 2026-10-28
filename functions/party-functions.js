@@ -4,7 +4,7 @@ import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { getStorage } from "firebase-admin/storage";
 import { FieldValue, Timestamp } from "firebase-admin/firestore";
 import { db, callable, resolveAccess, requireFeature } from "./core.js";
-import { LIMITS, sortGuestList, docId, status, validateParty, validateGuest, validateGuestBatch, validateGuestPatch, validateWalkIn, withGuestDefaults, plusOnes, planImport, fillBlanks, searchKey, guestKey, validatePhoto, summarize } from "./party.js";
+import { LIMITS, sortGuestList, docId, status, validateParty, validateGuest, validateGuestBatch, validateGuestPatch, validateWalkIn, plusOnes, planImport, fillBlanks, searchKey, guestKey, validatePhoto, summarize } from "./party.js";
 
 /** Door-screen callables stay warm (one idle instance) so the first tap is not delayed by a cold start. */
 const warm = { ...callable, minInstances: 1 };
@@ -19,7 +19,7 @@ function partyView(doc) {
 }
 function guestView(doc) {
   const data = doc.data();
-  return { id: doc.id, firstName: data.firstName, lastName: data.lastName, company: data.company ?? "", invitedBy: data.invitedBy ?? "", notes: data.notes ?? "", status: data.status, plusOnes: Number(data.plusOnes) || 0, vip: data.vip === true, plusOnesArrived: data.checkedIn === true ? Number(data.plusOnesArrived) || 0 : 0, checkedIn: data.checkedIn === true, checkedInAt: iso(data.checkedInAt), createdAt: iso(data.createdAt), updatedAt: iso(data.updatedAt) };
+  return { id: doc.id, firstName: data.firstName, lastName: data.lastName, company: data.company, invitedBy: data.invitedBy, notes: data.notes, status: data.status, plusOnes: data.plusOnes, vip: data.vip, plusOnesArrived: data.plusOnesArrived, checkedIn: data.checkedIn, checkedInAt: iso(data.checkedInAt), createdAt: iso(data.createdAt), updatedAt: iso(data.updatedAt) };
 }
 async function loadParty(partyId) {
   const snapshot = await parties().doc(partyId).get();
@@ -122,7 +122,7 @@ export const addGuest = onCall(callable, async (request) => {
   const count = (await guestsOf(partyId).count().get()).data().count;
   if (count >= LIMITS.guestsPerParty) throw new HttpsError("resource-exhausted", `A party can have up to ${LIMITS.guestsPerParty} guests.`);
   const ref = guestsOf(partyId).doc();
-  await ref.set({ schemaVersion: 1, ...withGuestDefaults(guest), checkedIn: false, checkedInAt: null, createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() });
+  await ref.set({ schemaVersion: 1, ...guest, plusOnesArrived: 0, checkedIn: false, checkedInAt: null, createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() });
   return { success: true, guestId: ref.id };
 });
 /**
@@ -135,7 +135,7 @@ export const importGuests = onCall(callable, async (request) => {
   const partyId = docId(request.data?.partyId, "party"), guests = validateGuestBatch(request.data?.guests);
   await loadParty(partyId);
   const docs = (await guestsOf(partyId).select("firstName", "lastName", "company", "invitedBy", "notes", "plusOnes").limit(LIMITS.guestsPerParty).get()).docs;
-  const existing = docs.map((doc) => ({ id: doc.id, key: guestKey({ firstName: String(doc.get("firstName") ?? ""), lastName: String(doc.get("lastName") ?? "") }), company: String(doc.get("company") ?? ""), invitedBy: String(doc.get("invitedBy") ?? ""), notes: String(doc.get("notes") ?? ""), plusOnes: Number(doc.get("plusOnes")) || 0 }));
+  const existing = docs.map((doc) => ({ id: doc.id, key: guestKey({ firstName: doc.get("firstName"), lastName: doc.get("lastName") }), company: doc.get("company"), invitedBy: doc.get("invitedBy"), notes: doc.get("notes"), plusOnes: doc.get("plusOnes") }));
   const { toAdd, updates, skipped } = planImport(guests, existing);
   if (existing.length + toAdd.length > LIMITS.guestsPerParty) throw new HttpsError("resource-exhausted", `A party can have up to ${LIMITS.guestsPerParty} guests.`);
   let updated = 0;
@@ -148,7 +148,7 @@ export const importGuests = onCall(callable, async (request) => {
         if (!snapshot.exists) return;
         const current = snapshot.data(), set = fillBlanks(current, updates[index].set);
         if (!set) return;
-        const merged = { firstName: current.firstName ?? "", lastName: current.lastName ?? "", company: set.company ?? current.company ?? "" };
+        const merged = { firstName: current.firstName, lastName: current.lastName, company: set.company ?? current.company };
         transaction.update(refs[index], { ...set, searchKey: searchKey(merged), updatedAt: FieldValue.serverTimestamp() });
         count += 1;
       });
@@ -157,21 +157,21 @@ export const importGuests = onCall(callable, async (request) => {
   }
   for (let start = 0; start < toAdd.length; start += 400) {
     const batch = db.batch();
-    for (const guest of toAdd.slice(start, start + 400)) batch.set(guestsOf(partyId).doc(), { schemaVersion: 1, ...withGuestDefaults(guest), checkedIn: false, checkedInAt: null, importedBy: staff.email, createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() });
+    for (const guest of toAdd.slice(start, start + 400)) batch.set(guestsOf(partyId).doc(), { schemaVersion: 1, ...guest, plusOnesArrived: 0, checkedIn: false, checkedInAt: null, importedBy: staff.email, createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() });
     await batch.commit();
   }
   return { success: true, added: toAdd.length, updated, skipped: skipped + (updates.length - updated) };
 });
 /**
  * Full edit (party page, names included) or, with `patch: true`, a door edit that can only change notes, status, VIP, plus-ones and how many plus-ones arrived.
- * Door edits never touch names or company and never touch check-in. Fields missing from a full edit (plus-ones, VIP) are left as they are.
+ * Door edits never touch names or company and never touch check-in. A full edit writes every guest field.
  */
 export const updateGuest = onCall(warm, async (request) => {
   await requireFeature(request, "party");
   const partyId = docId(request.data?.partyId, "party"), guestId = docId(request.data?.guestId, "guest");
   if (request.data?.patch === true) {
     const patch = validateGuestPatch(request.data), snapshot = await guestSnapshot(partyId, guestId);
-    if (snapshot.data().checkedIn !== true) delete patch.plusOnesArrived; // arrivals only exist for checked-in guests
+    if (!snapshot.data().checkedIn) delete patch.plusOnesArrived; // arrivals only exist for checked-in guests
     await guestsOf(partyId).doc(guestId).update({ ...patch, updatedAt: FieldValue.serverTimestamp() });
     return { success: true, guest: guestView(await guestsOf(partyId).doc(guestId).get()) };
   }
@@ -213,7 +213,7 @@ export const checkInGuest = onCall(warm, async (request) => {
   const alreadyCheckedIn = await db.runTransaction(async (transaction) => {
     const snapshot = await transaction.get(ref);
     if (!snapshot.exists) throw new HttpsError("not-found", "That guest no longer exists.");
-    if (snapshot.data().checkedIn === true) return true;
+    if (snapshot.data().checkedIn) return true;
     transaction.update(ref, { checkedIn: true, checkedInAt: FieldValue.serverTimestamp(), plusOnesArrived: arrived, checkedInBy: staff.email, updatedAt: FieldValue.serverTimestamp() });
     return false;
   });

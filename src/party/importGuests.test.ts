@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { parseGuestImport, parseStatus } from "./importGuests";
 
+/** A guest already on the list, with every field. */
+const onList = (over: { firstName: string; lastName: string } & Partial<{ company: string; invitedBy: string; notes: string; plusOnes: number }>) => ({ company: "", invitedBy: "", notes: "", plusOnes: 0, ...over });
+
 describe("parseStatus", () => {
   it("understands friendly variants and defaults blank to pending", () => {
     for (const word of ["coming", "Coming", "yes", "Confirmed", "attending"]) expect(parseStatus(word)).toBe("coming");
@@ -22,7 +25,7 @@ describe("plus-ones in the import", () => {
     expect(problems.map((problem) => problem.reason)).toEqual(Array(3).fill(expect.stringMatching(/Plus-ones .* whole number from 0 to 10/)));
   });
   it("fills plus-ones on a guest already on the list only when they have none, and never overwrites", () => {
-    const preview = parseGuestImport("Ada, Lovelace, , , , , 2\nGrace, Hopper, , , , , 3", [{ firstName: "Ada", lastName: "Lovelace", plusOnes: 0, company: "Co", invitedBy: "x", notes: "y" }, { firstName: "Grace", lastName: "Hopper", plusOnes: 1, company: "Co", invitedBy: "x", notes: "y" }]);
+    const preview = parseGuestImport("Ada, Lovelace, , , , , 2\nGrace, Hopper, , , , , 3", [onList({ firstName: "Ada", lastName: "Lovelace", company: "Co", invitedBy: "x", notes: "y" }), onList({ firstName: "Grace", lastName: "Hopper", plusOnes: 1, company: "Co", invitedBy: "x", notes: "y" })]);
     expect(preview.rows.map((row) => row.fills)).toEqual([["plusOnes"], []]);
     expect(preview.toUpdate.map((guest) => guest.firstName)).toEqual(["Ada"]); expect(preview.skipped).toBe(1);
   });
@@ -61,7 +64,7 @@ describe("parseGuestImport", () => {
   });
   it("fills blank notes on an existing guest but never overwrites", () => {
     const { rows, toUpdate } = parseGuestImport("Ada, Lovelace, , , , Nut allergy\nGrace, Hopper, , , , New note", [
-      { firstName: "Ada", lastName: "Lovelace", notes: "" }, { firstName: "Grace", lastName: "Hopper", notes: "VIP" }]);
+      onList({ firstName: "Ada", lastName: "Lovelace" }), onList({ firstName: "Grace", lastName: "Hopper", notes: "VIP" })]);
     expect(rows.map((row) => row.fills)).toEqual([["notes"], []]);
     expect(toUpdate).toHaveLength(1);
   });
@@ -80,7 +83,7 @@ describe("parseGuestImport", () => {
     expect(problems[5].reason).toMatch(/too long/);
   });
   it("skips names already on the list and repeats within the paste, ignoring case", () => {
-    const { rows, toAdd, skipped } = parseGuestImport("ada, LOVELACE\nAda, Lovelace\nGrace, Hopper\ngrace, hopper", [{ firstName: "Ada", lastName: "Lovelace" }]);
+    const { rows, toAdd, skipped } = parseGuestImport("ada, LOVELACE\nAda, Lovelace\nGrace, Hopper\ngrace, hopper", [onList({ firstName: "Ada", lastName: "Lovelace" })]);
     expect(toAdd.map((guest) => guest.firstName)).toEqual(["Grace"]);
     expect(skipped).toBe(3);
     expect(rows.map((row) => row.duplicate)).toEqual(["list", "list", null, "paste"]);
@@ -90,9 +93,9 @@ describe("parseGuestImport", () => {
   });
   it("fills in invited by (and company) on guests already on the list when theirs is blank", () => {
     const existing = [
-      { firstName: "Ada", lastName: "Lovelace", company: "", invitedBy: "" },
-      { firstName: "Grace", lastName: "Hopper", company: "Navy", invitedBy: "Friends" },
-      { firstName: "Alan", lastName: "Turing", company: "", invitedBy: "Client" },
+      onList({ firstName: "Ada", lastName: "Lovelace" }),
+      onList({ firstName: "Grace", lastName: "Hopper", company: "Navy", invitedBy: "Friends" }),
+      onList({ firstName: "Alan", lastName: "Turing", invitedBy: "Client" }),
     ];
     const { rows, toAdd, toUpdate, skipped } = parseGuestImport("ADA, lovelace, Engines, Work\nGrace, Hopper, Other, Work\nAlan, Turing, Bletchley\nAlan, Turing, Bletchley\nAda, Lovelace, , Crew\nNew, Person, , Work", existing);
     expect(toAdd.map((guest) => guest.firstName)).toEqual(["New"]);
@@ -102,7 +105,7 @@ describe("parseGuestImport", () => {
     expect(skipped).toBe(3);
   });
   it("treats a pasted blank invited by as nothing to fill", () => {
-    const { rows, toUpdate, skipped } = parseGuestImport("Ada, Lovelace", [{ firstName: "Ada", lastName: "Lovelace", company: "", invitedBy: "" }]);
+    const { rows, toUpdate, skipped } = parseGuestImport("Ada, Lovelace", [onList({ firstName: "Ada", lastName: "Lovelace" })]);
     expect(toUpdate).toEqual([]); expect(skipped).toBe(1); expect(rows[0].duplicate).toBe("list");
   });
 });
