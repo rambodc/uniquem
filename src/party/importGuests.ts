@@ -21,11 +21,11 @@ export type ImportRow = { line: number; guest: GuestInput; duplicate: "list" | "
 export type ImportProblem = { line: number; text: string; reason: string };
 /** `toAdd` are new guests, `toUpdate` are pasted rows that fill in blanks on existing guests, `skipped` change nothing. */
 export type ImportPreview = { rows: ImportRow[]; problems: ImportProblem[]; toAdd: GuestInput[]; toUpdate: GuestInput[]; skipped: number };
-type ExistingGuest = Pick<GuestInput, "firstName" | "lastName"> & Partial<Pick<GuestInput, "company" | "invitedBy" | "notes" | "plusOnes">>;
+type ExistingGuest = Pick<GuestInput, "firstName" | "lastName" | "company" | "invitedBy" | "notes" | "plusOnes">;
 
 const nameKey = (guest: Pick<GuestInput, "firstName" | "lastName">) => `${guest.firstName.toLowerCase()}\n${guest.lastName.toLowerCase()}`;
 // eslint-disable-next-line no-control-regex
-const clean = (value: string | undefined) => (value ?? "").replace(/[\u0000-\u001F\u007F]/g, " ").replace(/\s+/g, " ").trim();
+const clean = (value: string) => value.replace(/[\u0000-\u001F\u007F]/g, " ").replace(/\s+/g, " ").trim();
 const HEADER = /^(first\s*name|firstname|first)$/i;
 
 /**
@@ -40,7 +40,7 @@ export function parseGuestImport(text: string, existing: ExistingGuest[] = []): 
   const onList = new Map<string, { company: string; invitedBy: string; notes: string; plusOnes: number }>();
   for (const guest of existing) {
     const key = nameKey({ firstName: clean(guest.firstName), lastName: clean(guest.lastName) });
-    if (!onList.has(key)) onList.set(key, { company: clean(guest.company), invitedBy: clean(guest.invitedBy), notes: clean(guest.notes), plusOnes: Number(guest.plusOnes) || 0 });
+    if (!onList.has(key)) onList.set(key, { company: clean(guest.company), invitedBy: clean(guest.invitedBy), notes: clean(guest.notes), plusOnes: guest.plusOnes });
   }
   const inPaste = new Set<string>(), rows: ImportRow[] = [], problems: ImportProblem[] = [], toAdd: GuestInput[] = [], toUpdate: GuestInput[] = [];
   let skipped = 0, header = true;

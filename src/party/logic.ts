@@ -14,7 +14,7 @@ export const guestName = (guest: Pick<Guest, "firstName" | "lastName">) => `${gu
 export function filterGuests(guests: Guest[], query: string, status: GuestStatus | "all" = "all", deep = false) {
   const fold = (value: string) => value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
   const words = fold(query).split(/\s+/).filter(Boolean);
-  return guests.filter((guest) => (status === "all" || guest.status === status) && (() => { const key = fold(`${guest.firstName} ${guest.lastName} ${guest.company}${deep ? ` ${guest.invitedBy ?? ""} ${guest.notes ?? ""}${guest.vip ? " vip" : ""}` : ""}`); return words.every((word) => key.includes(word)); })());
+  return guests.filter((guest) => (status === "all" || guest.status === status) && (() => { const key = fold(`${guest.firstName} ${guest.lastName} ${guest.company}${deep ? ` ${guest.invitedBy} ${guest.notes}${guest.vip ? " vip" : ""}` : ""}`); return words.every((word) => key.includes(word)); })());
 }
 const foldName = (value: string) => value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 /** Guests are always listed A to Z by first name, then last name (ignores case and accents). */
@@ -37,8 +37,8 @@ export const clampPlusOnes = (value: number) => Math.min(MAX_PLUS_ONES, Math.max
 export function doorCounts(guests: Guest[]) {
   let expected = 0, arrived = 0, checkedIn = 0;
   for (const guest of guests) {
-    if (guest.status === "coming") expected += 1 + (guest.plusOnes || 0);
-    if (guest.checkedIn) { checkedIn += 1; arrived += 1 + (guest.plusOnesArrived || 0); }
+    if (guest.status === "coming") expected += 1 + guest.plusOnes;
+    if (guest.checkedIn) { checkedIn += 1; arrived += 1 + guest.plusOnesArrived; }
   }
   return { expected, arrived, checkedIn, total: guests.length };
 }

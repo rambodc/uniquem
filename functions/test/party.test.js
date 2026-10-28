@@ -1,7 +1,7 @@
 import { Buffer } from "node:buffer";
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { plusOnes, flag, validateGuestPatch, validateWalkIn, withGuestDefaults, validateParty, validateGuest, validateGuestBatch, planImport, fillBlanks, guestKey, LIMITS, validatePhoto, summarize, docId, status, capacity, sniffImage, PHOTO, sortGuestList, compareGuests } from "../party.js";
+import { plusOnes, flag, validateGuestPatch, validateWalkIn, validateParty, validateGuest, validateGuestBatch, planImport, fillBlanks, guestKey, LIMITS, validatePhoto, summarize, docId, status, capacity, sniffImage, PHOTO, sortGuestList, compareGuests } from "../party.js";
 
 
 const party = { name: "  Winter   Mixer ", startsAt: "2026-12-04T02:30:00.000Z", location: " Calgary Petroleum Club ", description: "  Drinks\r\nand food ", capacity: 120, hostNotes: "Reserve table 4" };
@@ -80,7 +80,7 @@ test("summarizes guest counts, check-ins by status and capacity left", () => {
   const guests = [
     { status: "coming", checkedIn: true }, { status: "coming", checkedIn: false }, { status: "pending", checkedIn: true },
     { status: "notComing", checkedIn: true }, { status: "notComing", checkedIn: false },
-  ];
+  ].map((guest) => ({ plusOnes: 0, plusOnesArrived: 0, ...guest }));
   assert.deepEqual(summarize(guests, 10), { invited: 5, coming: 2, pending: 1, notComing: 2, checkedIn: 3, checkedInNotComing: 1, checkedInPending: 1, plusOnes: 0, headcount: 2, arrivedPeople: 3, capacity: 10, capacityLeft: 10 - 2 - 2 });
   assert.equal(summarize(guests, null).capacityLeft, null);
   assert.equal(summarize(guests, 2).capacityLeft, -2);
@@ -90,8 +90,8 @@ test("summary counts plus-ones: headcount, people arrived and capacity left by h
   const guests = [
     { status: "coming", plusOnes: 2, checkedIn: true, plusOnesArrived: 1 }, // 3 expected, 2 arrived
     { status: "coming", plusOnes: 1, checkedIn: false, plusOnesArrived: 0 }, // 2 expected
-    { status: "coming", checkedIn: false }, // old guest without the field: 1 expected
-    { status: "notComing", plusOnes: 4, checkedIn: false }, // not expected, plus-ones do not count
+    { status: "coming", plusOnes: 0, checkedIn: false, plusOnesArrived: 0 }, // no plus-ones: 1 expected
+    { status: "notComing", plusOnes: 4, checkedIn: false, plusOnesArrived: 0 }, // not expected, plus-ones do not count
     { status: "pending", plusOnes: 1, checkedIn: true, plusOnesArrived: 1 }, // arrived without being marked coming: takes 2 spaces
     { status: "coming", plusOnes: 3, checkedIn: false, plusOnesArrived: 3 }, // arrivals are ignored until checked in
   ];
@@ -107,13 +107,11 @@ test("plus-ones are whole numbers from 0 to 10; blank means 0", () => {
   for (const bad of [-1, 11, 1.5, "2", NaN, true]) assert.throws(() => plusOnes(bad), /whole number from 0 to 10/);
   assert.throws(() => flag("yes", "VIP flag"), /true or false/); assert.equal(flag(true, "x"), true);
 });
-test("guest plus-ones and VIP are validated, and left out when the request does not have them", () => {
+test("every validated guest has plus-ones (blank is 0) and VIP (blank is false)", () => {
   const plain = validateGuest({ firstName: "A", lastName: "B" });
-  assert.equal("plusOnes" in plain, false); assert.equal("vip" in plain, false);
-  assert.deepEqual(withGuestDefaults(plain).plusOnes, 0); assert.equal(withGuestDefaults(plain).vip, false);
+  assert.equal(plain.plusOnes, 0); assert.equal(plain.vip, false);
   const full = validateGuest({ firstName: "A", lastName: "B", plusOnes: 3, vip: true });
   assert.equal(full.plusOnes, 3); assert.equal(full.vip, true);
-  assert.equal(withGuestDefaults(full).plusOnes, 3);
   assert.throws(() => validateGuest({ firstName: "A", lastName: "B", plusOnes: 11 }), /plus-ones/);
   assert.throws(() => validateGuest({ firstName: "A", lastName: "B", vip: "true" }), /VIP/);
 });
@@ -138,7 +136,7 @@ test("walk-ins are coming, default to the Walk-in type and arrive with their pla
 });
 test("fillBlanks fills plus-ones only when the guest has none", () => {
   assert.deepEqual(fillBlanks({ invitedBy: "Me", company: "Co", notes: "x", plusOnes: 0 }, { plusOnes: 2 }), { plusOnes: 2 });
-  assert.deepEqual(fillBlanks({ invitedBy: "Me", company: "Co", notes: "x" }, { plusOnes: 1 }), { plusOnes: 1 });
+  assert.deepEqual(fillBlanks({ invitedBy: "Me", company: "Co", notes: "x", plusOnes: 0 }, { plusOnes: 1 }), { plusOnes: 1 });
   assert.equal(fillBlanks({ invitedBy: "Me", company: "Co", notes: "x", plusOnes: 1 }, { plusOnes: 3 }), null);
   assert.equal(fillBlanks({ invitedBy: "Me", company: "Co", notes: "x", plusOnes: 0 }, { plusOnes: 0 }), null);
 });
@@ -158,7 +156,7 @@ test("bulk import accepts 1 to 200 guests only", () => {
   assert.throws(() => validateGuestBatch(many(201)), /up to 200/);
   for (const bad of [[], undefined, null, "Ada Lovelace", { length: 1 }]) assert.throws(() => validateGuestBatch(bad), /at least one guest/);
 });
-const ex = (id, first, last, company = "", invitedBy = "") => ({ id, key: guestKey({ firstName: first, lastName: last }), company, invitedBy });
+const ex = (id, first, last, company = "", invitedBy = "") => ({ id, key: guestKey({ firstName: first, lastName: last }), company, invitedBy, notes: "", plusOnes: 0 });
 test("bulk import skips repeats and unchanged names already on the party (any case)", () => {
   const guests = validateGuestBatch([{ firstName: "Ada", lastName: "Lovelace" }, { firstName: "ADA", lastName: "LOVELACE", company: "dup" }, { firstName: "Grace", lastName: "Hopper" }, { firstName: "grace", lastName: "hopper" }, { firstName: "Alan", lastName: "Turing", invitedBy: "Work" }]);
   const plan = planImport(guests, [ex("t", "alan", "TURING", "", "Friends")]);
@@ -176,15 +174,15 @@ test("guest notes are trimmed, cleaned, optional and capped at 500", () => {
   assert.throws(() => validateGuest({ firstName: "A", lastName: "B", notes: 5 }), /valid notes/);
 });
 test("fillBlanks fills blank notes and never overwrites them", () => {
-  assert.deepEqual(fillBlanks({ invitedBy: "Me", company: "Co", notes: "" }, { notes: "Vegan" }), { notes: "Vegan" });
-  assert.equal(fillBlanks({ invitedBy: "Me", company: "Co", notes: "VIP" }, { notes: "Vegan" }), null);
+  assert.deepEqual(fillBlanks({ invitedBy: "Me", company: "Co", notes: "", plusOnes: 0 }, { notes: "Vegan" }), { notes: "Vegan" });
+  assert.equal(fillBlanks({ invitedBy: "Me", company: "Co", notes: "VIP", plusOnes: 0 }, { notes: "Vegan" }), null);
 });
 test("fillBlanks only fills blank invited by / company and never overwrites", () => {
   assert.deepEqual(fillBlanks({ invitedBy: "", company: "" }, { invitedBy: "Work", company: "Acme" }), { invitedBy: "Work", company: "Acme" });
   assert.deepEqual(fillBlanks({ invitedBy: "  ", company: "Old" }, { invitedBy: "Work", company: "New" }), { invitedBy: "Work" });
   assert.equal(fillBlanks({ invitedBy: "Me", company: "Old" }, { invitedBy: "Work", company: "New" }), null);
   assert.equal(fillBlanks({ invitedBy: "", company: "" }, { invitedBy: "", company: "" }), null);
-  assert.equal(fillBlanks({}, {}), null);
+  assert.equal(fillBlanks({ invitedBy: "", company: "", notes: "", plusOnes: 0 }, {}), null);
 });
 test("bulk import fills in blanks on existing guests without duplicates", () => {
   const existing = [ex("a", "Ada", "Lovelace"), ex("b", "Grace", "Hopper", "Navy", "Friends"), ex("c", "Alan", "Turing", "", "Client"), ex("d", "Linus", "T")];
