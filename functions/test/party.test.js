@@ -112,6 +112,17 @@ test("bulk import skips repeats and unchanged names already on the party (any ca
   assert.equal(plan.toAdd[0].company, "");
   assert.equal(planImport(guests.slice(0, 1), []).skipped, 0);
 });
+test("guest notes are trimmed, cleaned, optional and capped at 500", () => {
+  assert.equal(validateGuest({ firstName: "A", lastName: "B" }).notes, "");
+  assert.equal(validateGuest({ firstName: "A", lastName: "B", notes: "  VIP\u0000 \r\nplus-one  " }).notes, "VIP \nplus-one");
+  assert.equal(validateGuest({ firstName: "A", lastName: "B", notes: "x".repeat(500) }).notes.length, 500);
+  assert.throws(() => validateGuest({ firstName: "A", lastName: "B", notes: "x".repeat(501) }), /notes is too long/);
+  assert.throws(() => validateGuest({ firstName: "A", lastName: "B", notes: 5 }), /valid notes/);
+});
+test("fillBlanks fills blank notes and never overwrites them", () => {
+  assert.deepEqual(fillBlanks({ invitedBy: "Me", company: "Co", notes: "" }, { notes: "Vegan" }), { notes: "Vegan" });
+  assert.equal(fillBlanks({ invitedBy: "Me", company: "Co", notes: "VIP" }, { notes: "Vegan" }), null);
+});
 test("fillBlanks only fills blank invited by / company and never overwrites", () => {
   assert.deepEqual(fillBlanks({ invitedBy: "", company: "" }, { invitedBy: "Work", company: "Acme" }), { invitedBy: "Work", company: "Acme" });
   assert.deepEqual(fillBlanks({ invitedBy: "  ", company: "Old" }, { invitedBy: "Work", company: "New" }), { invitedBy: "Work" });

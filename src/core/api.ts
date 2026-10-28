@@ -13,8 +13,8 @@ export const restoreContactInquiry = (inquiryId: string) => invoke("restoreConta
 export type GuestStatus = "coming" | "pending" | "notComing";
 export type Party = { id: string; name: string; startsAt: string | null; location: string; description: string; capacity: number | null; hostNotes: string; hasPhoto: boolean; archived: boolean; archivedAt: string | null; thumbDataUrl: string | null; createdAt: string | null; updatedAt: string | null };
 export type PartyInput = { name: string; startsAt: string; location: string; description: string; capacity: number | null; hostNotes: string };
-export type Guest = { id: string; firstName: string; lastName: string; company: string; invitedBy: string; status: GuestStatus; checkedIn: boolean; checkedInAt: string | null; createdAt: string | null; updatedAt: string | null };
-export type GuestInput = { firstName: string; lastName: string; company: string; invitedBy: string; status: GuestStatus };
+export type Guest = { id: string; firstName: string; lastName: string; company: string; invitedBy: string; notes: string; status: GuestStatus; checkedIn: boolean; checkedInAt: string | null; createdAt: string | null; updatedAt: string | null };
+export type GuestInput = { firstName: string; lastName: string; company: string; invitedBy: string; notes: string; status: GuestStatus };
 export type PartySummary = { invited: number; coming: number; pending: number; notComing: number; checkedIn: number; checkedInNotComing: number; checkedInPending: number; capacity: number | null; capacityLeft: number | null };
 export type GuestList = { party: Party; guests: Guest[]; summary: PartySummary; serverTime: string };
 /** What the server says the signed-in account may use. `role` is null when the account has no active staff document. */

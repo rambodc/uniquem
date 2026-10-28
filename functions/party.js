@@ -3,7 +3,7 @@ import { Buffer } from "node:buffer";
 import { HttpsError } from "firebase-functions/v2/https";
 
 export const STATUSES = ["coming", "pending", "notComing"];
-export const LIMITS = { name: 120, location: 200, description: 2000, hostNotes: 2000, firstName: 80, lastName: 80, company: 120, invitedBy: 120, capacityMax: 100000, guestsPerParty: 2000, importPerCall: 200 };
+export const LIMITS = { name: 120, location: 200, description: 2000, hostNotes: 2000, firstName: 80, lastName: 80, company: 120, invitedBy: 120, notes: 500, capacityMax: 100000, guestsPerParty: 2000, importPerCall: 200 };
 export const PHOTO = { maxBytes: 5 * 1024 * 1024, thumbMaxBytes: 30 * 1024, types: { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" } };
 const MIN_TIME = Date.UTC(2020, 0, 1), MAX_TIME = Date.UTC(2100, 0, 1);
 const invalid = (message) => new HttpsError("invalid-argument", message);
@@ -69,6 +69,7 @@ export function validateGuest(value) {
     lastName: line(value.lastName, "last name", LIMITS.lastName),
     company: line(value.company, "company", LIMITS.company, { required: false }),
     invitedBy: line(value.invitedBy, "invited by / type", LIMITS.invitedBy, { required: false }),
+    notes: block(value.notes, "notes", LIMITS.notes),
     status: value.status == null ? "pending" : status(value.status),
   };
   return { ...guest, searchKey: searchKey(guest) };
@@ -85,19 +86,19 @@ export function validateGuestBatch(value) {
   });
 }
 /**
- * What a pasted guest may fill in on a guest already on the list: "invited by" and company, only where the existing value is blank
+ * What a pasted guest may fill in on a guest already on the list: "invited by / type", company and notes, only where the existing value is blank
  * and the pasted one is not. Returns null when nothing would change. Never overwrites a value, never touches status or check-in.
  */
 export function fillBlanks(current, pasted) {
   const set = {};
-  for (const field of ["invitedBy", "company"]) {
+  for (const field of ["invitedBy", "company", "notes"]) {
     if (!String(current?.[field] ?? "").trim() && String(pasted?.[field] ?? "").trim()) set[field] = pasted[field];
   }
   return Object.keys(set).length ? set : null;
 }
 /**
  * Splits validated guests into new guests to add, existing guests to fill in, and the number skipped.
- * `existing` is [{ id, key, company, invitedBy }] for the guests already on the party (key from guestKey).
+ * `existing` is [{ id, key, company, invitedBy, notes }] for the guests already on the party (key from guestKey).
  * Repeats of a new name within the import are skipped; repeats of an existing name can only fill what an earlier row did not.
  */
 export function planImport(guests, existing) {

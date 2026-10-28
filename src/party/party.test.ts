@@ -4,7 +4,7 @@ import { filterGuests, sortGuests, splitParties } from "./logic";
 import { edmontonInputToIso, formatClock, isoToEdmontonInput } from "./time";
 import { checkPhotoFile } from "./photo";
 
-const guest = (over: Partial<Guest>): Guest => ({ id: "g", firstName: "Ada", lastName: "Lovelace", company: "Engines Ltd", invitedBy: "", status: "pending", checkedIn: false, checkedInAt: null, createdAt: null, updatedAt: null, ...over });
+const guest = (over: Partial<Guest>): Guest => ({ id: "g", firstName: "Ada", lastName: "Lovelace", company: "Engines Ltd", invitedBy: "", notes: "", status: "pending", checkedIn: false, checkedInAt: null, createdAt: null, updatedAt: null, ...over });
 const party = (id: string, startsAt: string): Party => ({ id, name: id, startsAt, location: "", description: "", capacity: null, hostNotes: "", hasPhoto: false, archived: false, archivedAt: null, thumbDataUrl: null, createdAt: null, updatedAt: null });
 
 describe("Calgary time", () => {
