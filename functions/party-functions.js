@@ -4,7 +4,7 @@ import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { getStorage } from "firebase-admin/storage";
 import { FieldValue, Timestamp } from "firebase-admin/firestore";
 import { db, callable, resolveAccess, requireFeature } from "./core.js";
-import { LIMITS, sortGuestList, docId, status, validateParty, validateGuest, validateGuestBatch, planImport, guestKey, validatePhoto, summarize } from "./party.js";
+import { LIMITS, sortGuestList, docId, status, validateParty, validateGuest, validateGuestBatch, planImport, fillBlanks, searchKey, guestKey, validatePhoto, summarize } from "./party.js";
 
 const parties = () => db.collection("parties");
 const guestsOf = (partyId) => parties().doc(partyId).collection("guests");
@@ -123,20 +123,42 @@ export const addGuest = onCall(callable, async (request) => {
   await ref.set({ schemaVersion: 1, ...guest, checkedIn: false, checkedInAt: null, createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() });
   return { success: true, guestId: ref.id };
 });
-/** Bulk add (staff only). Skips guests already on the party by first + last name. Returns { added, skipped }. */
+/**
+ * Bulk add (staff only). New names are added. A name already on the party (first + last, any case) is never duplicated:
+ * its blank "invited by" / company is filled in from the import, existing values are never overwritten, and status and check-in
+ * data are never touched. Returns { added, updated, skipped }.
+ */
 export const importGuests = onCall(callable, async (request) => {
   const staff = await requireFeature(request, "party");
   const partyId = docId(request.data?.partyId, "party"), guests = validateGuestBatch(request.data?.guests);
   await loadParty(partyId);
-  const existing = (await guestsOf(partyId).select("firstName", "lastName").limit(LIMITS.guestsPerParty).get()).docs.map((doc) => guestKey({ firstName: String(doc.get("firstName") ?? ""), lastName: String(doc.get("lastName") ?? "") }));
-  const { toAdd, skipped } = planImport(guests, existing);
+  const docs = (await guestsOf(partyId).select("firstName", "lastName", "company", "invitedBy").limit(LIMITS.guestsPerParty).get()).docs;
+  const existing = docs.map((doc) => ({ id: doc.id, key: guestKey({ firstName: String(doc.get("firstName") ?? ""), lastName: String(doc.get("lastName") ?? "") }), company: String(doc.get("company") ?? ""), invitedBy: String(doc.get("invitedBy") ?? "") }));
+  const { toAdd, updates, skipped } = planImport(guests, existing);
   if (existing.length + toAdd.length > LIMITS.guestsPerParty) throw new HttpsError("resource-exhausted", `A party can have up to ${LIMITS.guestsPerParty} guests.`);
+  let updated = 0;
+  if (updates.length) {
+    // One transaction (at most 200 guests per call): re-read each guest and only fill what is still blank, so a concurrent edit is never overwritten.
+    updated = await db.runTransaction(async (transaction) => {
+      const refs = updates.map((update) => guestsOf(partyId).doc(update.id)), snapshots = await transaction.getAll(...refs);
+      let count = 0;
+      snapshots.forEach((snapshot, index) => {
+        if (!snapshot.exists) return;
+        const current = snapshot.data(), set = fillBlanks(current, updates[index].set);
+        if (!set) return;
+        const merged = { firstName: current.firstName ?? "", lastName: current.lastName ?? "", company: set.company ?? current.company ?? "" };
+        transaction.update(refs[index], { ...set, searchKey: searchKey(merged), updatedAt: FieldValue.serverTimestamp() });
+        count += 1;
+      });
+      return count;
+    });
+  }
   for (let start = 0; start < toAdd.length; start += 400) {
     const batch = db.batch();
     for (const guest of toAdd.slice(start, start + 400)) batch.set(guestsOf(partyId).doc(), { schemaVersion: 1, ...guest, checkedIn: false, checkedInAt: null, importedBy: staff.email, createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() });
     await batch.commit();
   }
-  return { success: true, added: toAdd.length, skipped };
+  return { success: true, added: toAdd.length, updated, skipped: skipped + (updates.length - updated) };
 });
 export const updateGuest = onCall(callable, async (request) => {
   await requireFeature(request, "party");
