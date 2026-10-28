@@ -2,7 +2,7 @@
 // to each original in public/images, so phones download a fraction of the bytes.
 const WIDTHS = [480, 800, 1200];
 const intrinsic: Record<string, number> = {
-  "/images/uniquem/oilfield-chemicals-hero-v2.webp": 1672,
+  "/images/uniquem/oilfield-chemicals-hero-v3.webp": 1672,
   "/images/uniquem/industrial-facility.webp": 1672,
   "/images/uniquem/materials-warehouse.webp": 1448,
   "/images/technology-3d.webp": 1693,
