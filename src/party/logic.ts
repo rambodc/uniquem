@@ -20,3 +20,12 @@ const foldName = (value: string) => value.normalize("NFD").replace(/[\u0300-\u03
 /** Guests are always listed A to Z by first name, then last name (ignores case and accents). */
 export const compareGuests = (a: Pick<Guest, "firstName" | "lastName">, b: Pick<Guest, "firstName" | "lastName">) => foldName(a.firstName).localeCompare(foldName(b.firstName), "en") || foldName(a.lastName).localeCompare(foldName(b.lastName), "en");
 export const sortGuests = (guests: Guest[]) => [...guests].sort(compareGuests);
+
+/** Door check-in: the row as the screen shows it while a check-in or undo is still being confirmed by the server. */
+export const optimisticGuest = (guest: Guest, checkedIn: boolean, at: string): Guest => ({ ...guest, checkedIn, checkedInAt: checkedIn ? at : null });
+/** A fresh list from the server, except rows that are mid-action keep what the screen shows, so the poll never undoes an optimistic row. */
+export function mergePolled(current: Guest[], next: Guest[], busyIds: ReadonlySet<string>): Guest[] {
+  if (busyIds.size === 0) return next;
+  const mine = new Map(current.map((guest) => [guest.id, guest]));
+  return next.map((guest) => busyIds.has(guest.id) ? mine.get(guest.id) ?? guest : guest);
+}

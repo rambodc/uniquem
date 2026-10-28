@@ -69,3 +69,7 @@ a.ws-card:hover{transform:translateY(-3px);border-color:var(--accent);box-shadow
 .ws-section-head{flex-wrap:wrap}
 
 .ws-stats{grid-template-columns:repeat(2,1fr)}@media(min-width:620px){.ws-stats{grid-template-columns:repeat(3,1fr)}}@media(min-width:1000px){.ws-stats{grid-template-columns:repeat(6,1fr)}}.ws-stat{min-width:0}.ws-stat b{overflow-wrap:anywhere}@media(max-width:619px){.ws-stat{padding:16px}.ws-stat b{font-size:28px}}
+.ws-door-row{position:relative;overflow:hidden}.ws-door-row.busy{border-color:var(--accent)}.ws-door-row.busy button{cursor:progress}
+.ws-progress{position:absolute;left:0;right:0;bottom:0;height:4px;background:var(--soft);overflow:hidden;font-size:0;color:transparent}.ws-progress::after{content:"";position:absolute;top:0;bottom:0;width:40%;background:var(--accent);border-radius:4px;animation:ws-slide 1s ease-in-out infinite}
+@keyframes ws-slide{0%{left:-40%}100%{left:100%}}
+@media (prefers-reduced-motion:reduce){.ws-progress::after{animation:none;width:100%}}

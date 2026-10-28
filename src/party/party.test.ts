@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Guest, Party } from "../core/api";
-import { filterGuests, sortGuests, splitParties } from "./logic";
+import { filterGuests, mergePolled, optimisticGuest, sortGuests, splitParties } from "./logic";
 import { edmontonInputToIso, formatClock, isoToEdmontonInput } from "./time";
 import { checkPhotoFile } from "./photo";
 
@@ -68,5 +68,21 @@ describe("photo checks", () => {
     expect(checkPhotoFile({ type: "image/png", size: 1000 })).toBe("");
     expect(checkPhotoFile({ type: "image/gif", size: 1000 })).toMatch(/JPEG, PNG or WebP/);
     expect(checkPhotoFile({ type: "image/webp", size: 5 * 1024 * 1024 + 1 })).toMatch(/5 MB/);
+  });
+});
+
+describe("door optimistic updates", () => {
+  it("shows a check-in or undo at once", () => {
+    const out = optimisticGuest(guest({ id: "1", checkedIn: true, checkedInAt: "2026-07-11T01:30:15.000Z" }), false, "2026-07-11T02:00:00.000Z");
+    expect(out.checkedIn).toBe(false); expect(out.checkedInAt).toBeNull();
+    const back = optimisticGuest(out, true, "2026-07-11T02:00:00.000Z");
+    expect(back.checkedIn).toBe(true); expect(back.checkedInAt).toBe("2026-07-11T02:00:00.000Z");
+  });
+  it("a poll never overwrites a row that is mid-action, but updates the rest", () => {
+    const current = [guest({ id: "1", checkedIn: false }), guest({ id: "2", checkedIn: false })];
+    const polled = [guest({ id: "1", checkedIn: true, checkedInAt: "2026-07-11T01:30:15.000Z" }), guest({ id: "2", checkedIn: true, checkedInAt: "2026-07-11T01:31:00.000Z" }), guest({ id: "3" })];
+    const merged = mergePolled(current, polled, new Set(["1"]));
+    expect(merged.map((g) => g.checkedIn)).toEqual([false, true, false]);
+    expect(mergePolled(current, polled, new Set())).toBe(polled);
   });
 });
