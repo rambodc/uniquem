@@ -1,12 +1,14 @@
 import { lazy, Suspense, useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
+import { isPrivatePage } from "../../auth/privatePaths";
 import "./screensaver.css";
 
 /** Milliseconds of inactivity before the screensaver appears. */
 export const SCREENSAVER_IDLE_MS = 30_000;
-// Never on the narrated SandWeb presentation (it plays audio), nor on the staff dashboard and Party
-// pages (the door check-in screen must never be covered mid-use).
-const EXCLUDED = (path: string) => path === "/chemicals/sandweb" || /^\/(dashboard|party)(\/|$)/.test(path);
+// Public pages only. Never on the narrated SandWeb presentation (it plays audio), and never anywhere in the private workspace
+// (sign-in, dashboard and every mini app): a full-screen WebGL scene over a staff page made phones slow and, after the tab slept and
+// its WebGL context was dropped, left a blank overlay in front of the page.
+const EXCLUDED = (path: string) => path === "/chemicals/sandweb" || isPrivatePage(path);
 const ACTIVITY = ["pointermove", "pointerdown", "mousemove", "mousedown", "keydown", "wheel", "scroll", "touchstart", "touchmove"] as const;
 const load = () => import("./ScreensaverScene");
 const Scene = lazy(load);

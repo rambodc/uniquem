@@ -6,6 +6,7 @@ import { listParties, restoreParty, type Party } from "../core/api";
 import { Page, messageOf } from "./Workspace";
 import { splitParties } from "./logic";
 import { formatPartyDateTime } from "./time";
+import { useResume } from "../core/resilience";
 
 function PartyCard({ party, onRestore, busy }: { party: Party; onRestore?: (party: Party) => void; busy?: boolean }) {
   const card = <Link className={`ws-party${party.archived ? " archived" : ""}`} to={`/party/${party.id}`}>
@@ -18,6 +19,7 @@ export default function PartyList() {
   const [showArchived, setShowArchived] = useState(false), [parties, setParties] = useState<Party[] | null>(null), [error, setError] = useState(""), [busy, setBusy] = useState(false);
   const load = useCallback(async (archived: boolean) => { try { const result = await listParties(archived); setParties(result.parties); setError(""); } catch (cause) { setError(messageOf(cause, "The parties could not be loaded. Try again.")); } }, []);
   useEffect(() => { setParties(null); void load(showArchived); }, [load, showArchived]);
+  useResume(() => load(showArchived));
   async function restore(party: Party) { setBusy(true); try { await restoreParty(party.id); await load(showArchived); } catch (cause) { setError(messageOf(cause, "The party could not be restored. Try again.")); } finally { setBusy(false); } }
   const { upcoming, past } = splitParties(parties ?? []);
   const toggle = <button className="ws-button ghost" onClick={() => setShowArchived((value) => !value)}>{showArchived ? <><ArrowLeft size={18} /> Back to parties</> : <><Archive size={18} /> Archived</>}</button>;

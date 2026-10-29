@@ -3,13 +3,13 @@ import { Star } from "lucide-react";
 import type { Guest, GuestDoorPatch, GuestStatus, WalkInInput } from "../core/api";
 import { STATUS_LABEL, clampPlusOnes, guestName } from "./logic";
 import { Sheet, messageOf } from "./Workspace";
-import { Stepper } from "./DoorBits";
+import { GenderPicker, Stepper } from "./DoorBits";
 
 const VipToggle = ({ value, onChange }: { value: boolean; onChange: (next: boolean) => void }) => <button type="button" className={`ws-vip-toggle${value ? " on" : ""}`} aria-pressed={value} onClick={() => onChange(!value)}><Star size={18} fill={value ? "currentColor" : "none"} /> VIP{value ? " (on)" : ""}</button>;
 
 /** Walk-in: someone not on the list. One button creates them as "coming" and checks them in. */
 export function WalkInSheet({ initial, onSubmit, onClose }: { initial: { firstName: string; lastName: string }; onSubmit: (input: WalkInInput) => Promise<void>; onClose: () => void }) {
-  const [form, setForm] = useState<WalkInInput>({ ...initial, company: "", invitedBy: "Walk-in", notes: "", plusOnes: 0, vip: false }), [busy, setBusy] = useState(false), [error, setError] = useState(""), first = useRef<HTMLInputElement>(null);
+  const [form, setForm] = useState<WalkInInput>({ ...initial, gender: "male", company: "", invitedBy: "Walk-in", notes: "", plusOnes: 0, vip: false }), [busy, setBusy] = useState(false), [error, setError] = useState(""), first = useRef<HTMLInputElement>(null);
   useEffect(() => { first.current?.focus(); }, []);
   const set = (key: "firstName" | "lastName" | "company" | "invitedBy" | "notes") => (event: { target: { value: string } }) => setForm((current) => ({ ...current, [key]: event.target.value }));
   async function submit(event: FormEvent) {
@@ -21,6 +21,7 @@ export function WalkInSheet({ initial, onSubmit, onClose }: { initial: { firstNa
       {error && <div className="ws-status error" role="alert">{error}</div>}
       <label>First name<input ref={first} value={form.firstName} onChange={set("firstName")} maxLength={80} required autoComplete="off" /></label>
       <label>Last name<input value={form.lastName} onChange={set("lastName")} maxLength={80} required autoComplete="off" /></label>
+      <GenderPicker className="ws-sheet-wide" value={form.gender} onChange={(gender) => setForm((current) => ({ ...current, gender }))} />
       <label>Company<input value={form.company} onChange={set("company")} maxLength={120} autoComplete="off" /></label>
       <label>Invited by / Type<input value={form.invitedBy} onChange={set("invitedBy")} maxLength={120} autoComplete="off" /></label>
       <div className="ws-sheet-pair"><Stepper label="Plus-ones arriving with them" value={form.plusOnes} onChange={(plusOnes) => setForm((current) => ({ ...current, plusOnes }))} /><VipToggle value={Boolean(form.vip)} onChange={(vip) => setForm((current) => ({ ...current, vip }))} /></div>

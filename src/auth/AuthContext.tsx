@@ -1,6 +1,8 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { onAuthStateChanged, signOut, type User } from "firebase/auth";
-import { auth, authReady } from "../core/firebase";
+import { getToken } from "firebase/app-check";
+import { appCheck, auth, authReady } from "../core/firebase";
+import { emitResume, watchResume } from "../core/resilience";
 import { getAccess, type Access, type Profile } from "../core/api";
 import type { MiniAppId, UserType } from "./miniApps";
 type AuthState = {
@@ -30,6 +32,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     getAccess().then((result) => { if (active) setAccess(result); }, () => { if (active) setAccess(NO_ACCESS); }).finally(() => { if (active) setAccessLoading(false); });
     return () => { active = false; };
   }, [uid, verified]);
+  // Back from the background (or the back/forward cache, or offline): refresh the sign-in and App Check tokens first, then who this
+  // account is, then tell open pages to reload their data. Failures keep what is on screen; nothing goes blank.
+  useEffect(() => watchResume(() => {
+    const current = auth.currentUser;
+    void Promise.allSettled([current?.getIdToken(), appCheck ? getToken(appCheck) : undefined])
+      .then(() => current ? getAccess().then(setAccess, () => undefined) : undefined)
+      .finally(emitResume);
+  }), []);
   const value = useMemo<AuthState>(() => {
     const miniApps = access?.miniApps ?? [];
     return { user, loading, type: access?.type ?? null, miniApps, profile: access?.profile ?? null, refreshAccess: async () => setAccess(await getAccess()), accessLoading: Boolean(user && verified && (accessLoading || !access)), can: (app) => miniApps.includes(app), logout: () => signOut(auth) };

@@ -1,5 +1,5 @@
 import type { Guest } from "../core/api";
-import { STATUS_LABEL, guestName } from "./logic";
+import { GENDER_LABEL, STATUS_LABEL, guestName } from "./logic";
 import { formatClock } from "./time";
 import { PlusChip, VipBadge } from "./DoorBits";
 
@@ -9,6 +9,7 @@ export default function DoorGuestInfo({ guest, busy }: { guest: Guest; busy?: "i
   return <>
     <div className="ws-door-name"><div className="ws-door-title"><b>{guestName(guest)}</b>{guest.vip && <VipBadge />}<PlusChip count={guest.plusOnes} /></div></div>
     <dl className="ws-door-info">
+      <div><dt>Gender</dt><dd>{GENDER_LABEL[guest.gender]}</dd></div>
       {guest.company && <div><dt>Company</dt><dd>{guest.company}</dd></div>}
       {guest.invitedBy && <div><dt>Invited by / Type</dt><dd>{guest.invitedBy}</dd></div>}
       <div><dt>Status</dt><dd>{guest.status === "coming" ? <span className="ws-flag coming">{STATUS_LABEL.coming}</span> : state(guest.status)}</dd></div>

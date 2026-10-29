@@ -62,7 +62,7 @@ export function parseGuestImport(text: string, existing: ExistingGuest[] = []): 
     if (long) return problem(long);
     const plusOnes = plusText === "" ? 0 : /^\d{1,2}$/.test(plusText) ? Number(plusText) : -1;
     if (plusOnes < 0 || plusOnes > IMPORT_LIMITS.plusOnes) return problem(`Plus-ones “${plusText}” must be a whole number from 0 to ${IMPORT_LIMITS.plusOnes}.`);
-    const guest: GuestInput = { firstName, lastName, company, invitedBy, notes, status, plusOnes, vip: false }, key = nameKey(guest);
+    const guest: GuestInput = { firstName, lastName, gender: "male", company, invitedBy, notes, status, plusOnes, vip: false }, key = nameKey(guest);
     const current = onList.get(key);
     if (current) {
       const fills: FillField[] = (["invitedBy", "company", "notes"] as const).filter((field) => !current[field] && guest[field]);

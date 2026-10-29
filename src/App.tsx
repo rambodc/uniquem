@@ -1,10 +1,12 @@
-import { lazy, Suspense, useEffect } from "react";
+import { Suspense, useEffect } from "react";
 import { Navigate, Route, Routes, useLocation, useParams } from "react-router-dom";
 import PublicSite from "./public/PublicSite";
 import SeoMetadata from "./public/SeoMetadata";
 import AnalyticsTracker from "./core/AnalyticsTracker";
 import IdleScreensaver from "./public/screensaver/IdleScreensaver";
-// Private pages (and Firebase Auth) load on demand, keeping them out of the public bundle.
+import ErrorBoundary from "./core/ErrorBoundary";
+import { lazyWithReload as lazy } from "./core/resilience";
+// Private pages (and Firebase Auth) load on demand, keeping them out of the public bundle. If a chunk is gone after a deploy, the page reloads once.
 const PrivateLayout = lazy(() => import("./auth/PrivateLayout"));
 const SignIn = lazy(() => import("./auth/SignIn"));
 const ContactInbox = lazy(() => import("./contact/ContactInbox"));
@@ -21,7 +23,7 @@ const SafetyLessonPage = lazy(() => import("./safety/SafetyLesson"));
 const SafetyProgressPage = lazy(() => import("./safety/SafetyProgress"));
 function SummaryRedirect() { const { partyId = "" } = useParams(); return <Navigate to={`/party/${partyId}`} replace />; }
 function ScrollToTop() { const { pathname } = useLocation(); useEffect(() => { if ("scrollRestoration" in window.history) window.history.scrollRestoration = "manual"; }, []); useEffect(() => { window.scrollTo(0, 0); }, [pathname]); return null; }
-export default function App() { return <><SeoMetadata /><AnalyticsTracker /><ScrollToTop /><Routes>
+export default function App() { const { pathname } = useLocation(); return <><SeoMetadata /><AnalyticsTracker /><ScrollToTop /><ErrorBoundary resetKey={pathname}><Routes>
   <Route element={<Suspense fallback={<main className="center-state">Opening your Uniquem workspace…</main>}><PrivateLayout /></Suspense>}>
     <Route path="/signin" element={<SignIn />} />
     <Route element={<RequireMiniApp />}><Route path="/dashboard" element={<Dashboard />} /></Route>
@@ -39,4 +41,4 @@ export default function App() { return <><SeoMetadata /><AnalyticsTracker /><Scr
   </Route>
   <Route path="/" element={<PublicSite />} /><Route path="/about-us" element={<PublicSite />} /><Route path="/chemicals" element={<PublicSite />} /><Route path="/chemicals/*" element={<PublicSite />} /><Route path="/contact-us" element={<PublicSite />} /><Route path="/service-areas/alberta" element={<PublicSite />} />
   <Route path="*" element={<PublicSite notFound />} />
-</Routes><IdleScreensaver /></>; }
+</Routes></ErrorBoundary><IdleScreensaver /></>; }

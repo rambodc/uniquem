@@ -13,13 +13,14 @@
 //   `superAdminOnly`                     only super admins ever see or use it; it can never be given to staff
 //   `everyone`                           every signed-in user has it automatically; it is never assigned or removed
 // `accent` is the tile's colour (a hex). The palette is green-led and has no yellow.
+// Order here is the dashboard order: Profile is always first, for everyone.
 
 export const MINI_APPS = /** @type {const} */ ([
+  { id: "profile", name: "Profile", description: "Your name, email, photo and password.", route: "/profile", icon: "CircleUserRound", accent: "#6a5acd", superAdminOnly: false, everyone: true },
   { id: "party", name: "Party", description: "Parties, guest lists and door check-in.", route: "/party", icon: "PartyPopper", accent: "#0f9d6b", superAdminOnly: false, everyone: false },
   { id: "contact", name: "Contact form", description: "Messages received through uniquem.ca.", route: "/contact-inbox", icon: "Inbox", accent: "#1e78a8", superAdminOnly: false, everyone: false },
   { id: "safety", name: "Safety", description: "Safety training lessons and short quizzes.", route: "/safety", icon: "HardHat", accent: "#0d8a8a", superAdminOnly: false, everyone: false },
   { id: "users", name: "Users", description: "Add people, edit their details and choose which mini apps each one can open.", route: "/users", icon: "ShieldCheck", accent: "#1d5c4a", superAdminOnly: true, everyone: false },
-  { id: "profile", name: "Profile", description: "Your name, email, photo and password.", route: "/profile", icon: "CircleUserRound", accent: "#6a5acd", superAdminOnly: false, everyone: true },
 ]);
 
 export const SUPER_ADMIN = "super_admin";

@@ -12,3 +12,15 @@
 .pf-hidden{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;border:0!important;opacity:0;pointer-events:none}
 .pf-card .ws-status{margin:14px 0 0}.pf-card .pf-wide .ws-status{margin:0}
 @media(max-width:560px){.pf-fields{grid-template-columns:1fr}.pf-photo-row{flex-direction:column;align-items:flex-start}.pf-photo-actions{flex:none}}
+.pf-collapsible{padding:0!important;overflow:hidden}
+.pf-toggle{display:flex;align-items:center;gap:12px;width:100%;min-height:68px;padding:14px 22px;border:0;background:none;color:var(--ink);font:inherit;text-align:left;cursor:pointer}
+.pf-toggle:hover{background:#f6faf8}.pf-toggle:focus-visible{outline:3px solid var(--accent);outline-offset:-3px}
+.pf-toggle h2{margin:0!important;flex:1;font-size:18px!important}
+.pf-toggle-icon{display:grid;place-items:center;width:38px;height:38px;border-radius:12px;background:var(--soft);color:#2f6f5e}
+.pf-chevron{color:var(--mute);transition:transform .2s}.pf-collapsible.open .pf-chevron{transform:rotate(180deg)}
+.pf-collapsible>.ws-status{margin:0 22px 18px!important}
+.pf-password-form{padding:4px 22px 22px;border-top:1px solid #e6efec;padding-top:18px}
+.pf-logout{display:flex;justify-content:center;padding-top:4px}
+.pf-logout-btn{min-width:220px;color:#a8322a!important;border-color:#e3c3bf!important}.pf-logout-btn:hover:not(:disabled){background:#fdf1ef!important}
+@media(max-width:560px){.pf-logout-btn{width:100%}.pf-toggle{padding:12px 16px}.pf-password-form{padding:16px}}
+@media(prefers-reduced-motion:reduce){.pf-chevron{transition:none}}

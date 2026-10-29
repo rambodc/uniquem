@@ -39,19 +39,19 @@ test("enforces length limits and capacity rules", () => {
 test("strips control characters from text", () => { assert.equal(validateParty({ ...party, name: "Mix\u0000er\u0007" }).name, "Mixer"); });
 
 test("validates and trims a guest, builds a search key and defaults status to pending", () => {
-  const guest = validateGuest({ firstName: " Ada ", lastName: "  Lovelace", company: " Analytical  Engines ", invitedBy: " Rambod " });
+  const guest = validateGuest({ gender: "male", firstName: " Ada ", lastName: "  Lovelace", company: " Analytical  Engines ", invitedBy: " Rambod " });
   assert.deepEqual([guest.firstName, guest.lastName, guest.company, guest.invitedBy, guest.status], ["Ada", "Lovelace", "Analytical Engines", "Rambod", "pending"]);
   assert.equal(guest.searchKey, "ada lovelace analytical engines");
 });
 test("guest needs first and last name, and only the three statuses are allowed", () => {
-  assert.throws(() => validateGuest({ firstName: "", lastName: "X" }), /first name/);
-  assert.throws(() => validateGuest({ firstName: "X", lastName: " " }), /last name/);
-  assert.throws(() => validateGuest({ firstName: "X", lastName: "Y", status: "maybe" }), /Status/);
-  assert.throws(() => validateGuest({ firstName: "x".repeat(81), lastName: "Y" }), /too long/);
-  assert.throws(() => validateGuest({ firstName: "X", lastName: "Y", invitedBy: "x".repeat(121) }), /invited by \/ type is too long/);
-  assert.throws(() => validateGuest({ firstName: 5, lastName: "Y" }), /valid first name/);
+  assert.throws(() => validateGuest({ gender: "male", firstName: "", lastName: "X" }), /first name/);
+  assert.throws(() => validateGuest({ gender: "male", firstName: "X", lastName: " " }), /last name/);
+  assert.throws(() => validateGuest({ gender: "male", firstName: "X", lastName: "Y", status: "maybe" }), /Status/);
+  assert.throws(() => validateGuest({ gender: "male", firstName: "x".repeat(81), lastName: "Y" }), /too long/);
+  assert.throws(() => validateGuest({ gender: "male", firstName: "X", lastName: "Y", invitedBy: "x".repeat(121) }), /invited by \/ type is too long/);
+  assert.throws(() => validateGuest({ gender: "male", firstName: 5, lastName: "Y" }), /valid first name/);
   for (const ok of ["coming", "pending", "notComing"]) assert.equal(status(ok), ok);
-  assert.equal(validateGuest({ firstName: "X", lastName: "Y" }).company, "");
+  assert.equal(validateGuest({ gender: "male", firstName: "X", lastName: "Y" }).company, "");
 });
 test("document ids cannot address other paths", () => {
   assert.equal(docId("AbC123_-x"), "AbC123_-x");
@@ -96,9 +96,9 @@ test("a door edit bounds plus-ones who arrived to 0-10", () => {
   for (const bad of [-1, 11, 2.5, "1"]) assert.throws(() => validateGuestPatch({ plusOnesArrived: bad }), /plus-ones who arrived/);
 });
 test("walk-ins arrive as one checked-in shape: plus-ones who arrived default to the plus-ones, always 0-10", () => {
-  assert.equal(validateWalkIn({ firstName: "A", lastName: "B", plusOnes: 2 }).plusOnesArrived, 2);
-  assert.equal(validateWalkIn({ firstName: "A", lastName: "B", plusOnes: 2, plusOnesArrived: 1 }).plusOnesArrived, 1);
-  assert.throws(() => validateWalkIn({ firstName: "A", lastName: "B", plusOnesArrived: 11 }), /plus-ones who arrived/);
+  assert.equal(validateWalkIn({ gender: "male", firstName: "A", lastName: "B", plusOnes: 2 }).plusOnesArrived, 2);
+  assert.equal(validateWalkIn({ gender: "male", firstName: "A", lastName: "B", plusOnes: 2, plusOnesArrived: 1 }).plusOnesArrived, 1);
+  assert.throws(() => validateWalkIn({ gender: "male", firstName: "A", lastName: "B", plusOnesArrived: 11 }), /plus-ones who arrived/);
 });
 test("the server no longer works out counts (the screens derive them from the guest list in one place)", async () => {
   const party = await import("../party.js"), functions = readFileSync(new URL("../party-functions.js", import.meta.url), "utf8");
@@ -112,31 +112,31 @@ test("plus-ones are whole numbers from 0 to 10; blank means 0", () => {
   assert.throws(() => flag("yes", "VIP flag"), /true or false/); assert.equal(flag(true, "x"), true);
 });
 test("every validated guest has plus-ones (blank is 0) and VIP (blank is false)", () => {
-  const plain = validateGuest({ firstName: "A", lastName: "B" });
+  const plain = validateGuest({ gender: "male", firstName: "A", lastName: "B" });
   assert.equal(plain.plusOnes, 0); assert.equal(plain.vip, false);
-  const full = validateGuest({ firstName: "A", lastName: "B", plusOnes: 3, vip: true });
+  const full = validateGuest({ gender: "male", firstName: "A", lastName: "B", plusOnes: 3, vip: true });
   assert.equal(full.plusOnes, 3); assert.equal(full.vip, true);
-  assert.throws(() => validateGuest({ firstName: "A", lastName: "B", plusOnes: 11 }), /plus-ones/);
-  assert.throws(() => validateGuest({ firstName: "A", lastName: "B", vip: "true" }), /VIP/);
+  assert.throws(() => validateGuest({ gender: "male", firstName: "A", lastName: "B", plusOnes: 11 }), /plus-ones/);
+  assert.throws(() => validateGuest({ gender: "male", firstName: "A", lastName: "B", vip: "true" }), /VIP/);
 });
 test("door patch only allows notes, status, VIP and plus-ones, validated, and needs at least one", () => {
   assert.deepEqual(validateGuestPatch({ partyId: "p", guestId: "g", patch: true, notes: " Vegan\u0000 ", vip: true, plusOnes: 2, plusOnesArrived: 1, status: "coming" }), { notes: "Vegan", vip: true, plusOnes: 2, plusOnesArrived: 1, status: "coming" });
-  assert.deepEqual(validateGuestPatch({ firstName: "Hacker", lastName: "X", company: "Evil", notes: "" }), { notes: "" }); // names and company are ignored
+  assert.deepEqual(validateGuestPatch({ gender: "male", firstName: "Hacker", lastName: "X", company: "Evil", notes: "" }), { notes: "" }); // names and company are ignored
   assert.throws(() => validateGuestPatch({ patch: true }), /Nothing to change/);
-  assert.throws(() => validateGuestPatch({ firstName: "Only", lastName: "Names" }), /Nothing to change/);
+  assert.throws(() => validateGuestPatch({ gender: "male", firstName: "Only", lastName: "Names" }), /Nothing to change/);
   assert.throws(() => validateGuestPatch({ notes: "x".repeat(501) }), /too long/);
   assert.throws(() => validateGuestPatch({ status: "maybe" }), /Status/);
   assert.throws(() => validateGuestPatch({ plusOnesArrived: 11 }), /plus-ones who arrived/);
   assert.throws(() => validateGuestPatch(null), /invalid/);
 });
 test("walk-ins are coming, default to the Walk-in type and arrive with their planned plus-ones", () => {
-  const walkIn = validateWalkIn({ firstName: " Sam ", lastName: "Hughes", company: "Acme", status: "notComing", plusOnes: 2 });
+  const walkIn = validateWalkIn({ gender: "male", firstName: " Sam ", lastName: "Hughes", company: "Acme", status: "notComing", plusOnes: 2 });
   assert.equal(walkIn.status, "coming"); assert.equal(walkIn.invitedBy, "Walk-in"); assert.equal(walkIn.plusOnes, 2); assert.equal(walkIn.plusOnesArrived, 2); assert.equal(walkIn.vip, false);
   assert.equal(walkIn.searchKey, "sam hughes acme");
-  assert.equal(validateWalkIn({ firstName: "A", lastName: "B", invitedBy: "Client", plusOnes: 2, plusOnesArrived: 1 }).plusOnesArrived, 1);
-  assert.equal(validateWalkIn({ firstName: "A", lastName: "B" }).plusOnes, 0);
-  assert.throws(() => validateWalkIn({ firstName: "", lastName: "B" }), /first name/);
-  assert.throws(() => validateWalkIn({ firstName: "A", lastName: "B", plusOnesArrived: 12 }), /plus-ones who arrived/);
+  assert.equal(validateWalkIn({ gender: "male", firstName: "A", lastName: "B", invitedBy: "Client", plusOnes: 2, plusOnesArrived: 1 }).plusOnesArrived, 1);
+  assert.equal(validateWalkIn({ gender: "male", firstName: "A", lastName: "B" }).plusOnes, 0);
+  assert.throws(() => validateWalkIn({ gender: "male", firstName: "", lastName: "B" }), /first name/);
+  assert.throws(() => validateWalkIn({ gender: "male", firstName: "A", lastName: "B", plusOnesArrived: 12 }), /plus-ones who arrived/);
 });
 test("fillBlanks fills plus-ones only when the guest has none", () => {
   assert.deepEqual(fillBlanks({ invitedBy: "Me", company: "Co", notes: "x", plusOnes: 0 }, { plusOnes: 2 }), { plusOnes: 2 });
@@ -146,23 +146,23 @@ test("fillBlanks fills plus-ones only when the guest has none", () => {
 });
 
 test("bulk import validates and trims every guest like a single guest, and reports which row is wrong", () => {
-  const batch = validateGuestBatch([{ firstName: " Ada ", lastName: "Lovelace", company: " Engines  Ltd " }, { firstName: "Grace", lastName: "Hopper", status: "notComing", invitedBy: "Rambod" }]);
+  const batch = validateGuestBatch([{ gender: "male", firstName: " Ada ", lastName: "Lovelace", company: " Engines  Ltd " }, { gender: "male", firstName: "Grace", lastName: "Hopper", status: "notComing", invitedBy: "Rambod" }]);
   assert.equal(batch.length, 2);
   assert.deepEqual([batch[0].firstName, batch[0].company, batch[0].status, batch[0].searchKey], ["Ada", "Engines Ltd", "pending", "ada lovelace engines ltd"]);
   assert.equal(batch[1].status, "notComing");
-  assert.throws(() => validateGuestBatch([{ firstName: "Ada", lastName: "L" }, { firstName: "Bob", lastName: "" }]), /Guest 2: Enter a last name/);
-  assert.throws(() => validateGuestBatch([{ firstName: "Ada", lastName: "L", status: "maybe" }]), /Guest 1: Status/);
+  assert.throws(() => validateGuestBatch([{ gender: "male", firstName: "Ada", lastName: "L" }, { gender: "male", firstName: "Bob", lastName: "" }]), /Guest 2: Enter a last name/);
+  assert.throws(() => validateGuestBatch([{ gender: "male", firstName: "Ada", lastName: "L", status: "maybe" }]), /Guest 1: Status/);
   assert.throws(() => validateGuestBatch([null]), /Guest 1/);
 });
 test("bulk import accepts 1 to 200 guests only", () => {
-  const many = (count) => Array.from({ length: count }, (_, index) => ({ firstName: `G${index}`, lastName: "X" }));
+  const many = (count) => Array.from({ length: count }, (_, index) => ({ gender: "male", firstName: `G${index}`, lastName: "X" }));
   assert.equal(validateGuestBatch(many(LIMITS.importPerCall)).length, 200);
   assert.throws(() => validateGuestBatch(many(201)), /up to 200/);
   for (const bad of [[], undefined, null, "Ada Lovelace", { length: 1 }]) assert.throws(() => validateGuestBatch(bad), /at least one guest/);
 });
-const ex = (id, first, last, company = "", invitedBy = "") => ({ id, key: guestKey({ firstName: first, lastName: last }), company, invitedBy, notes: "", plusOnes: 0 });
+const ex = (id, first, last, company = "", invitedBy = "") => ({ id, key: guestKey({ gender: "male", firstName: first, lastName: last }), company, invitedBy, notes: "", plusOnes: 0 });
 test("bulk import skips repeats and unchanged names already on the party (any case)", () => {
-  const guests = validateGuestBatch([{ firstName: "Ada", lastName: "Lovelace" }, { firstName: "ADA", lastName: "LOVELACE", company: "dup" }, { firstName: "Grace", lastName: "Hopper" }, { firstName: "grace", lastName: "hopper" }, { firstName: "Alan", lastName: "Turing", invitedBy: "Work" }]);
+  const guests = validateGuestBatch([{ gender: "male", firstName: "Ada", lastName: "Lovelace" }, { gender: "male", firstName: "ADA", lastName: "LOVELACE", company: "dup" }, { gender: "male", firstName: "Grace", lastName: "Hopper" }, { gender: "male", firstName: "grace", lastName: "hopper" }, { gender: "male", firstName: "Alan", lastName: "Turing", invitedBy: "Work" }]);
   const plan = planImport(guests, [ex("t", "alan", "TURING", "", "Friends")]);
   assert.deepEqual(plan.toAdd.map((guest) => `${guest.firstName} ${guest.lastName}`), ["Ada Lovelace", "Grace Hopper"]);
   assert.deepEqual(plan.updates, []);
@@ -171,11 +171,11 @@ test("bulk import skips repeats and unchanged names already on the party (any ca
   assert.equal(planImport(guests.slice(0, 1), []).skipped, 0);
 });
 test("guest notes are trimmed, cleaned, optional and capped at 500", () => {
-  assert.equal(validateGuest({ firstName: "A", lastName: "B" }).notes, "");
-  assert.equal(validateGuest({ firstName: "A", lastName: "B", notes: "  VIP\u0000 \r\nplus-one  " }).notes, "VIP \nplus-one");
-  assert.equal(validateGuest({ firstName: "A", lastName: "B", notes: "x".repeat(500) }).notes.length, 500);
-  assert.throws(() => validateGuest({ firstName: "A", lastName: "B", notes: "x".repeat(501) }), /notes is too long/);
-  assert.throws(() => validateGuest({ firstName: "A", lastName: "B", notes: 5 }), /valid notes/);
+  assert.equal(validateGuest({ gender: "male", firstName: "A", lastName: "B" }).notes, "");
+  assert.equal(validateGuest({ gender: "male", firstName: "A", lastName: "B", notes: "  VIP\u0000 \r\nplus-one  " }).notes, "VIP \nplus-one");
+  assert.equal(validateGuest({ gender: "male", firstName: "A", lastName: "B", notes: "x".repeat(500) }).notes.length, 500);
+  assert.throws(() => validateGuest({ gender: "male", firstName: "A", lastName: "B", notes: "x".repeat(501) }), /notes is too long/);
+  assert.throws(() => validateGuest({ gender: "male", firstName: "A", lastName: "B", notes: 5 }), /valid notes/);
 });
 test("fillBlanks fills blank notes and never overwrites them", () => {
   assert.deepEqual(fillBlanks({ invitedBy: "Me", company: "Co", notes: "", plusOnes: 0 }, { notes: "Vegan" }), { notes: "Vegan" });
@@ -191,12 +191,12 @@ test("fillBlanks only fills blank invited by / company and never overwrites", ()
 test("bulk import fills in blanks on existing guests without duplicates", () => {
   const existing = [ex("a", "Ada", "Lovelace"), ex("b", "Grace", "Hopper", "Navy", "Friends"), ex("c", "Alan", "Turing", "", "Client"), ex("d", "Linus", "T")];
   const guests = validateGuestBatch([
-    { firstName: "ADA", lastName: "lovelace", invitedBy: "Work", company: "Engines" },
-    { firstName: "Grace", lastName: "Hopper", invitedBy: "Work", company: "Other", status: "notComing" },
-    { firstName: "Alan", lastName: "Turing", invitedBy: "Work", company: "Bletchley" },
-    { firstName: "Linus", lastName: "T" },
-    { firstName: "Ada", lastName: "Lovelace", invitedBy: "Crew" },
-    { firstName: "New", lastName: "Person", invitedBy: "Work" },
+    { gender: "male", firstName: "ADA", lastName: "lovelace", invitedBy: "Work", company: "Engines" },
+    { gender: "male", firstName: "Grace", lastName: "Hopper", invitedBy: "Work", company: "Other", status: "notComing" },
+    { gender: "male", firstName: "Alan", lastName: "Turing", invitedBy: "Work", company: "Bletchley" },
+    { gender: "male", firstName: "Linus", lastName: "T" },
+    { gender: "male", firstName: "Ada", lastName: "Lovelace", invitedBy: "Crew" },
+    { gender: "male", firstName: "New", lastName: "Person", invitedBy: "Work" },
   ]);
   const plan = planImport(guests, existing);
   assert.deepEqual(plan.toAdd.map((guest) => guest.firstName), ["New"]);
@@ -208,5 +208,14 @@ test("guest lists sort by first name, then last name, ignoring case and accents"
   const guests = [{ id: "1", firstName: "zoe", lastName: "Adams" }, { id: "2", firstName: "Éric", lastName: "Zed" }, { id: "3", firstName: "eric", lastName: "Baker" }, { id: "4", firstName: "Ada", lastName: "Young" }, { id: "5", firstName: "ada", lastName: "Brown" }];
   assert.deepEqual(sortGuestList(guests).map((g) => g.id), ["5", "4", "3", "2", "1"]);
   assert.equal(guests[0].id, "1"); // input is not mutated
-  assert.ok(compareGuests({ firstName: "Amy", lastName: "Z" }, { firstName: "Ben", lastName: "A" }) < 0);
+  assert.ok(compareGuests({ gender: "male", firstName: "Amy", lastName: "Z" }, { gender: "male", firstName: "Ben", lastName: "A" }) < 0);
+});
+test("gender is required on every guest and must be male or female (single add, edit, walk-in and import)", () => {
+  assert.equal(validateGuest({ gender: "female", firstName: "A", lastName: "B" }).gender, "female");
+  assert.equal(validateGuest({ gender: "male", firstName: "A", lastName: "B" }).gender, "male");
+  for (const bad of [undefined, null, "", "Male", "other", 1]) assert.throws(() => validateGuest({ gender: bad, firstName: "A", lastName: "B" }), /male or female/);
+  assert.throws(() => validateWalkIn({ firstName: "A", lastName: "B" }), /male or female/);
+  assert.equal(validateWalkIn({ gender: "female", firstName: "A", lastName: "B" }).gender, "female");
+  assert.throws(() => validateGuestBatch([{ gender: "male", firstName: "A", lastName: "B" }, { firstName: "C", lastName: "D" }]), /Guest 2: Choose male or female/);
+  assert.throws(() => validateGuestPatch({ gender: "female" }), /Nothing to change/, "the door edit never changes gender");
 });

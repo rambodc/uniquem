@@ -8,6 +8,7 @@ import { Confirm, Page, messageOf } from "../party/Workspace";
 import { formatPartyDateTime } from "../party/time";
 import { UserSheet } from "./UserSheets";
 import { inviteNotice, inviteState, isInviteProblem, type Notice } from "./invite";
+import { useResume } from "../core/resilience";
 import "./users.css";
 
 const appNames = (user: UserRecord) => user.type === SUPER_ADMIN ? "Every mini app" : user.miniApps.length ? `${user.miniApps.map((id) => miniAppById(id).name).join(", ")} (and Profile)` : "Profile only";
@@ -47,6 +48,7 @@ export default function UsersApp() {
   const [sheet, setSheet] = useState<{ user: UserRecord | null } | null>(null), [deleting, setDeleting] = useState<UserRecord | null>(null);
   const load = useCallback(async () => { try { setUsers((await listUsers()).users); setError(""); } catch (cause) { setError(messageOf(cause, "The users could not be loaded. Try again.")); } }, []);
   useEffect(() => { void load(); }, [load]);
+  useResume(load);
   async function run(task: () => Promise<Notice>, fallback: string) { setBusy(true); setError(""); setNotice(null); try { setNotice(await task()); await load(); } catch (cause) { setError(messageOf(cause, fallback)); } finally { setBusy(false); setDeleting(null); } }
   const invite = (user: UserRecord) => run(async () => inviteNotice(user.email, (await sendUserInvite(user.uid)).invite, false), "The invite email could not be sent. Try again.");
   const remove = (user: UserRecord) => run(async () => { await deleteUser(user.uid); return { tone: "ok", text: `${user.firstName} ${user.lastName} (${user.email}) was deleted.` }; }, "The user could not be deleted. Try again.");
