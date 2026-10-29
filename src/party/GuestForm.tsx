@@ -1,7 +1,8 @@
 import { useRef, useState, type FormEvent } from "react";
 import type { GuestInput, GuestStatus } from "../core/api";
+import { GenderPicker } from "./DoorBits";
 import { MAX_PLUS_ONES, STATUS_LABEL, clampPlusOnes } from "./logic";
-export const emptyGuest: GuestInput = { firstName: "", lastName: "", company: "", invitedBy: "", notes: "", status: "pending", plusOnes: 0, vip: false };
+export const emptyGuest: GuestInput = { firstName: "", lastName: "", gender: "male", company: "", invitedBy: "", notes: "", status: "pending", plusOnes: 0, vip: false };
 /** One guest at a time. Used for both adding and editing. */
 export default function GuestForm({ initial = emptyGuest, submitLabel, onSubmit, onCancel, clearAfterSave = false }: { initial?: GuestInput; submitLabel: string; clearAfterSave?: boolean; onSubmit: (guest: GuestInput) => Promise<void>; onCancel?: () => void }) {
   const first = useRef<HTMLInputElement>(null), [guest, setGuest] = useState(initial), [busy, setBusy] = useState(false), [error, setError] = useState("");
@@ -14,6 +15,7 @@ export default function GuestForm({ initial = emptyGuest, submitLabel, onSubmit,
     {error && <div className="ws-status error" role="alert">{error}</div>}
     <label>First name<input ref={first} value={guest.firstName} onChange={set("firstName")} maxLength={80} required autoComplete="off" /></label>
     <label>Last name<input value={guest.lastName} onChange={set("lastName")} maxLength={80} required autoComplete="off" /></label>
+    <GenderPicker value={guest.gender} onChange={(gender) => setGuest((current) => ({ ...current, gender }))} />
     <label>Company<input value={guest.company} onChange={set("company")} maxLength={120} autoComplete="off" /></label>
     <label>Invited by / Type<input value={guest.invitedBy} onChange={set("invitedBy")} maxLength={120} autoComplete="off" /></label>
     <label className="ws-guest-notes">Notes<textarea value={guest.notes} onChange={set("notes")} maxLength={500} rows={3} placeholder="Allergies, VIP, plus-one, anything to remember" /></label>

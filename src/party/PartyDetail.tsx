@@ -5,10 +5,11 @@ import { Archive, ArchiveRestore, DoorOpen, MapPin, Pencil, Search, StickyNote, 
 import { addGuest, archiveParty, deleteGuest, restoreParty, getPartyPhoto, listGuests, setGuestStatus, updateGuest, type Guest, type GuestInput, type GuestList, type GuestStatus } from "../core/api";
 import { Confirm, Page, messageOf } from "./Workspace";
 import GuestForm from "./GuestForm";
-import { PlusChip, VipBadge } from "./DoorBits";
+import { GenderChip, PlusChip, VipBadge } from "./DoorBits";
 import ImportGuests from "./ImportGuests";
 import { STATUS_LABEL, filterGuests, guestName, sortGuests } from "./logic";
-import { summarize } from "./summary";
+import { genderRatio, summarize } from "./summary";
+import { useResume } from "../core/resilience";
 import { formatClock, formatPartyDateTime } from "./time";
 
 export default function PartyDetail() {
@@ -18,6 +19,7 @@ export default function PartyDetail() {
   const [confirm, setConfirm] = useState<{ kind: "party" } | { kind: "guest"; guest: Guest } | null>(null), [busy, setBusy] = useState(false);
   const load = useCallback(async () => { try { setData(await listGuests(partyId)); setError(""); } catch (cause) { setError(messageOf(cause, "This party could not be loaded. Try again.")); } }, [partyId]);
   useEffect(() => { void load(); }, [load]);
+  useResume(load);
   useEffect(() => { if (!data?.party.hasPhoto) { setPhoto(null); return; } let active = true; getPartyPhoto(partyId).then((result) => { if (active) setPhoto(result.dataUrl); }, () => undefined); return () => { active = false; }; }, [partyId, data?.party.hasPhoto, data?.party.updatedAt]);
 
   const party = data?.party, summary = data && summarize(data.guests, data.party.capacity), visible = data ? filterGuests(sortGuests(data.guests), query, filter) : [];
@@ -31,6 +33,7 @@ export default function PartyDetail() {
   const left = summary?.capacityLeft;
   const stats: [string, string | number, string?, string?][] = summary ? [["Invited", summary.invited], ["Coming", summary.coming], ["Pending", summary.pending], ["Not coming", summary.notComing],
     ["Checked in", summary.checkedIn, undefined, summary.arrivedPeople !== summary.checkedIn ? `${people(summary.arrivedPeople)} with plus-ones` : undefined],
+    ["Male / Female", `${summary.male} / ${summary.female}`, "gender", `Ratio ${genderRatio(summary.male, summary.female)} (M : F) · Checked in ${summary.checkedInMale} / ${summary.checkedInFemale}${summary.checkedIn ? ` (${genderRatio(summary.checkedInMale, summary.checkedInFemale)})` : ""}`],
     ...(left == null ? [] : [["Capacity left", left < 0 ? `Over by ${-left}` : left, left < 0 ? "warn" : undefined, left < 0 ? `Over capacity: ${summary.arrivedPeople} arrived, capacity ${summary.capacity}` : `${summary.arrivedPeople} arrived of ${summary.capacity}`] as [string, string | number, string?, string?]])] : [];
   if (!data) return <Page title="Party" back={{ to: "/party", label: "Parties" }}>{error ? <div className="ws-status error" role="alert">{error}</div> : <div className="ws-empty">Loading…</div>}</Page>;
   return <Page title={party!.name} subtitle={<><span>{formatPartyDateTime(party!.startsAt)}</span> · <span><MapPin size={14} /> {party!.location}</span></>} back={{ to: "/party", label: "Parties" }}
@@ -59,8 +62,8 @@ export default function PartyDetail() {
       </div>
       {data.guests.length === 0 ? <div className="ws-empty">No guests yet. Add the first one.</div> : visible.length === 0 ? <div className="ws-empty">No guests match.</div> : <ul className="ws-guests">{visible.map((guest) => <li key={guest.id}>
         {editing === guest.id
-          ? <GuestForm initial={{ firstName: guest.firstName, lastName: guest.lastName, company: guest.company, invitedBy: guest.invitedBy, notes: guest.notes, status: guest.status, plusOnes: guest.plusOnes, vip: guest.vip }} submitLabel="Save" onSubmit={async (next: GuestInput) => { await updateGuest(partyId, guest.id, next); setEditing(null); await load(); }} onCancel={() => setEditing(null)} />
-          : <><div className="ws-guest-main"><b className="ws-guest-name">{guestName(guest)}{guest.vip && <VipBadge />}<PlusChip count={guest.plusOnes} />{guest.notes && <span className="ws-note-icon" role="img" aria-label="Has a note"><StickyNote size={15} /></span>}</b><small>{[guest.company, guest.invitedBy].filter(Boolean).join(" · ") || "—"}</small>{guest.notes && <p className="ws-guest-note">{guest.notes}</p>}{guest.checkedIn && <span className="ws-badge ok">Checked in {formatClock(guest.checkedInAt)}</span>}</div>
+          ? <GuestForm initial={{ firstName: guest.firstName, lastName: guest.lastName, gender: guest.gender, company: guest.company, invitedBy: guest.invitedBy, notes: guest.notes, status: guest.status, plusOnes: guest.plusOnes, vip: guest.vip }} submitLabel="Save" onSubmit={async (next: GuestInput) => { await updateGuest(partyId, guest.id, next); setEditing(null); await load(); }} onCancel={() => setEditing(null)} />
+          : <><div className="ws-guest-main"><b className="ws-guest-name">{guestName(guest)}<GenderChip gender={guest.gender} />{guest.vip && <VipBadge />}<PlusChip count={guest.plusOnes} />{guest.notes && <span className="ws-note-icon" role="img" aria-label="Has a note"><StickyNote size={15} /></span>}</b><small>{[guest.company, guest.invitedBy].filter(Boolean).join(" · ") || "—"}</small>{guest.notes && <p className="ws-guest-note">{guest.notes}</p>}{guest.checkedIn && <span className="ws-badge ok">Checked in {formatClock(guest.checkedInAt)}</span>}</div>
             <select aria-label={`Status for ${guestName(guest)}`} className={`ws-status-select ${guest.status}`} value={guest.status} onChange={(event) => void act(() => setGuestStatus(partyId, guest.id, event.target.value as GuestStatus), "The status could not be changed.")}>{(Object.keys(STATUS_LABEL) as GuestStatus[]).map((status) => <option key={status} value={status}>{STATUS_LABEL[status]}</option>)}</select>
             <div className="ws-guest-actions"><button className="ws-chip" onClick={() => { setEditing(guest.id); setAdding(false); }}><Pencil size={15} /> Edit</button><button className="ws-chip danger-text" onClick={() => setConfirm({ kind: "guest", guest })}><Trash2 size={15} /> Delete</button></div></>}
       </li>)}</ul>}

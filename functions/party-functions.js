@@ -19,7 +19,7 @@ function partyView(doc) {
 }
 function guestView(doc) {
   const data = doc.data();
-  return { id: doc.id, firstName: data.firstName, lastName: data.lastName, company: data.company, invitedBy: data.invitedBy, notes: data.notes, status: data.status, plusOnes: data.plusOnes, vip: data.vip, plusOnesArrived: data.plusOnesArrived, checkedIn: data.checkedIn, checkedInAt: iso(data.checkedInAt), createdAt: iso(data.createdAt), updatedAt: iso(data.updatedAt) };
+  return { id: doc.id, firstName: data.firstName, lastName: data.lastName, gender: data.gender, company: data.company, invitedBy: data.invitedBy, notes: data.notes, status: data.status, plusOnes: data.plusOnes, vip: data.vip, plusOnesArrived: data.plusOnesArrived, checkedIn: data.checkedIn, checkedInAt: iso(data.checkedInAt), createdAt: iso(data.createdAt), updatedAt: iso(data.updatedAt) };
 }
 async function loadParty(partyId) {
   const snapshot = await parties().doc(partyId).get();

@@ -41,19 +41,21 @@ test("registry is the single source: ids are unique, every entry is complete, on
   assert.deepEqual([...USER_TYPES], ["super_admin", "staff"]);
 });
 test("miniAppsFor: super admins get every mini app; staff get what everyone has plus the assigned assignable ones, in registry order", () => {
+  assert.equal(MINI_APPS[0].id, "profile", "Profile is always the first tile, for everyone");
   assert.deepEqual(miniAppsFor(SUPER_ADMIN, []), MINI_APP_IDS);
+  assert.equal(miniAppsFor(SUPER_ADMIN, [])[0], "profile");
   assert.deepEqual(miniAppsFor(SUPER_ADMIN, undefined), MINI_APP_IDS);
-  assert.deepEqual(miniAppsFor(STAFF, ["contact"]), ["contact", "profile"]);
-  assert.deepEqual(miniAppsFor(STAFF, ["contact", "party"]), ["party", "contact", "profile"]);
-  assert.deepEqual(miniAppsFor(STAFF, ["users", "party", "nope"]), ["party", "profile"], "users can never be assigned");
+  assert.deepEqual(miniAppsFor(STAFF, ["contact"]), ["profile", "contact"]);
+  assert.deepEqual(miniAppsFor(STAFF, ["contact", "party"]), ["profile", "party", "contact"]);
+  assert.deepEqual(miniAppsFor(STAFF, ["users", "party", "nope"]), ["profile", "party"], "users can never be assigned");
   assert.deepEqual(miniAppsFor(STAFF, []), ["profile"], "everyone has Profile, even with nothing assigned");
   assert.deepEqual(miniAppsFor(STAFF, undefined), ["profile"]);
   assert.deepEqual(miniAppsFor(STAFF, ["profile"]), ["profile"], "assigning Profile changes nothing");
 });
 test("resolveAccess: access comes only from a users/{uid} record that matches the signed-in email", async () => {
-  assert.deepEqual(await resolveAccess(request("ann", "ANN@uniquem.ca"), database), { uid: "ann", email: "ann@uniquem.ca", type: "staff", miniApps: ["party", "profile"], profile: { firstName: "Test", lastName: "Person", email: "ann@uniquem.ca", thumbDataUrl: null } });
+  assert.deepEqual(await resolveAccess(request("ann", "ANN@uniquem.ca"), database), { uid: "ann", email: "ann@uniquem.ca", type: "staff", miniApps: ["profile", "party"], profile: { firstName: "Test", lastName: "Person", email: "ann@uniquem.ca", thumbDataUrl: null } });
   assert.deepEqual((await resolveAccess(request("boss", "boss@uniquem.ca"), database)).miniApps, MINI_APP_IDS);
-  assert.deepEqual((await resolveAccess(request("sneaky", "sneaky@uniquem.ca"), database)).miniApps, ["party", "profile"]);
+  assert.deepEqual((await resolveAccess(request("sneaky", "sneaky@uniquem.ca"), database)).miniApps, ["profile", "party"]);
   assert.deepEqual((await resolveAccess(request("none", "none@uniquem.ca"), database)).miniApps, ["profile"], "a user with no assigned mini apps still has Profile");
   for (const [uid, address] of [["nameless", "nameless@uniquem.ca"], ["halfnamed", "half@uniquem.ca"], ["untrimmed", "untrimmed@uniquem.ca"]]) assert.equal(await resolveAccess(request(uid, address), database), null, `${uid}: a record without both stored names is not on the current schema`);
   assert.equal(await resolveAccess(request("ann", "ann@uniquem.ca"), fakeDb({})), null, "no record: no access, no hardcoded owner");

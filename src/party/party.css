@@ -175,3 +175,9 @@
 @media (prefers-reduced-motion:reduce){.ws-checkin:active:not(:disabled){transform:none}}
 .ws-page>.ws-meta{margin-left:auto;margin-right:auto}.ws-expected{margin-top:14px}
 .ws-stat.warn b{font-size:26px;line-height:1.2}
+/* Gender: chip on guest cards, picker in the guest forms, and the stats card (wider: it carries both counts and the ratios). */
+.ws-gender{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:99px;font-size:11.5px;font-weight:650;line-height:1.5;vertical-align:middle}
+.ws-gender.male{background:#e3eff7;color:#1e5a7f}.ws-gender.female{background:#f3e6f1;color:#7d3570}
+.ws-guest-name .ws-gender{margin-left:8px}
+.ws-gender-field{display:grid;gap:6px;font-size:14px;font-weight:600;color:#2a4a47}.ws-gender-field .ws-seg{margin-top:0}.ws-gender-field .ws-seg button{min-height:46px}
+.ws-stat.gender{grid-column:span 2}

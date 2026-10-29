@@ -36,9 +36,9 @@ describe("parseGuestImport", () => {
     const { rows, problems, toAdd } = parseGuestImport("Ada, Lovelace, Engines Ltd, Rambod, coming\nGrace,Hopper\n\n  Alan , Turing , , , not coming  ");
     expect(problems).toEqual([]);
     expect(toAdd).toEqual([
-      { firstName: "Ada", lastName: "Lovelace", company: "Engines Ltd", invitedBy: "Rambod", notes: "", status: "coming", plusOnes: 0, vip: false },
-      { firstName: "Grace", lastName: "Hopper", company: "", invitedBy: "", notes: "", status: "pending", plusOnes: 0, vip: false },
-      { firstName: "Alan", lastName: "Turing", company: "", invitedBy: "", notes: "", status: "notComing", plusOnes: 0, vip: false },
+      { firstName: "Ada", lastName: "Lovelace", gender: "male", company: "Engines Ltd", invitedBy: "Rambod", notes: "", status: "coming", plusOnes: 0, vip: false },
+      { firstName: "Grace", lastName: "Hopper", gender: "male", company: "", invitedBy: "", notes: "", status: "pending", plusOnes: 0, vip: false },
+      { firstName: "Alan", lastName: "Turing", gender: "male", company: "", invitedBy: "", notes: "", status: "notComing", plusOnes: 0, vip: false },
     ]);
     expect(rows.map((row) => row.line)).toEqual([1, 2, 4]);
   });

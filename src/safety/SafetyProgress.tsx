@@ -3,6 +3,7 @@ import { listSafetyProgress, type SafetyProgressBoard } from "../core/api";
 import { Page, messageOf } from "../party/Workspace";
 import { formatPartyDateTime } from "../party/time";
 import { statusText } from "./safety";
+import { useResume } from "../core/resilience";
 import "./safety.css";
 
 export function ProgressTable({ board }: { board: SafetyProgressBoard }) {
@@ -23,7 +24,9 @@ export function ProgressTable({ board }: { board: SafetyProgressBoard }) {
 /** Super admins: everyone who has Safety, against every lesson. */
 export default function SafetyProgressPage() {
   const [board, setBoard] = useState<SafetyProgressBoard | null>(null), [error, setError] = useState("");
-  useEffect(() => { listSafetyProgress().then(setBoard, (cause) => setError(messageOf(cause, "Progress could not be loaded. Try again."))); }, []);
+  const load = () => listSafetyProgress().then((next) => { setBoard(next); setError(""); }, (cause) => setError(messageOf(cause, "Progress could not be loaded. Try again.")));
+  useEffect(() => { void load(); }, []);
+  useResume(load);
   return <Page eyebrow="Safety training" title="Everyone's progress" subtitle="Each person's status on the current version of every lesson." back={{ to: "/safety", label: "Safety" }}>
     {error && <div className="ws-status error" role="alert">{error}</div>}
     {!board && !error && <div className="ws-empty sf-gap">Loading progress…</div>}

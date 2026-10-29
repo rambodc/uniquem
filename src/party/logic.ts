@@ -1,4 +1,4 @@
-import type { Guest, GuestStatus, Party } from "../core/api";
+import type { Gender, Guest, GuestStatus, Party } from "../core/api";
 /** A party counts as "upcoming" until 12 hours after it starts, so tonight's party stays on top while it is running. */
 export const UPCOMING_GRACE_MS = 12 * 60 * 60 * 1000;
 export function splitParties(parties: Party[], now = Date.now()) {
@@ -7,6 +7,9 @@ export function splitParties(parties: Party[], now = Date.now()) {
   const past = parties.filter((party) => time(party) + UPCOMING_GRACE_MS < now).sort((a, b) => time(b) - time(a));
   return { upcoming, past };
 }
+/** Gender, required on every guest. New guests start on male. */
+export const GENDER_LABEL: Record<Gender, string> = { male: "Male", female: "Female" };
+export const GENDERS = Object.keys(GENDER_LABEL) as Gender[];
 export const STATUS_LABEL: Record<GuestStatus, string> = { coming: "Coming", pending: "Pending", notComing: "Not coming" };
 export const guestName = (guest: Pick<Guest, "firstName" | "lastName">) => `${guest.firstName} ${guest.lastName}`;
 /** Matches every typed word against first name, last name or company (any order, ignores case and accents).

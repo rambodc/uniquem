@@ -4,7 +4,7 @@ import { arrivedGuests, checkedInMessage, clampPlusOnes, filterGuests, groupChip
 import { edmontonInputToIso, formatClock, formatClockShort, isoToEdmontonInput } from "./time";
 import { checkPhotoFile } from "./photo";
 
-const guest = (over: Partial<Guest>): Guest => ({ id: "g", firstName: "Ada", lastName: "Lovelace", company: "Engines Ltd", invitedBy: "", notes: "", status: "pending", plusOnes: 0, vip: false, plusOnesArrived: 0, checkedIn: false, checkedInAt: null, createdAt: null, updatedAt: null, ...over });
+const guest = (over: Partial<Guest>): Guest => ({ id: "g", firstName: "Ada", lastName: "Lovelace", gender: "male", company: "Engines Ltd", invitedBy: "", notes: "", status: "pending", plusOnes: 0, vip: false, plusOnesArrived: 0, checkedIn: false, checkedInAt: null, createdAt: null, updatedAt: null, ...over });
 const party = (id: string, startsAt: string): Party => ({ id, name: id, startsAt, location: "", description: "", capacity: null, hostNotes: "", hasPhoto: false, archived: false, archivedAt: null, thumbDataUrl: null, createdAt: null, updatedAt: null });
 
 describe("Calgary time", () => {

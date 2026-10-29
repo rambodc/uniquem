@@ -1,4 +1,5 @@
-import { lazy, Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
+import { lazyWithReload } from "../core/resilience";
 import { Link, useParams } from "react-router-dom";
 import { ArrowLeft, ArrowRight, Check, ClipboardCheck, Pause, Play, RotateCcw, X } from "lucide-react";
 import { getSafetyLesson, submitSafetyQuiz, type SafetyLesson as Lesson, type SafetyResult, type SafetySlide } from "../core/api";
@@ -6,7 +7,7 @@ import { Page, messageOf } from "../party/Workspace";
 import "./safety.css";
 
 // three.js only loads when a 3D slide is actually opened.
-const ModelView = lazy(() => import("./ModelView"));
+const ModelView = lazyWithReload(() => import("./ModelView"));
 
 /** Narration for a slide: a big round play button over the picture (a smaller one in the corner on video and 3D slides, so it never
  * covers the video controls or blocks turning the model). Pause while playing, with a progress ring; replay when it has finished.

@@ -1,10 +1,10 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import type { Guest } from "../core/api";
-import { summarize } from "./summary";
+import { genderRatio, summarize } from "./summary";
 
-type G = Pick<Guest, "status" | "plusOnes" | "plusOnesArrived" | "checkedIn">;
-const g = (over: Partial<G> = {}): G => ({ status: "coming", plusOnes: 0, plusOnesArrived: 0, checkedIn: false, ...over });
+type G = Pick<Guest, "status" | "plusOnes" | "plusOnesArrived" | "checkedIn" | "gender">;
+const g = (over: Partial<G> = {}): G => ({ gender: "male", status: "coming", plusOnes: 0, plusOnesArrived: 0, checkedIn: false, ...over });
 const many = (count: number, over: Partial<G> = {}) => Array.from({ length: count }, () => g(over));
 
 describe("party summary invariants (table driven)", () => {
@@ -36,7 +36,14 @@ describe("party summary invariants (table driven)", () => {
       expect(s.capacityLeft).toBe(40 - s.arrivedPeople);
       expect(s.checkedIn).toBeLessThanOrEqual(s.arrivedPeople);
       expect(s.checkedInPending + s.checkedInNotComing).toBeLessThanOrEqual(s.checkedIn);
+      expect(s.male + s.female).toBe(s.invited);
+      expect(s.checkedInMale + s.checkedInFemale).toBe(s.checkedIn);
     }
+  });
+  it("gender: every guest on the list, and those checked in; plus-ones are not counted; ratio is reduced", () => {
+    const s = summarize([g({ gender: "female", checkedIn: true, plusOnes: 2, plusOnesArrived: 2 }), g({ gender: "female" }), ...many(3, { checkedIn: true }), g({ status: "notComing" })], null);
+    expect([s.male, s.female, s.checkedInMale, s.checkedInFemale]).toEqual([4, 2, 3, 1]);
+    expect(genderRatio(s.male, s.female)).toBe("2 : 1"); expect(genderRatio(3, 1)).toBe("3 : 1"); expect(genderRatio(5, 0)).toBe("1 : 0"); expect(genderRatio(0, 0)).toBe("—"); expect(genderRatio(23, 17)).toBe("23 : 17");
   });
   it("does not change the guests it is given", () => { const guests = [g({ checkedIn: true, plusOnesArrived: 1 })], copy = structuredClone(guests); summarize(guests, 5); expect(guests).toEqual(copy); });
 });

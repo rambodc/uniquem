@@ -3,7 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import type { Guest } from "../core/api";
 import DoorGuestInfo from "./DoorGuestInfo";
 
-const guest = (over: Partial<Guest>): Guest => ({ id: "g", firstName: "Ada", lastName: "Lovelace", company: "Engines Ltd", invitedBy: "Client", notes: "Vegan, plus-one", status: "coming", plusOnes: 0, vip: false, plusOnesArrived: 0, checkedIn: false, checkedInAt: null, createdAt: null, updatedAt: null, ...over });
+const guest = (over: Partial<Guest>): Guest => ({ id: "g", firstName: "Ada", lastName: "Lovelace", gender: "male", company: "Engines Ltd", invitedBy: "Client", notes: "Vegan, plus-one", status: "coming", plusOnes: 0, vip: false, plusOnesArrived: 0, checkedIn: false, checkedInAt: null, createdAt: null, updatedAt: null, ...over });
 const html = (over: Partial<Guest> = {}, busy?: "in" | "out") => renderToStaticMarkup(<DoorGuestInfo guest={guest(over)} busy={busy} />);
 
 describe("door guest info", () => {

@@ -4,6 +4,7 @@ import { BarChart3, Box, CheckCircle2, Clock, Image, PlayCircle, XCircle } from 
 import { listSafety, type SafetyCategory, type SafetyLessonSummary, type SafetySlideType } from "../core/api";
 import { Page, messageOf } from "../party/Workspace";
 import { KIND_LABELS, startLabel, statusText } from "./safety";
+import { useResume } from "../core/resilience";
 import "./safety.css";
 
 const KIND_ICONS: Record<SafetySlideType, typeof Image> = { image: Image, video: PlayCircle, "3d": Box };
@@ -41,7 +42,9 @@ export function CategoryList({ categories, lessons }: { categories: SafetyCatego
 /** Safety: the categories and their lessons, with the signed-in person's own status on each. */
 export default function SafetyHome() {
   const [data, setData] = useState<Awaited<ReturnType<typeof listSafety>> | null>(null), [error, setError] = useState("");
-  useEffect(() => { listSafety().then(setData, (cause) => setError(messageOf(cause, "Safety training could not be loaded. Try again."))); }, []);
+  const load = () => listSafety().then((next) => { setData(next); setError(""); }, (cause) => setError(messageOf(cause, "Safety training could not be loaded. Try again.")));
+  useEffect(() => { void load(); }, []);
+  useResume(load);
   return <Page title="Safety" subtitle="Short lessons, then a quick quiz. Pass each one to complete it." back={{ to: "/dashboard", label: "Dashboard" }}
     actions={data?.canViewProgress ? <Link className="ws-chip" to="/safety/progress"><BarChart3 size={16} /> Everyone's progress</Link> : undefined}>
     {error && <div className="ws-status error" role="alert">{error}</div>}

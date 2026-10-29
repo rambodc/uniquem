@@ -6,6 +6,7 @@ import { addWalkIn, checkInGuest, listGuests, undoCheckIn, updateGuestAtDoor, ty
 import { messageOf } from "./Workspace";
 import { arrivedGuests, checkedInMessage, guestName, mergePolled, optimisticGuest, searchResults, splitName } from "./logic";
 import { summarize } from "./summary";
+import { useResume } from "../core/resilience";
 import { formatClockShort } from "./time";
 import DoorRow, { type RowBusy } from "./DoorRow";
 import DoorBrowse from "./DoorBrowse";
@@ -23,6 +24,7 @@ export default function CheckIn() {
   const pollRef = useRef(0), busyRef = useRef(new Set<string>()), seqRef = useRef(0), searchRef = useRef<HTMLInputElement>(null), resultsRef = useRef<HTMLDivElement>(null);
   useEffect(() => { document.title = "Door check-in | Uniquem private"; if (window.matchMedia("(pointer: fine)").matches) searchRef.current?.focus(); }, []);
   const load = useCallback(async () => { try { const seq = seqRef.current, next = await listGuests(partyId); if (seq !== seqRef.current) return; setData((current) => ({ ...next, guests: mergePolled(current?.guests ?? [], next.guests, busyRef.current) })); setError(""); } catch (cause) { setError(messageOf(cause, "Can't reach the server. Check your connection.")); } }, [partyId]);
+  useResume(load);
   useEffect(() => { void load(); const tick = () => { if (!document.hidden) void load(); }; pollRef.current = window.setInterval(tick, POLL_MS); return () => window.clearInterval(pollRef.current); }, [load]);
   useEffect(() => { if (!armed) return; const timer = window.setTimeout(() => setArmed(null), 4000); return () => window.clearTimeout(timer); }, [armed]);
   useEffect(() => { if (!toast) return; const timer = window.setTimeout(() => setToast(null), TOAST_MS); return () => window.clearTimeout(timer); }, [toast]);

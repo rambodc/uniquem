@@ -1,7 +1,18 @@
 import { httpsCallable } from "firebase/functions";
 import { functions } from "./firebase";
 import type { MiniAppId, UserType } from "../auth/miniApps";
-async function invoke<TRequest, TResponse>(name: string, data?: TRequest) { return (await httpsCallable<TRequest, TResponse>(functions, name)(data as TRequest)).data; }
+/** Reads (list…/get…) give up after 20 s and are tried once more on a network-type failure (a request left hanging while the phone slept);
+ * changes give up after 30 s and are never repeated automatically. */
+const isRead = (name: string) => /^(list|get)[A-Z]/.test(name);
+const retryable = (error: unknown) => /deadline-exceeded|unavailable|internal/.test(String((error as { code?: string })?.code ?? ""));
+async function invoke<TRequest, TResponse>(name: string, data?: TRequest) {
+  const call = () => httpsCallable<TRequest, TResponse>(functions, name, { timeout: isRead(name) ? 20_000 : 30_000 })(data as TRequest);
+  try { return (await call()).data; } catch (error) {
+    if (!isRead(name) || !retryable(error)) throw error;
+    await new Promise((resolve) => setTimeout(resolve, 800));
+    return (await call()).data;
+  }
+}
 export type Inquiry = { id: string; inquiryType: string; productName?: string; name: string; email?: string; company?: string; phone?: string; message: string; createdAt: string | null; archived: boolean };
 export type InquiryList = { inquiries: Inquiry[]; total: number; nextCursor: number | null };
 export const submitContactInquiry = (data: Record<string, string>) => invoke("submitContactInquiry", data);
@@ -11,14 +22,15 @@ export const restoreContactInquiry = (inquiryId: string) => invoke("restoreConta
 
 // ---- Access and Party ----
 export type GuestStatus = "coming" | "pending" | "notComing";
+export type Gender = "male" | "female";
 export type Party = { id: string; name: string; startsAt: string | null; location: string; description: string; capacity: number | null; hostNotes: string; hasPhoto: boolean; archived: boolean; archivedAt: string | null; thumbDataUrl: string | null; createdAt: string | null; updatedAt: string | null };
 export type PartyInput = { name: string; startsAt: string; location: string; description: string; capacity: number | null; hostNotes: string };
-export type Guest = { id: string; firstName: string; lastName: string; company: string; invitedBy: string; notes: string; status: GuestStatus; plusOnes: number; vip: boolean; plusOnesArrived: number; checkedIn: boolean; checkedInAt: string | null; createdAt: string | null; updatedAt: string | null };
-export type GuestInput = { firstName: string; lastName: string; company: string; invitedBy: string; notes: string; status: GuestStatus; plusOnes: number; vip: boolean };
+export type Guest = { id: string; firstName: string; lastName: string; gender: Gender; company: string; invitedBy: string; notes: string; status: GuestStatus; plusOnes: number; vip: boolean; plusOnesArrived: number; checkedIn: boolean; checkedInAt: string | null; createdAt: string | null; updatedAt: string | null };
+export type GuestInput = { firstName: string; lastName: string; gender: Gender; company: string; invitedBy: string; notes: string; status: GuestStatus; plusOnes: number; vip: boolean };
 /** What staff may change at the door: never names or company. */
 export type GuestDoorPatch = Partial<Pick<GuestInput, "notes" | "status" | "vip" | "plusOnes">> & { plusOnesArrived?: number };
 /** A walk-in is added and checked in at the door in one step. */
-export type WalkInInput = { firstName: string; lastName: string; company: string; invitedBy: string; notes: string; plusOnes: number; vip?: boolean };
+export type WalkInInput = { firstName: string; lastName: string; gender: Gender; company: string; invitedBy: string; notes: string; plusOnes: number; vip?: boolean };
 export type GuestList = { party: Party; guests: Guest[]; serverTime: string };
 /** Who the signed-in account is: names and email (changed only by a super admin) and the small avatar (changed only by the person). */
 export type Profile = { firstName: string; lastName: string; email: string; thumbDataUrl: string | null };

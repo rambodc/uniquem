@@ -33,7 +33,7 @@ describe("Safety", () => {
     expect(video).toContain("controls"); expect(video).toContain('poster="https://x/p.jpg"'); expect(video).toContain('preload="metadata"'); expect(video).not.toContain("autoplay");
     expect(html(<SlideMedia slide={{ type: "3d", title: "T", caption: "C", url: "https://x/m.glb", posterUrl: null, audioUrl: null }} />)).toContain("Loading the 3D model");
     const source = readFileSync("src/safety/SafetyLesson.tsx", "utf8");
-    expect(source).not.toMatch(/from "@react-three|from "three/); expect(source).toContain('lazy(() => import("./ModelView"))');
+    expect(source).not.toMatch(/from "@react-three|from "three/); expect(source).toContain('lazyWithReload(() => import("./ModelView"))');
   });
   it("narration is a round play button on the media itself (centre on pictures, corner on video and 3D), never a text button", () => {
     const slide = (type: "image" | "video" | "3d", audioUrl: string | null) => ({ type, title: "T", caption: "C", url: `https://x/m.${type}`, posterUrl: null, audioUrl });

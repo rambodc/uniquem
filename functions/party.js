@@ -38,6 +38,12 @@ export function status(value) {
   if (!STATUSES.includes(value)) throw invalid("Status must be coming, pending or notComing.");
   return value;
 }
+/** A guest's gender: "male" or "female". Required on every guest (the forms start on male). */
+export const GENDERS = ["male", "female"];
+export function gender(value) {
+  if (!GENDERS.includes(value)) throw invalid("Choose male or female.");
+  return value;
+}
 export function capacity(value) {
   if (value == null || value === "") return null;
   if (typeof value !== "number" || !Number.isInteger(value) || value < 0 || value > LIMITS.capacityMax) throw invalid(`Capacity must be a whole number from 0 to ${LIMITS.capacityMax}.`);
@@ -78,6 +84,7 @@ export function validateGuest(value) {
   const guest = {
     firstName: line(value.firstName, "first name", LIMITS.firstName),
     lastName: line(value.lastName, "last name", LIMITS.lastName),
+    gender: gender(value.gender),
     company: line(value.company, "company", LIMITS.company, { required: false }),
     invitedBy: line(value.invitedBy, "invited by / type", LIMITS.invitedBy, { required: false }),
     notes: block(value.notes, "notes", LIMITS.notes),
