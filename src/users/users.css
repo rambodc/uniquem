@@ -7,3 +7,7 @@
 .ws-user-actions{display:flex;flex-wrap:wrap;gap:8px}
 .ws-seg.two{grid-template-columns:repeat(2,1fr)}
 .ws-sheet-form .ws-app-pick{display:flex;align-items:flex-start;gap:12px;padding:6px 0}.ws-app-pick input{margin-top:1px;flex:none}.ws-app-pick span{display:grid;gap:2px}.ws-app-pick small{color:var(--mute);font-size:13px;font-weight:400}
+.ws-invite{display:flex;align-items:flex-start;gap:8px;margin-top:4px;padding:8px 11px;border-radius:12px;font-size:13px;line-height:1.35}.ws-invite svg{flex:none;margin-top:1px}.ws-invite span{display:grid;gap:2px}.ws-invite small{font-size:12.5px;opacity:.9}
+.ws-invite.ok{background:#e1f5ee;color:#16604f}.ws-invite.info{background:#e8eef0;color:#3f5a63}.ws-invite.problem{background:#fde9e7;color:#8f2a22}
+.ws-user-card.invite-problem{border-color:#e7a39c;box-shadow:0 0 0 1px #e7a39c inset}
+.ws-status.error svg{vertical-align:-3px}

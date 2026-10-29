@@ -28,3 +28,5 @@ If the secret is missing, Resend rejects the request (for example 403 for an unv
 ## User invites
 
 The Users mini app (`createUser`, `sendUserInvite` in `users-functions.js`) emails new users a one-time Firebase password-setup link through the same Resend API, secret and `Uniquem Website <website@irobotx.io>` sender. The email goes only to the new user (Reply-To is the super admin who invited them) and is sent once per create, or when a super admin presses "Resend invite". The link is never logged or returned to the browser.
+Both callables wait for Resend, retry transient failures twice with the same `Idempotency-Key` (`user-invite/{uid}/{random per invite}`), and save the outcome on `users/{uid}.invite`
+(see `invite.js`); `listUsers` reads `GET /emails/{id}` to update delivered / delayed / bounced / complained.

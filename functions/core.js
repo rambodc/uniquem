@@ -15,7 +15,7 @@ export function validateInquiry(value) { if (!value || typeof value !== "object"
 
 // Access for the private workspace. There is no hardcoded owner: every account needs a verified email and an active
 // record at users/{Firebase Auth uid} = { email, firstName, lastName, type: "super_admin" | "staff", miniApps: string[], photoPath, thumbDataUrl,
-// createdAt, createdBy, updatedAt, updatedBy }.
+// invite (see invite.js), createdAt, createdBy, updatedAt, updatedBy }.
 // A super admin can open every mini app in miniApps.js; staff can open the mini apps everyone has (Profile) plus the ones listed on their record.
 // A record that is missing, for another email, without both names, or with an unknown type means no access: nothing is guessed or defaulted.
 // Removing a user deletes the record (and the sign-in account), so access ends on their very next call.

@@ -97,7 +97,12 @@ resend an invite, and delete a user (with a confirm step; removes the `users/{ui
 - **Adding a user** creates the Firebase Auth account (random password nobody knows, email marked verified) and the `users/{uid}` record together, then emails the
   person an invite once through Resend (from `Uniquem Website <website@irobotx.io>`, same `RESEND_API_KEY` secret as the contact form). The email holds a one-time
   Firebase link where they choose their own password, then they sign in at `/signin`. The link works for about an hour; "Resend invite" sends a new one. The link is only ever
-  in that email: it is not shown in the app and not logged. If the email fails, the user still exists and the screen says so.
+  in that email: it is not shown in the app and not logged.
+- **Invite status (never silent)**: `createUser` and `sendUserInvite` wait for Resend's answer (transient network/409/429/5xx errors retried twice with backoff, one
+  `Idempotency-Key` per invite so retries can't send twice) and return `invite: { sent: true, id } | { sent: false, reason }`. Every `users/{uid}` record has
+  `invite` (`functions/invite.js`): `null` if no invite was ever sent from the app, else `{ status: sent|delivered|delayed|bounced|complained|failed, at, by, resendId, error, checkedAt }`.
+  `listUsers` re-reads Resend's delivery status for invites from the last 3 days that aren't final. A failed, bounced or spam-flagged invite is a red alert on the
+  user's card and at the top of the Users screen, with the reason and a highlighted "Resend invite" button; a failure at create time is a red alert, never a green notice.
 - Super admins can edit or delete each other. They can fix their own name, but their own email, type and mini apps need another super admin, and nobody can delete themselves. The last super admin can never be demoted or deleted.
 - **Changing an email** updates the Firebase Auth account first (it must stay unique; the record's email must equal the account's), then the record; if the record can't be saved the account is put back. The person's sessions are revoked, so they sign in again with the new email.
 - **Super admins can't change a password or a profile photo**: no callable does it. The photo and the password belong to the person (see Profile). Deleting a user also deletes their photo.
