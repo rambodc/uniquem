@@ -5,7 +5,7 @@ import { MemoryRouter } from "react-router-dom";
 import type { ReactNode } from "react";
 import type { SafetyLesson, SafetyLessonSummary, SafetyProgress, SafetyResult } from "../core/api";
 import { CategoryList } from "./SafetyHome";
-import { QuizView, SlideMedia } from "./SafetyLesson";
+import { QuizView, SlideMedia, SlideView } from "./SafetyLesson";
 import { ProgressTable } from "./SafetyProgress";
 import { startLabel, statusText } from "./safety";
 
@@ -34,6 +34,18 @@ describe("Safety", () => {
     expect(html(<SlideMedia slide={{ type: "3d", title: "T", caption: "C", url: "https://x/m.glb", posterUrl: null, audioUrl: null }} />)).toContain("Loading the 3D model");
     const source = readFileSync("src/safety/SafetyLesson.tsx", "utf8");
     expect(source).not.toMatch(/from "@react-three|from "three/); expect(source).toContain('lazy(() => import("./ModelView"))');
+  });
+  it("narration is a round play button on the media itself (centre on pictures, corner on video and 3D), never a text button", () => {
+    const slide = (type: "image" | "video" | "3d", audioUrl: string | null) => ({ type, title: "T", caption: "C", url: `https://x/m.${type}`, posterUrl: null, audioUrl });
+    const view = (slides: ReturnType<typeof slide>[]) => html(<SlideView lesson={{ ...lesson, slides }} index={0} onBack={() => undefined} onNext={() => undefined} />);
+    const image = view([slide("image", "https://x/a.mp3")]);
+    expect(image).toMatch(/<div class="sf-stage image">.*<button type="button" class="sf-narrate center idle" aria-label="Play narration"/s);
+    expect(image).toContain('src="https://x/a.mp3"'); expect(image).not.toContain("Play audio");
+    expect(view([slide("video", "https://x/a.mp3")])).toContain('class="sf-narrate corner idle"');
+    expect(view([slide("3d", "https://x/a.mp3")])).toContain('class="sf-narrate corner idle"');
+    expect(view([slide("image", null)])).not.toContain("sf-narrate");
+    const source = readFileSync("src/safety/SafetyLesson.tsx", "utf8");
+    expect(source).toMatch(/return \(\) => \{ el\?\.pause\(\); \}/); expect(source).toContain("key={`${index}:${slide.audioUrl}`}");
   });
   it("the quiz can't be submitted until every question is answered, and shows the server's grading after", () => {
     const quiz = (answers: (number | null)[], result: SafetyResult | null) => html(<QuizView lesson={lesson} answers={answers} result={result} busy={false} error="" onPick={() => undefined} onSubmit={() => undefined} onRetake={() => undefined} onReview={() => undefined} />);

@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, ArrowRight, Check, ClipboardCheck, Pause, RotateCcw, Volume2, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, ClipboardCheck, Pause, Play, RotateCcw, X } from "lucide-react";
 import { getSafetyLesson, submitSafetyQuiz, type SafetyLesson as Lesson, type SafetyResult, type SafetySlide } from "../core/api";
 import { Page, messageOf } from "../party/Workspace";
 import "./safety.css";
@@ -8,11 +8,23 @@ import "./safety.css";
 // three.js only loads when a 3D slide is actually opened.
 const ModelView = lazy(() => import("./ModelView"));
 
-function AudioButton({ url }: { url: string }) {
-  const audio = useRef<HTMLAudioElement>(null), [playing, setPlaying] = useState(false);
-  const toggle = () => { const el = audio.current; if (!el) return; if (el.paused) void el.play(); else el.pause(); };
-  return <><audio ref={audio} src={url} preload="none" onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)} onEnded={() => setPlaying(false)} />
-    <button type="button" className="ws-chip" onClick={toggle}>{playing ? <Pause size={16} /> : <Volume2 size={16} />} {playing ? "Pause audio" : "Play audio"}</button></>;
+/** Narration for a slide: a big round play button over the picture (a smaller one in the corner on video and 3D slides, so it never
+ * covers the video controls or blocks turning the model). Pause while playing, with a progress ring; replay when it has finished.
+ * The audio stops when the slide changes (this component is remounted per slide and pauses on unmount). */
+export function NarrationButton({ url, corner }: { url: string; corner: boolean }) {
+  const audio = useRef<HTMLAudioElement>(null), [state, setState] = useState<"idle" | "playing" | "paused" | "ended">("idle"), [progress, setProgress] = useState(0);
+  useEffect(() => { const el = audio.current; return () => { el?.pause(); }; }, []);
+  const toggle = () => { const el = audio.current; if (!el) return; if (el.paused) { if (el.ended) el.currentTime = 0; void el.play().catch(() => setState("paused")); } else el.pause(); };
+  const label = state === "playing" ? "Pause narration" : state === "ended" ? "Replay narration" : "Play narration";
+  const Icon = state === "playing" ? Pause : state === "ended" ? RotateCcw : Play, R = 46, C = 2 * Math.PI * R;
+  return <>
+    <audio ref={audio} src={url} preload="none" onPlay={() => setState("playing")} onPause={(e) => { if (!e.currentTarget.ended) setState("paused"); }} onEnded={() => { setState("ended"); setProgress(1); }}
+      onTimeUpdate={(e) => { const el = e.currentTarget; if (el.duration) setProgress(el.currentTime / el.duration); }} />
+    <button type="button" className={`sf-narrate ${corner ? "corner" : "center"} ${state}`} onClick={toggle} aria-label={label} title={label}>
+      <svg className="sf-ring" viewBox="0 0 100 100" aria-hidden><circle cx="50" cy="50" r={R} /><circle className="sf-ring-fill" cx="50" cy="50" r={R} strokeDasharray={C} strokeDashoffset={C * (1 - progress)} /></svg>
+      <Icon className="sf-narrate-icon" aria-hidden />
+    </button>
+  </>;
 }
 
 export function SlideMedia({ slide }: { slide: SafetySlide }) {
@@ -25,13 +37,15 @@ export function SlideMedia({ slide }: { slide: SafetySlide }) {
 export function SlideView({ lesson, index, onBack, onNext }: { lesson: Lesson; index: number; onBack: () => void; onNext: () => void }) {
   const slide = lesson.slides[index], last = index === lesson.slides.length - 1;
   return <section className="sf-player" aria-label={`Slide ${index + 1} of ${lesson.slides.length}`}>
-    <div className={`sf-stage ${slide.type}`}><SlideMedia key={slide.url} slide={slide} />{slide.type === "3d" && <span className="sf-hint">Drag to turn · pinch or scroll to zoom</span>}</div>
+    <div className={`sf-stage ${slide.type}`}>
+      <SlideMedia key={slide.url} slide={slide} />{slide.type === "3d" && <span className="sf-hint">Drag to turn · pinch or scroll to zoom</span>}
+      {slide.audioUrl && <NarrationButton key={`${index}:${slide.audioUrl}`} url={slide.audioUrl} corner={slide.type !== "image"} />}
+    </div>
     <div className="sf-copy">
       <div className="sf-dots" aria-hidden>{lesson.slides.map((_, i) => <span key={i} className={i === index ? "on" : i < index ? "done" : ""} />)}</div>
       <span className="sf-step">Slide {index + 1} of {lesson.slides.length}</span>
       {slide.title && <h2>{slide.title}</h2>}
       <p>{slide.caption}</p>
-      {slide.audioUrl && <AudioButton key={slide.audioUrl} url={slide.audioUrl} />}
     </div>
     <nav className="sf-nav">
       <button type="button" className="ws-button ghost" onClick={onBack} disabled={index === 0}><ArrowLeft size={17} /> Back</button>
