@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { EMAIL_FROM, EMAIL_TO, RESEND_ENDPOINT, ResendError, buildInviteEmail, deliveryStatus, fetchDeliveryStatus, formatMountainTimestamp, retryDelay, sendInquiryNotification, sendInviteEmail } from "../mailer.js";
+import { EMAIL_FROM, EMAIL_REPLY_TO, EMAIL_TO, RESEND_ENDPOINT, ResendError, buildInviteEmail, deliveryStatus, fetchDeliveryStatus, formatMountainTimestamp, retryDelay, sendInquiryNotification, sendInviteEmail } from "../mailer.js";
 
 const okFetch = (calls) => async (url, init) => { calls.push({ url, init, body: JSON.parse(init.body) }); return { ok: true, status: 200, json: async () => ({ id: "email_123" }) }; };
 
@@ -9,7 +9,7 @@ test("formats timestamps in Alberta daylight and standard Mountain Time", () => 
   assert.match(formatMountainTimestamp("2026-01-15T18:00:00.000Z"), /MST/);
 });
 
-test("sends a product inquiry through Resend from website@irobotx.io to the Uniquem inbox", async () => {
+test("sends a product inquiry through Resend from website@uniquem.ca to the Uniquem inbox", async () => {
   const calls = [];
   const result = await sendInquiryNotification({
     name: "A Customer",
@@ -26,7 +26,8 @@ test("sends a product inquiry through Resend from website@irobotx.io to the Uniq
   assert.equal(init.method, "POST");
   assert.equal(init.headers.Authorization, "Bearer re_test_key");
   assert.equal(init.headers["Idempotency-Key"], "contact-inquiry/abc123");
-  assert.equal(EMAIL_FROM, "Uniquem Website <website@irobotx.io>");
+  assert.equal(EMAIL_FROM, "Uniquem Website <website@uniquem.ca>");
+  assert.equal(EMAIL_REPLY_TO, "rambodr@uniquem.ca");
   assert.equal(body.from, EMAIL_FROM);
   assert.deepEqual(body.to, [EMAIL_TO]);
   assert.equal(EMAIL_TO, "rambodr@uniquem.ca");
@@ -58,10 +59,10 @@ test("refuses to send without an API key", async () => {
 });
 
 test("surfaces Resend API failures so the inquiry stays saved with notificationSent false", async () => {
-  const failing = async () => ({ ok: false, status: 403, json: async () => ({ message: "The irobotx.io domain is not verified." }) });
+  const failing = async () => ({ ok: false, status: 403, json: async () => ({ message: "The uniquem.ca domain is not verified." }) });
   await assert.rejects(
     sendInquiryNotification({ name: "Customer", email: "customer@example.com", message: "Question" }, "re_test_key", { fetchImpl: failing }),
-    /Resend responded 403: The irobotx.io domain is not verified/,
+    /Resend responded 403: The uniquem.ca domain is not verified/,
   );
   await assert.rejects(
     sendInquiryNotification({ name: "Customer", email: "customer@example.com", message: "Question" }, "re_test_key", { fetchImpl: async () => { throw new Error("network down"); } }),
@@ -78,7 +79,7 @@ test("the user invite goes out from the Uniquem sender to the new user only, wit
   assert.equal(init.headers.Authorization, "Bearer re_test_key");
   assert.equal(body.from, EMAIL_FROM);
   assert.deepEqual(body.to, ["new.user@example.com"]);
-  assert.equal(body.reply_to, "admin@uniquem.ca");
+  assert.equal(body.reply_to, "rambodr@uniquem.ca");
   assert.match(body.text, /^Hi Nina,/);
   assert.match(body.text, /oobCode=TESTCODE/);
   assert.match(body.text, /https:\/\/uniquem\.ca\/signin/);

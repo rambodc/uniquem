@@ -95,7 +95,7 @@ the browser only hides screens. `getAccess` returns `{ type, miniApps, profile: 
 **Users mini app** (`/users`, super admins only; `functions/users-functions.js`): list users (name, small avatar, email), add a user (first and last name, email, type, mini apps), edit names, email, type and mini apps,
 resend an invite, and delete a user (with a confirm step; removes the `users/{uid}` record and the Firebase Auth account, so access ends on their next call).
 - **Adding a user** creates the Firebase Auth account (random password nobody knows, email marked verified) and the `users/{uid}` record together, then emails the
-  person an invite once through Resend (from `Uniquem Website <website@irobotx.io>`, same `RESEND_API_KEY` secret as the contact form). The email holds a one-time
+  person an invite once through Resend (from `Uniquem Website <website@uniquem.ca>`, Reply-To rambodr@uniquem.ca, same `RESEND_API_KEY` secret as the contact form). The email holds a one-time
   Firebase link where they choose their own password, then they sign in at `/signin`. The link works for about an hour; "Resend invite" sends a new one. The link is only ever
   in that email: it is not shown in the app and not logged.
 - **Invite status (never silent)**: `createUser` and `sendUserInvite` wait for Resend's answer (transient network/409/429/5xx errors retried twice with backoff, one
