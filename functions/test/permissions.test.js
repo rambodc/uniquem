@@ -24,7 +24,7 @@ const database = fakeDb({
 });
 
 test("registry is the single source: ids are unique, every entry is complete, only super-admin-only apps are withheld", () => {
-  assert.deepEqual([...MINI_APP_IDS].sort(), ["contact", "party", "profile", "users"]);
+  assert.deepEqual([...MINI_APP_IDS].sort(), ["contact", "party", "profile", "safety", "users"]);
   assert.equal(new Set(MINI_APP_IDS).size, MINI_APPS.length);
   for (const app of MINI_APPS) {
     for (const key of ["id", "name", "description", "route", "icon", "accent"]) assert.equal(typeof app[key], "string", `${app.id}.${key}`);
@@ -34,7 +34,7 @@ test("registry is the single source: ids are unique, every entry is complete, on
     assert.equal(app.superAdminOnly && app.everyone, false, `${app.id} can't be both super-admin-only and for everyone`);
   }
   assert.equal(new Set(MINI_APPS.map((app) => app.route)).size, MINI_APPS.length, "one route each");
-  assert.deepEqual(ASSIGNABLE_MINI_APP_IDS, ["party", "contact"], "neither users (super admins only) nor profile (everyone) is ever assigned");
+  assert.deepEqual(ASSIGNABLE_MINI_APP_IDS, ["party", "contact", "safety"], "neither users (super admins only) nor profile (everyone) is ever assigned");
   assert.deepEqual(EVERYONE_MINI_APP_IDS, ["profile"]);
   assert.equal(MINI_APPS.find((app) => app.id === "users").superAdminOnly, true);
   assert.equal(MINI_APPS.find((app) => app.id === "profile").everyone, true);
@@ -84,13 +84,13 @@ test("requireSuperAdmin: only super admins", async () => {
 
 const read = (path) => readFileSync(new URL(path, import.meta.url), "utf8");
 const callables = (source) => source.split(/export const (\w+) = onCall\(/).slice(1).reduce((all, part, i, parts) => i % 2 === 0 ? [...all, { name: part, body: parts[i + 1].split(/\n(?:\/\*\*|export const )/)[0] }] : all, []);
-test("every callable is guarded: contact and party by requireMiniApp, profile by requireMiniApp(profile), users by requireSuperAdmin; only submitContactInquiry and getAccess are open", () => {
-  const sources = { "../index.js": read("../index.js"), "../party-functions.js": read("../party-functions.js"), "../profile-functions.js": read("../profile-functions.js"), "../users-functions.js": read("../users-functions.js") };
+test("every callable is guarded: contact and party by requireMiniApp, profile by requireMiniApp(profile), safety by requireMiniApp(safety), users by requireSuperAdmin; only submitContactInquiry and getAccess are open", () => {
+  const sources = { "../index.js": read("../index.js"), "../party-functions.js": read("../party-functions.js"), "../profile-functions.js": read("../profile-functions.js"), "../users-functions.js": read("../users-functions.js"), "../safety-functions.js": read("../safety-functions.js") };
   const open = new Set(["submitContactInquiry", "getAccess"]);
   for (const [file, source] of Object.entries(sources)) {
     for (const { name, body } of callables(source)) {
       if (open.has(name)) continue;
-      const guard = file.includes("users") ? /requireSuperAdmin\(request\)/ : file.includes("profile") ? /requireMiniApp\(request, "profile"\)/ : /requireMiniApp\(request, "(party|contact)"\)/;
+      const guard = file.includes("users") ? /requireSuperAdmin\(request\)/ : file.includes("safety") ? /^callable, async \(request\) => \{\n\s*const access = await requireMiniApp\(request, "safety"\);/ : file.includes("profile") ? /requireMiniApp\(request, "profile"\)/ : /requireMiniApp\(request, "(party|contact)"\)/;
       assert.match(body, guard, `${name} in ${file} must check access first`);
     }
   }

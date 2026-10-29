@@ -42,3 +42,5 @@ export async function requireSuperAdmin(request, database = db) {
   if (!access || access.type !== SUPER_ADMIN) throw new HttpsError("permission-denied", "This account is not authorized.");
   return access;
 }
+/** Whether a resolved access (from resolveAccess / requireMiniApp) belongs to a super admin. */
+export const isSuperAdmin = (access) => access?.type === SUPER_ADMIN;

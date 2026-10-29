@@ -1,0 +1,46 @@
+{
+  "categories": [
+    { "id": "uniquem-basics", "title": "Uniquem Basics", "description": "Who we are and the first rules everyone follows on site.", "order": 1 },
+    { "id": "ppe-and-safety", "title": "PPE & Safety", "description": "The protective equipment you wear and why.", "order": 2 },
+    { "id": "loading-products", "title": "Loading Products", "description": "Loading and securing product for shipping.", "order": 3 },
+    { "id": "production", "title": "Production", "description": "Safe work in blending and production areas.", "order": 4 }
+  ],
+  "lessons": [
+    {
+      "id": "welcome-to-uniquem",
+      "categoryId": "uniquem-basics",
+      "title": "Welcome to Uniquem",
+      "order": 1,
+      "version": 1,
+      "passMark": 80,
+      "slides": [
+        { "type": "image", "media": "welcome-1-company.svg", "title": "Welcome to Uniquem", "caption": "Uniquem is a Calgary oilfield chemical company. On site, always follow your manager's direction. If you are unsure about a task, stop and ask." },
+        { "type": "image", "media": "welcome-2-no-flames.svg", "title": "No smoking, flames or sparks", "caption": "No smoking, open flames or spark-producing tools anywhere on site. Many of our products and their vapours can catch fire." },
+        { "type": "video", "media": "welcome-3-forklifts.mp4", "poster": "welcome-3-forklifts-poster.jpg", "title": "Forklifts and heavy equipment", "caption": "Watch for forklifts and heavy equipment. Make eye contact with the operator before you cross, and stay in the marked walkways." }
+      ],
+      "quiz": [
+        { "q": "You are not sure how to do a task on site. What should you do?", "options": ["Work it out on your own", "Stop and ask your manager", "Skip the task"], "answerIndex": 1, "explanation": "Always follow your manager's direction. When in doubt, stop and ask." },
+        { "q": "Where on site is smoking allowed?", "options": ["Nowhere on site", "Outside the warehouse door", "In the parking lot near the tanks"], "answerIndex": 0, "explanation": "No smoking, flames or sparks anywhere on site. Product vapours can ignite." },
+        { "q": "A forklift is coming toward the walkway you want to cross. What do you do?", "options": ["Cross quickly before it arrives", "Wave and keep walking", "Wait, make eye contact with the operator and cross only in the walkway"], "answerIndex": 2, "explanation": "Make eye contact so the operator knows you are there, and stay in marked walkways." }
+      ]
+    },
+    {
+      "id": "ppe-basics",
+      "categoryId": "ppe-and-safety",
+      "title": "PPE Basics",
+      "order": 1,
+      "version": 1,
+      "passMark": 80,
+      "slides": [
+        { "type": "image", "media": "ppe-1-coveralls.svg", "title": "Coveralls", "caption": "Wear your coveralls, fully done up, in every work area. They keep chemicals off your skin and your own clothes." },
+        { "type": "3d", "media": "ppe-2-drum.glb", "title": "Masks, respirators and ventilation", "caption": "Open drums and blending can release dust and vapours. Wear the mask or respirator the task calls for, and keep the area ventilated. Drag to turn the drum." },
+        { "type": "image", "media": "ppe-3-hearing.svg", "title": "Ear protection", "caption": "Pumps, compressors and mixers are loud. Wear ear plugs or ear muffs wherever hearing protection signs are posted." }
+      ],
+      "quiz": [
+        { "q": "When should your coveralls be worn?", "options": ["Only when it is cold", "In every work area, fully done up", "Only when handling drums"], "answerIndex": 1, "explanation": "Coveralls are worn in every work area so chemicals stay off your skin and clothes." },
+        { "q": "You are opening a drum and notice strong vapours. What helps protect you?", "options": ["Your mask or respirator and good ventilation", "Holding your breath", "Working faster"], "answerIndex": 0, "explanation": "Use the mask or respirator the task calls for and keep the area ventilated." },
+        { "q": "Where do you need ear protection?", "options": ["Only in the office", "Nowhere, it is optional", "Wherever hearing protection signs are posted, near pumps and mixers"], "answerIndex": 2, "explanation": "Loud equipment damages hearing over time. Wear plugs or muffs where signs are posted." }
+      ]
+    }
+  ]
+}

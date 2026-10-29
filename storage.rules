@@ -1,2 +1,4 @@
 rules_version = '2';
+// Closed to the browser. Photos come back from Cloud Functions as data URLs, and Safety lesson media (safety/)
+// only through short-lived signed URLs that getSafetyLesson makes after checking the Safety mini app.
 service firebase.storage { match /b/{bucket}/o { match /{allPaths=**} { allow read, write: if false; } } }
