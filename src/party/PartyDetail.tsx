@@ -31,10 +31,12 @@ export default function PartyDetail() {
   }
   const people = (count: number) => `${count} ${count === 1 ? "person" : "people"}`;
   const left = summary?.capacityLeft;
+  // Order matters for the grid (2 / 3 / 6 columns): six small cards fill whole rows, then the wide Male / Female card takes a full row
+  // last. With no capacity set there are five small cards, so Checked in spans two columns to close the gap.
   const stats: [string, string | number, string?, string?][] = summary ? [["Invited", summary.invited], ["Coming", summary.coming], ["Pending", summary.pending], ["Not coming", summary.notComing],
-    ["Checked in", summary.checkedIn, undefined, summary.arrivedPeople !== summary.checkedIn ? `${people(summary.arrivedPeople)} with plus-ones` : undefined],
-    ["Male / Female", `${summary.male} / ${summary.female}`, "gender", `Ratio ${genderRatio(summary.male, summary.female)} (M : F) · Checked in ${summary.checkedInMale} / ${summary.checkedInFemale}${summary.checkedIn ? ` (${genderRatio(summary.checkedInMale, summary.checkedInFemale)})` : ""}`],
-    ...(left == null ? [] : [["Capacity left", left < 0 ? `Over by ${-left}` : left, left < 0 ? "warn" : undefined, left < 0 ? `Over capacity: ${summary.arrivedPeople} arrived, capacity ${summary.capacity}` : `${summary.arrivedPeople} arrived of ${summary.capacity}`] as [string, string | number, string?, string?]])] : [];
+    ["Checked in", summary.checkedIn, left == null ? "pair" : undefined, summary.arrivedPeople !== summary.checkedIn ? `${people(summary.arrivedPeople)} with plus-ones` : undefined],
+    ...(left == null ? [] : [["Capacity left", left < 0 ? `Over by ${-left}` : left, left < 0 ? "warn" : undefined, left < 0 ? `Over capacity: ${summary.arrivedPeople} arrived, capacity ${summary.capacity}` : `${summary.arrivedPeople} arrived of ${summary.capacity}`] as [string, string | number, string?, string?]]),
+    ["Male / Female", `${summary.male} / ${summary.female}`, "gender", `Ratio ${genderRatio(summary.male, summary.female)} (M : F) · Checked in ${summary.checkedInMale} / ${summary.checkedInFemale}${summary.checkedIn ? ` (${genderRatio(summary.checkedInMale, summary.checkedInFemale)})` : ""}`]] : [];
   if (!data) return <Page title="Party" back={{ to: "/party", label: "Parties" }}>{error ? <div className="ws-status error" role="alert">{error}</div> : <div className="ws-empty">Loading…</div>}</Page>;
   return <Page title={party!.name} subtitle={<><span>{formatPartyDateTime(party!.startsAt)}</span> · <span><MapPin size={14} /> {party!.location}</span></>} back={{ to: "/party", label: "Parties" }}
     actions={<><Link className="ws-button" to={`/party/${partyId}/check-in`}><DoorOpen size={18} /> Door check-in</Link><Link className="ws-button ghost" to={`/party/${partyId}/edit`}><Pencil size={18} /> Edit</Link>{party!.archived ? <button className="ws-button ghost" onClick={() => void act(() => restoreParty(partyId), "The party could not be restored. Try again.")}><ArchiveRestore size={18} /> Restore party</button> : <button className="ws-button ghost danger-text" onClick={() => setConfirm({ kind: "party" })}><Archive size={18} /> Archive party</button>}</>}>
