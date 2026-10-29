@@ -37,3 +37,9 @@ test("the old staff collection and shapes are gone: no data file, no script, no 
   for (const name of readdirSync(join(root, "scripts"))) assert.doesNotMatch(name, /migrat|backfill|seed|staff|role/i, `scripts/${name}`);
   assert.doesNotMatch(readFileSync(join(root, "firestore.rules"), "utf8"), /staff|users/, "rules stay deny-all");
 });
+test("emails go out only from website@uniquem.ca; the old irobotx.io sender never comes back", () => {
+  for (const file of files(root)) {
+    if (file === THIS_FILE) continue;
+    assert.doesNotMatch(readFileSync(file, "utf8"), /irobotx/i, `${file.slice(root.length)} mentions irobotx`);
+  }
+});

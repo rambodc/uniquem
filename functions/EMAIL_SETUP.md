@@ -2,7 +2,7 @@
 
 The `submitContactInquiry` callable validates the inquiry, saves it to Firestore (`contactInquiries`) first, and then sends a notification email through the [Resend](https://resend.com) HTTP API (`POST https://api.resend.com/emails`).
 
-- From: `Uniquem Website <website@irobotx.io>` (the `irobotx.io` domain must stay verified in the Resend account that owns the API key)
+- From: `Uniquem Website <website@uniquem.ca>` (the `uniquem.ca` domain must stay verified in the Resend account that owns the API key; its DKIM `resend._domainkey` TXT and the `send`/`rsend` CNAMEs live in GoDaddy DNS next to the Google Workspace records, which they do not touch)
 - To: `rambodr@uniquem.ca`
 - Subject: `New Uniquem website inquiry - <Mountain time>`, or `New Uniquem website inquiry (<product>) - <Mountain time>` for product inquiries, e.g. `New Uniquem website inquiry (SandWeb) - Oct 20, 2026, 1:48 PM MDT`. The timestamp keeps every subject unique.
 - Reply-To: the visitor's email when provided; otherwise `rambodr@uniquem.ca` (SandWeb "Call me" leads have a phone number and no email).
@@ -27,6 +27,6 @@ If the secret is missing, Resend rejects the request (for example 403 for an unv
 
 ## User invites
 
-The Users mini app (`createUser`, `sendUserInvite` in `users-functions.js`) emails new users a one-time Firebase password-setup link through the same Resend API, secret and `Uniquem Website <website@irobotx.io>` sender. The email goes only to the new user (Reply-To is the super admin who invited them) and is sent once per create, or when a super admin presses "Resend invite". The link is never logged or returned to the browser.
+The Users mini app (`createUser`, `sendUserInvite` in `users-functions.js`) emails new users a one-time Firebase password-setup link through the same Resend API, secret and `Uniquem Website <website@uniquem.ca>` sender. The email goes only to the new user (Reply-To is rambodr@uniquem.ca) and is sent once per create, or when a super admin presses "Resend invite". The link is never logged or returned to the browser.
 Both callables wait for Resend, retry transient failures twice with the same `Idempotency-Key` (`user-invite/{uid}/{random per invite}`), and save the outcome on `users/{uid}.invite`
 (see `invite.js`); `listUsers` reads `GET /emails/{id}` to update delivered / delayed / bounced / complained.

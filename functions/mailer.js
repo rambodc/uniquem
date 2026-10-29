@@ -1,8 +1,11 @@
-// Inquiry notifications and user invites are sent through Resend's HTTP API from the verified irobotx.io domain.
+// Inquiry notifications and user invites are sent through Resend's HTTP API from the verified uniquem.ca domain.
 // The API key comes from the Secret Manager secret RESEND_API_KEY and is never logged.
 export const RESEND_ENDPOINT = "https://api.resend.com/emails";
-export const EMAIL_FROM = "Uniquem Website <website@irobotx.io>";
+// The one sender for every email the site sends.
+export const EMAIL_FROM = "Uniquem Website <website@uniquem.ca>";
 export const EMAIL_TO = "rambodr@uniquem.ca";
+// Replies to invites come to the Uniquem inbox; inquiry replies go to the visitor.
+export const EMAIL_REPLY_TO = EMAIL_TO;
 
 export function formatMountainTimestamp(value = new Date()) {
   return new Intl.DateTimeFormat("en-US", {
@@ -39,7 +42,7 @@ export function buildInquiryEmail(inquiry) {
   const stamp = formatMountainTimestamp(inquiry.notificationTimestamp || new Date());
   const subject = `New Uniquem website inquiry${inquiry.productName ? ` (${inquiry.productName})` : ""} - ${stamp}`;
   // Reply goes straight to the visitor; phone-only leads reply to the inbox itself.
-  return { from: EMAIL_FROM, to: [EMAIL_TO], reply_to: inquiry.email || EMAIL_TO, subject, text: formatInquiryEmail(inquiry) };
+  return { from: EMAIL_FROM, to: [EMAIL_TO], reply_to: inquiry.email || EMAIL_REPLY_TO, subject, text: formatInquiryEmail(inquiry) };
 }
 
 /** A failed Resend call. `transient` is true when trying again can help (network trouble, a timeout, 409 concurrent request, 429 or 5xx). */
@@ -114,7 +117,7 @@ export function buildInviteEmail({ to, firstName, invitedBy, link }) {
     "The link works for about an hour. If it has expired, ask the person who invited you to send a new invite.",
     "If you were not expecting this, you can ignore this email.",
   ].join("\n");
-  return { from: EMAIL_FROM, to: [to], reply_to: invitedBy, subject: "Your Uniquem workspace account", text };
+  return { from: EMAIL_FROM, to: [to], reply_to: EMAIL_REPLY_TO, subject: "Your Uniquem workspace account", text };
 }
 
 /** Invites retry twice on transient failures. `idempotencyKey` must be new for each invite (create or "Resend invite") and the same across its retries. */
