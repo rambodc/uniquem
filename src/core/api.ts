@@ -69,3 +69,21 @@ export const deleteGuest = (partyId: string, guestId: string) => invoke("deleteG
 export const checkInGuest = (partyId: string, guestId: string, plusOnesArrived = 0) => invoke<{ partyId: string; guestId: string; plusOnesArrived: number }, { alreadyCheckedIn: boolean; guest: Guest }>("checkInGuest", { partyId, guestId, plusOnesArrived });
 export const undoCheckIn = (partyId: string, guestId: string) => invoke<{ partyId: string; guestId: string }, { guest: Guest }>("undoCheckIn", { partyId, guestId });
 export const setGuestStatus = (partyId: string, guestId: string, status: GuestStatus) => invoke("setGuestStatus", { partyId, guestId, status });
+
+// ---- Safety mini app (assigned per person) ----
+export type SafetyStatus = "not_started" | "passed" | "failed";
+export type SafetySlideType = "image" | "video" | "3d";
+/** The signed-in person's own progress on one lesson (its current version). */
+export type SafetyProgress = { status: SafetyStatus; attempts: number; lastScore: number | null; bestScore: number | null; completedAt: string | null; viewedAt: string | null };
+export type SafetyCategory = { id: string; title: string; description: string; order: number };
+export type SafetyLessonSummary = { id: string; categoryId: string; title: string; order: number; version: number; passMark: number; slideCount: number; questionCount: number; kinds: SafetySlideType[]; progress: SafetyProgress };
+/** Media URLs are short-lived signed links. `audioUrl` is optional narration. */
+export type SafetySlide = { type: SafetySlideType; title: string | null; caption: string; url: string; posterUrl: string | null; audioUrl: string | null };
+/** A lesson as the browser gets it: the quiz has no answers until it is submitted. */
+export type SafetyLesson = { id: string; categoryId: string; title: string; version: number; passMark: number; slides: SafetySlide[]; quiz: { q: string; options: string[] }[] };
+export type SafetyResult = { score: number; passed: boolean; correct: number; total: number; passMark: number; results: { chosen: number; answerIndex: number; correct: boolean; explanation: string }[]; progress: SafetyProgress };
+export type SafetyProgressBoard = { users: { uid: string; firstName: string; lastName: string; email: string }[]; lessons: { id: string; title: string; category: string; version: number }[]; cells: Record<string, SafetyProgress> };
+export const listSafety = () => invoke<undefined, { categories: SafetyCategory[]; lessons: SafetyLessonSummary[]; canViewProgress: boolean }>("listSafety");
+export const getSafetyLesson = (lessonId: string) => invoke<{ lessonId: string }, { lesson: SafetyLesson; progress: SafetyProgress }>("getSafetyLesson", { lessonId });
+export const submitSafetyQuiz = (lessonId: string, answers: number[]) => invoke<{ lessonId: string; answers: number[] }, SafetyResult>("submitSafetyQuiz", { lessonId, answers });
+export const listSafetyProgress = () => invoke<undefined, SafetyProgressBoard>("listSafetyProgress");

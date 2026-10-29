@@ -32,3 +32,5 @@ export * from "./party-functions.js";
 export * from "./profile-functions.js";
 // Users mini app (super admins only): see users-functions.js
 export * from "./users-functions.js";
+// Safety mini app (lessons and quizzes): see safety-functions.js
+export * from "./safety-functions.js";

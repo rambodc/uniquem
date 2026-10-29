@@ -16,6 +16,9 @@ const PartyDetail = lazy(() => import("./party/PartyDetail"));
 const CheckIn = lazy(() => import("./party/CheckIn"));
 const UsersApp = lazy(() => import("./users/UsersApp"));
 const ProfileApp = lazy(() => import("./profile/ProfileApp"));
+const SafetyHome = lazy(() => import("./safety/SafetyHome"));
+const SafetyLessonPage = lazy(() => import("./safety/SafetyLesson"));
+const SafetyProgressPage = lazy(() => import("./safety/SafetyProgress"));
 function SummaryRedirect() { const { partyId = "" } = useParams(); return <Navigate to={`/party/${partyId}`} replace />; }
 function ScrollToTop() { const { pathname } = useLocation(); useEffect(() => { if ("scrollRestoration" in window.history) window.history.scrollRestoration = "manual"; }, []); useEffect(() => { window.scrollTo(0, 0); }, [pathname]); return null; }
 export default function App() { return <><SeoMetadata /><AnalyticsTracker /><ScrollToTop /><Routes>
@@ -27,6 +30,9 @@ export default function App() { return <><SeoMetadata /><AnalyticsTracker /><Scr
       <Route path="/party" element={<PartyList />} /><Route path="/party/new" element={<PartyForm />} />
       <Route path="/party/:partyId" element={<PartyDetail />} /><Route path="/party/:partyId/edit" element={<PartyForm />} />
       <Route path="/party/:partyId/check-in" element={<CheckIn />} /><Route path="/party/:partyId/summary" element={<SummaryRedirect />} />
+    </Route>
+    <Route element={<RequireMiniApp app="safety" />}>
+      <Route path="/safety" element={<SafetyHome />} /><Route path="/safety/lesson/:lessonId" element={<SafetyLessonPage />} /><Route path="/safety/progress" element={<SafetyProgressPage />} />
     </Route>
     <Route element={<RequireMiniApp app="users" />}><Route path="/users" element={<UsersApp />} /></Route>
     <Route element={<RequireMiniApp app="profile" />}><Route path="/profile" element={<ProfileApp />} /></Route>

@@ -1,0 +1,60 @@
+/* Safety mini app. Green/teal only, no yellow. */
+.sf-gap{margin-top:28px}
+.sf-cats{display:grid;gap:18px;margin-top:30px}
+.sf-cat{padding:22px;border:1px solid var(--line2);border-radius:24px;background:#fff}
+.sf-cat.soon{background:#f8fbfa;border-style:dashed}
+.sf-cat-head{display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap}
+.sf-cat-head>div{flex:1 1 220px;min-width:0}.sf-cat-head h2{margin:2px 0 4px;font-size:21px;letter-spacing:-.02em}.sf-cat-head p{margin:0;color:var(--mute);font-size:14.5px}
+.sf-cat-num{flex:none;display:grid;place-items:center;width:40px;height:40px;border-radius:13px;background:linear-gradient(140deg,#3fb7a6,#0d8a8a 60%,#0a5e5e);color:#fff;font-weight:800}
+.sf-cat.soon .sf-cat-num{background:#dfeae7;color:#5d7b76}
+.sf-count{color:#2f6f5e;font-size:13px;font-weight:650;padding:5px 11px;border-radius:99px;background:var(--soft)}
+.sf-soon{color:#5d7b76;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:5px 11px;border:1px dashed #b9cfca;border-radius:99px}
+.sf-lessons{display:grid;gap:10px;margin-top:16px}
+.sf-lesson{display:flex;align-items:center;gap:14px 18px;flex-wrap:wrap;padding:16px 18px;border:1px solid #d9e6e2;border-left:5px solid #b9cfca;border-radius:16px;background:#fbfdfc}
+.sf-lesson.passed{border-left-color:#1f8f78}.sf-lesson.failed{border-left-color:#c2493f}
+.sf-lesson-main{flex:1 1 260px;min-width:0}.sf-lesson h3{margin:0 0 4px;font-size:18px;letter-spacing:-.02em}
+.sf-meta{margin:0;color:var(--mute);font-size:13.5px}
+.sf-kinds{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}.sf-kinds span{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:99px;background:#e6f4f3;color:#0b6767;font-size:12px;font-weight:600}
+.sf-lesson-side{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.sf-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:99px;font-size:12.5px;font-weight:700;white-space:nowrap}
+.sf-badge.not_started{background:#eef2f1;color:#4c625f}.sf-badge.passed{background:#d6f1e7;color:#16604f}.sf-badge.failed{background:#fde9e7;color:#8f2a22}
+.sf-start{min-height:40px;padding:0 16px;font-size:14px}
+
+.sf-player,.sf-quiz{margin-top:26px}
+.sf-stage{position:relative;overflow:hidden;aspect-ratio:16/10;border-radius:22px;background:linear-gradient(160deg,#0f2f2b,#1a5348);box-shadow:0 18px 40px rgba(16,47,43,.18)}
+.sf-stage.video{aspect-ratio:16/9;background:#0b1f1c}
+.sf-stage[class~="3d"]{background:radial-gradient(circle at 50% 35%,#f4fbf8,#d7ece5 60%,#b9d9cf)}
+.sf-image,.sf-video{display:block;width:100%;height:100%;object-fit:contain}
+.sf-canvas{width:100%!important;height:100%!important;touch-action:none;cursor:grab}
+.sf-hint{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);padding:6px 12px;border-radius:99px;background:rgba(16,47,43,.78);color:#e7fff6;font-size:12.5px;white-space:nowrap;pointer-events:none}
+.sf-media-note{display:grid;place-items:center;height:100%;padding:20px;text-align:center;color:#2a4a47;font-size:15px}
+.sf-copy{padding:20px 4px 4px}
+.sf-dots{display:flex;gap:6px;margin-bottom:12px}.sf-dots span{width:26px;height:6px;border-radius:9px;background:#d3e2de}.sf-dots span.done{background:#7cc9b2}.sf-dots span.on{background:#0d8a8a;width:40px}
+.sf-step{color:#0b6767;font-size:12px;font-weight:700;letter-spacing:.07em;text-transform:uppercase}
+.sf-copy h2{margin:6px 0 8px;font-size:26px;letter-spacing:-.03em}.sf-copy p{margin:0 0 14px;font-size:17px;line-height:1.55;color:#2a4a47}
+.sf-nav{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:22px}.sf-nav .ws-button{flex:1 1 160px}
+
+.sf-quiz-intro{margin:0 0 6px;color:var(--mute)}
+.sf-questions{list-style:none;counter-reset:q;margin:0;padding:0;display:grid;gap:14px}
+.sf-questions>li{counter-increment:q;padding:18px;border:1px solid var(--line2);border-radius:18px;background:#fff}
+.sf-questions>li.right{border-color:#8fd0bb;background:#f5fcf9}.sf-questions>li.wrong{border-color:#e7a39c;background:#fff8f7}
+.sf-questions fieldset{border:0;margin:0;padding:0;display:grid;gap:8px;min-width:0}
+.sf-questions legend{padding:0;margin-bottom:10px;font-weight:700;font-size:16.5px;line-height:1.4}.sf-questions legend:before{content:counter(q) ". ";color:#0b6767}
+.sf-option{display:flex;align-items:center;gap:10px;padding:12px 14px;border:1px solid #d6e3df;border-radius:13px;cursor:pointer;font-size:15.5px;line-height:1.35}
+.sf-option input{width:18px!important;height:18px;flex:none;margin:0;padding:0!important;accent-color:#0d8a8a}
+.sf-option span{flex:1}.sf-option.picked{border-color:#0d8a8a;background:#eef8f7}
+.sf-option.answer{border-color:#1f8f78;background:#e1f5ee;color:#16604f;font-weight:650}.sf-option.chosen{border-color:#c2493f;background:#fde9e7;color:#8f2a22}
+fieldset:disabled .sf-option{cursor:default}
+.sf-explain{margin:12px 0 0;font-size:14.5px;line-height:1.5;color:#2a4a47}
+.sf-result{display:flex;align-items:center;gap:18px;margin-bottom:18px;padding:20px 22px;border-radius:20px;color:#fff}
+.sf-result.passed{background:linear-gradient(125deg,#0f5e4c,#1f8f78)}.sf-result.failed{background:linear-gradient(125deg,#7d2a24,#b3382f)}
+.sf-score{font-size:46px;font-weight:800;letter-spacing:-.04em}.sf-result b{font-size:20px}.sf-result p{margin:4px 0 0;opacity:.92;font-size:14.5px}
+
+.sf-table-wrap{margin-top:26px;overflow-x:auto;border:1px solid var(--line2);border-radius:18px;background:#fff}
+.sf-table{border-collapse:collapse;width:100%;min-width:560px}
+.sf-table th,.sf-table td{padding:13px 15px;border-bottom:1px solid #e6efec;text-align:left;vertical-align:top;font-size:14px}
+.sf-table thead th{background:var(--soft);color:#2a4a47;font-size:13.5px}.sf-table small{display:block;color:var(--mute);font-size:12px;font-weight:500;margin-top:3px}
+.sf-table thead th small{margin:0 0 2px;text-transform:uppercase;letter-spacing:.05em;font-size:10.5px}
+.sf-table tbody th{position:sticky;left:0;background:#fff;min-width:150px}.sf-table tbody th b{font-size:15px}
+.sf-table tbody tr:last-child>*{border-bottom:0}
+@media(max-width:560px){.sf-cat{padding:16px;border-radius:20px}.sf-stage{border-radius:16px}.sf-copy h2{font-size:22px}.sf-copy p{font-size:16px}.sf-score{font-size:38px}.sf-result{padding:16px}}

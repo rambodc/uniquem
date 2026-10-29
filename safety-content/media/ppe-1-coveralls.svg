@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 750" width="1200" height="750" font-family="Inter,Segoe UI,Helvetica,Arial,sans-serif">
+<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0f2f2b"/><stop offset=".6" stop-color="#1a5348"/><stop offset="1" stop-color="#23806a"/></linearGradient>
+<pattern id="d" width="26" height="26" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1.4" fill="#ffffff" fill-opacity=".09"/></pattern></defs>
+<rect width="1200" height="750" fill="url(#g)"/><rect width="1200" height="750" fill="url(#d)"/>
+<circle cx="1020" cy="120" r="260" fill="#7fe0bf" fill-opacity=".10"/>
+<g transform="translate(110 150)"><rect width="250" height="250" rx="64" fill="#ffffff" fill-opacity=".12" stroke="#ffffff" stroke-opacity=".25"/>
+<g transform="translate(45 45) scale(6.66)" fill="none" stroke="#e7fff6" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"><path vector-effect="non-scaling-stroke" d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"></path></g></g>
+<text x="110" y="500" fill="#9fe3cb" font-size="26" font-weight="700" letter-spacing="4">PPE BASICS</text>
+<text x="110" y="572" fill="#ffffff" font-size="64" font-weight="800" letter-spacing="-1.5">Wear your coveralls</text>
+<text x="110" y="630" fill="#cdeee2" font-size="32">Fully done up, every shift, in every work area.</text>
+<text x="1090" y="705" fill="#ffffff" fill-opacity=".35" font-size="20" text-anchor="end">Placeholder image · Uniquem safety training</text>
+</svg>
