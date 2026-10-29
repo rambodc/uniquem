@@ -1,9 +1,11 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync, statSync } from "node:fs";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { test } from "node:test";
 import { URL } from "node:url";
 import { requireMiniApp } from "../core.js";
-import { contentToDocs, gradeQuiz, nextProgress, progressStatus, progressView, publicLesson, validateLesson } from "../safety.js";
+import { SAFETY_PATHS, contentToDocs, gradeQuiz, nextProgress, progressStatus, progressView, publicLesson, validateLesson } from "../safety.js";
 
 const content = JSON.parse(readFileSync(new URL("../../safety-content/content.json", import.meta.url), "utf8"));
 const docs = contentToDocs(content);
@@ -37,7 +39,7 @@ test("the browser never gets answers or explanations before submitting; media co
   assert.equal(view.slides[2].type, "video");
   assert.match(view.slides[2].url, /^https:\/\/signed\.example\/safety\/lessons\/welcome-to-uniquem\/.+\.mp4$/);
   assert.match(view.slides[2].posterUrl, /poster\.jpg$/);
-  assert.equal(view.slides[0].audioUrl, null, "no audio yet; the field is supported");
+  assert.match(view.slides[0].audioUrl, /^https:\/\/signed\.example\/safety\/lessons\/welcome-to-uniquem\/welcome-1-company\.mp3$/, "narration comes from Storage like the other media");
 });
 test("grading happens on the server: score in percent, pass at the pass mark, explanations only after", () => {
   const right = lesson.quiz.map((q) => q.answerIndex), wrongOne = right.map((a, i) => i === 0 ? (a + 1) % lesson.quiz[0].options.length : a);
@@ -79,4 +81,19 @@ test("access: only people with the Safety mini app (assigned staff and super adm
 test("Firestore and Storage stay closed to the browser: Safety data and media go only through the guarded callables", () => {
   const firestore = readFileSync(new URL("../../firestore.rules", import.meta.url), "utf8"), storage = readFileSync(new URL("../../storage.rules", import.meta.url), "utf8");
   for (const rules of [firestore, storage]) { assert.match(rules, /allow read, write: if false;/); assert.doesNotMatch(rules, /if true|request\.auth != null/); }
+});
+test("narration: every Welcome to Uniquem slide has a small MP3 from Storage; PPE Basics has none yet", () => {
+  for (const slide of lesson.slides) assert.match(slide.audioPath, /^safety\/lessons\/welcome-to-uniquem\/.+\.mp3$/);
+  assert.ok(docs.lessons.find((l) => l.id === "ppe-basics").doc.slides.every((s) => s.audioPath === null));
+});
+test("Firestore layout: one top-level collection, safety, with everything in subcollections under it", () => {
+  assert.deepEqual(SAFETY_PATHS, { content: "safety/content", categories: "safety/content/categories", lessons: "safety/content/lessons", progress: "safety/progress", records: "safety/progress/records" });
+  for (const [name, path] of Object.entries(SAFETY_PATHS)) assert.equal(path.split("/").length % 2 === 0 ? "doc" : "collection", ["content", "progress"].includes(name) ? "doc" : "collection", name);
+  const source = readFileSync(new URL("../safety-functions.js", import.meta.url), "utf8");
+  assert.doesNotMatch(source.replace('db.collection("users")', ""), /db\.collection\("/, "safety callables only use SAFETY_PATHS");
+});
+test("the old top-level safetyCategories / safetyLessons / safetyProgress collections never come back", () => {
+  const root = fileURLToPath(new URL("../..", import.meta.url)), self = fileURLToPath(import.meta.url), skip = new Set(["node_modules", "dist", ".git", ".firebase", ".seo-build", "reports"]);
+  const walk = (dir) => readdirSync(dir).flatMap((name) => { if (skip.has(name)) return []; const path = join(dir, name); return statSync(path).isDirectory() ? walk(path) : /\.(js|mjs|ts|tsx|json|md|yml|rules)$/.test(name) && name !== "package-lock.json" ? [path] : []; });
+  for (const file of walk(root)) if (file !== self) assert.doesNotMatch(readFileSync(file, "utf8"), /safety(Categories|Lessons|Progress)\b/, file.slice(root.length));
 });

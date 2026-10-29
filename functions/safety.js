@@ -1,11 +1,14 @@
 // Safety mini app: lessons (slides) and pre-written quizzes, stored as data in Firestore and Cloud Storage.
 // No Firebase calls here, so it is unit-testable. The callables are in safety-functions.js.
 //
-//   safetyCategories/{id}         { title, description, order }
-//   safetyLessons/{id}            { categoryId, title, order, version, passMark,
+// Everything lives under ONE top-level collection, `safety`:
+//   safety/content                         { kind: "content" }                      (parent document)
+//   safety/content/categories/{id}         { title, description, order }
+//   safety/content/lessons/{id}            { categoryId, title, order, version, passMark,
 //                                   slides: [{ type: "image" | "video" | "3d", mediaPath, title?, caption, posterPath?, audioPath? }],
 //                                   quiz:   [{ q, options[], answerIndex, explanation }] }
-//   safetyProgress/{uid}_{lesson} { uid, lessonId, lessonVersion, viewedAt, attempts: [{ at, score, passed }], passed, completedAt }
+//   safety/progress                        { kind: "progress" }                     (parent document)
+//   safety/progress/records/{uid}_{lesson} { uid, lessonId, lessonVersion, viewedAt, attempts: [{ at, score, passed }], passed, completedAt }
 //
 // Media lives in Storage under safety/ and is only reached through short-lived signed URLs from getSafetyLesson.
 // The browser never receives answerIndex or explanation before the quiz is submitted; grading happens on the server.
@@ -75,6 +78,8 @@ export function gradeQuiz(lesson, answers) {
 }
 
 export const progressId = (uid, lessonId) => `${uid}_${lessonId}`;
+/** The Firestore paths, relative to the database root. The only top-level collection is `safety`. */
+export const SAFETY_PATHS = { content: "safety/content", categories: "safety/content/categories", lessons: "safety/content/lessons", progress: "safety/progress", records: "safety/progress/records" };
 /** Progress only counts for the lesson's current version: when a lesson is updated (version goes up) everyone starts it again. */
 export const currentProgress = (progress, version) => progress && progress.lessonVersion === version ? progress : null;
 /** "not_started" | "passed" | "failed" for the lesson's current version. */
