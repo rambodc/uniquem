@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "r
 import { createUser, updateUser, type UserAccessInput, type UserRecord } from "../core/api";
 import { ASSIGNABLE_MINI_APP_IDS, STAFF, SUPER_ADMIN, USER_TYPES, USER_TYPE_LABELS, miniAppById, type MiniAppId, type UserType } from "../auth/miniApps";
 import { Sheet, messageOf } from "../party/Workspace";
+import { inviteNotice, type Notice } from "./invite";
 import "./users.css";
 
 function AccessFields({ value, onChange, locked }: { value: UserAccessInput; onChange: (next: UserAccessInput) => void; locked: boolean }) {
@@ -16,7 +17,7 @@ function AccessFields({ value, onChange, locked }: { value: UserAccessInput; onC
 }
 
 /** Create a user (names, email, type, mini apps) or edit one's names, email, type and mini apps. There is no password or photo field: only the person sets those. */
-export function UserSheet({ user, onDone, onClose }: { user: UserRecord | null; onDone: (notice: string) => void; onClose: () => void }) {
+export function UserSheet({ user, onDone, onClose }: { user: UserRecord | null; onDone: (notice: Notice) => void; onClose: () => void }) {
   const [form, setForm] = useState({ firstName: user?.firstName ?? "", lastName: user?.lastName ?? "", email: user?.email ?? "" }), [access, setAccess] = useState<UserAccessInput>(user ? { type: user.type, miniApps: user.miniApps } : { type: STAFF, miniApps: [] }), [busy, setBusy] = useState(false), [error, setError] = useState(""), first = useRef<HTMLInputElement>(null);
   const yourself = user?.you === true, set = (key: keyof typeof form) => (event: ChangeEvent<HTMLInputElement>) => setForm({ ...form, [key]: event.target.value });
   useEffect(() => { first.current?.focus(); }, []);
@@ -24,8 +25,8 @@ export function UserSheet({ user, onDone, onClose }: { user: UserRecord | null; 
     event.preventDefault(); if (busy) return; setBusy(true); setError("");
     const input = { ...form, email: form.email.trim(), ...access };
     try {
-      if (user) { await updateUser(user.uid, input); onDone(`Saved changes for ${form.firstName.trim()} ${form.lastName.trim()}.${input.email.toLowerCase() !== user.email ? " They'll need to sign in again with the new email." : ""}`); }
-      else { const created = await createUser(input); onDone(created.emailSent ? `User created. An invite email was sent to ${created.email}.` : `User created, but the invite email to ${created.email} could not be sent. Use Resend invite on that user to try again.`); }
+      if (user) { await updateUser(user.uid, input); onDone({ tone: "ok", text: `Saved changes for ${form.firstName.trim()} ${form.lastName.trim()}.${input.email.toLowerCase() !== user.email ? " They'll need to sign in again with the new email." : ""}` }); }
+      else { const created = await createUser(input); onDone(inviteNotice(created.email, created.invite, true)); }
     } catch (cause) { setError(messageOf(cause, user ? "The changes could not be saved. Try again." : "The user could not be created. Try again.")); setBusy(false); }
   }
   return <Sheet title={user ? "Edit user" : "Add user"} onClose={busy ? () => undefined : onClose}>
@@ -37,7 +38,7 @@ export function UserSheet({ user, onDone, onClose }: { user: UserRecord | null; 
       {yourself && <p className="ws-sheet-sub ws-sheet-wide">You can fix your own name here. Another super admin has to change your email or access.</p>}
       {user && !yourself && <p className="ws-sheet-sub ws-sheet-wide">If you change the email, they sign in with the new one from now on.</p>}
       <AccessFields value={access} onChange={setAccess} locked={yourself} />
-      <div className="ws-sheet-buttons"><button type="button" className="ws-button ghost" onClick={onClose} disabled={busy}>Cancel</button><button className="ws-button big" disabled={busy || !form.firstName.trim() || !form.lastName.trim() || !form.email.trim()}>{busy ? "Saving…" : user ? "Save changes" : "Create user"}</button></div>
+      <div className="ws-sheet-buttons"><button type="button" className="ws-button ghost" onClick={onClose} disabled={busy}>Cancel</button><button className="ws-button big" disabled={busy || !form.firstName.trim() || !form.lastName.trim() || !form.email.trim()}>{busy ? (user ? "Saving…" : "Creating and sending invite…") : user ? "Save changes" : "Create user"}</button></div>
     </form>
   </Sheet>;
 }

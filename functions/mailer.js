@@ -1,6 +1,5 @@
-// Inquiry notifications are sent through Resend's HTTP API from the verified
-// irobotx.io domain to the Uniquem inbox. The API key comes from the Secret
-// Manager secret RESEND_API_KEY and is never logged.
+// Inquiry notifications and user invites are sent through Resend's HTTP API from the verified irobotx.io domain.
+// The API key comes from the Secret Manager secret RESEND_API_KEY and is never logged.
 export const RESEND_ENDPOINT = "https://api.resend.com/emails";
 export const EMAIL_FROM = "Uniquem Website <website@irobotx.io>";
 export const EMAIL_TO = "rambodr@uniquem.ca";
@@ -43,18 +42,53 @@ export function buildInquiryEmail(inquiry) {
   return { from: EMAIL_FROM, to: [EMAIL_TO], reply_to: inquiry.email || EMAIL_TO, subject, text: formatInquiryEmail(inquiry) };
 }
 
-/** Posts one message to Resend. `idempotencyKey` makes a retried call safe. Throws on any non-2xx response; the key and message are never logged. */
-async function sendEmail(message, apiKey, { idempotencyKey, fetchImpl = globalThis.fetch } = {}) {
-  if (!apiKey) throw new Error("RESEND_API_KEY is not configured");
-  const headers = { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" };
-  if (idempotencyKey) headers["Idempotency-Key"] = idempotencyKey;
-  const response = await fetchImpl(RESEND_ENDPOINT, { method: "POST", headers, body: JSON.stringify(message) });
+/** A failed Resend call. `transient` is true when trying again can help (network trouble, a timeout, 409 concurrent request, 429 or 5xx). */
+export class ResendError extends Error {
+  constructor(message, { status = null, transient }) { super(message); this.name = "ResendError"; this.status = status; this.transient = transient; }
+}
+const isTransientStatus = (status) => status === 409 || status === 429 || status >= 500;
+const pause = (ms) => new Promise((resolve) => globalThis.setTimeout(resolve, ms));
+/** How long to wait before try number `attempt + 1` (attempt starts at 1): 0.5 s, then 1.5 s, or Resend's Retry-After (at most 5 s). */
+export function retryDelay(attempt, retryAfter) {
+  const seconds = Number(retryAfter);
+  return Number.isFinite(seconds) && seconds > 0 ? Math.min(seconds * 1000, 5000) : attempt === 1 ? 500 : 1500;
+}
+
+async function postOnce(message, headers, fetchImpl) {
+  let response;
+  try {
+    response = await fetchImpl(RESEND_ENDPOINT, { method: "POST", headers, body: JSON.stringify(message), signal: globalThis.AbortSignal.timeout(10_000) });
+  } catch (error) {
+    throw new ResendError(`Resend could not be reached (${error instanceof Error ? error.message : "network error"})`, { transient: true });
+  }
   if (!response.ok) {
     let detail = "";
     try { const body = await response.json(); detail = body?.message ? `: ${body.message}` : ""; } catch { /* ignore non-JSON bodies */ }
-    throw new Error(`Resend responded ${response.status}${detail}`);
+    const error = new ResendError(`Resend responded ${response.status}${detail}`, { status: response.status, transient: isTransientStatus(response.status) });
+    error.retryAfter = response.headers?.get?.("retry-after") ?? null;
+    throw error;
   }
-  return response.json();
+  const body = await response.json();
+  if (typeof body?.id !== "string" || !body.id) throw new ResendError("Resend accepted the request but returned no email id", { status: response.status, transient: false });
+  return body;
+}
+
+/**
+ * Posts one message to Resend and returns { id }. Transient failures are retried up to `retries` times with a short backoff.
+ * Every try carries the same Idempotency-Key and body, so Resend sends the email at most once however many tries it takes.
+ * Throws a ResendError when it still fails; the key and message are never logged.
+ */
+async function sendEmail(message, apiKey, { idempotencyKey, retries = 0, fetchImpl = globalThis.fetch, wait = pause } = {}) {
+  if (!apiKey) throw new ResendError("RESEND_API_KEY is not configured", { transient: false });
+  if (retries > 0 && !idempotencyKey) throw new Error("Retrying a send needs an idempotency key");
+  const headers = { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" };
+  if (idempotencyKey) headers["Idempotency-Key"] = idempotencyKey;
+  for (let attempt = 1; ; attempt += 1) {
+    try { return await postOnce(message, headers, fetchImpl); } catch (error) {
+      if (!(error instanceof ResendError) || !error.transient || attempt > retries) throw error;
+      await wait(retryDelay(attempt, error.retryAfter));
+    }
+  }
 }
 
 /**
@@ -83,6 +117,26 @@ export function buildInviteEmail({ to, firstName, invitedBy, link }) {
   return { from: EMAIL_FROM, to: [to], reply_to: invitedBy, subject: "Your Uniquem workspace account", text };
 }
 
-export function sendInviteEmail(invite, apiKey, { fetchImpl } = {}) {
-  return sendEmail(buildInviteEmail(invite), apiKey, { fetchImpl });
+/** Invites retry twice on transient failures. `idempotencyKey` must be new for each invite (create or "Resend invite") and the same across its retries. */
+export const INVITE_RETRIES = 2;
+export function sendInviteEmail(invite, apiKey, { idempotencyKey, fetchImpl, wait } = {}) {
+  return sendEmail(buildInviteEmail(invite), apiKey, { idempotencyKey, retries: INVITE_RETRIES, fetchImpl, wait });
+}
+
+/** What Resend's last event for an email means for an invite: "delivered", "delayed", "bounced", "complained" (marked as spam), "failed", or "sent" (still on its way). */
+export function deliveryStatus(lastEvent) {
+  if (["delivered", "opened", "clicked"].includes(lastEvent)) return "delivered";
+  if (lastEvent === "delivery_delayed") return "delayed";
+  if (lastEvent === "bounced") return "bounced";
+  if (lastEvent === "complained") return "complained";
+  if (["failed", "suppressed", "canceled"].includes(lastEvent)) return "failed";
+  return "sent";
+}
+/** Reads where Resend got with one email (its last event), for the invite status on the Users screen. Throws on any failure. */
+export async function fetchDeliveryStatus(id, apiKey, { fetchImpl = globalThis.fetch } = {}) {
+  if (!apiKey) throw new ResendError("RESEND_API_KEY is not configured", { transient: false });
+  const response = await fetchImpl(`${RESEND_ENDPOINT}/${encodeURIComponent(id)}`, { headers: { Authorization: `Bearer ${apiKey}` }, signal: globalThis.AbortSignal.timeout(5_000) });
+  if (!response.ok) throw new ResendError(`Resend responded ${response.status}`, { status: response.status, transient: isTransientStatus(response.status) });
+  const body = await response.json();
+  return deliveryStatus(body?.last_event);
 }

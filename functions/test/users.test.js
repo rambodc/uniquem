@@ -51,8 +51,9 @@ test("a super admin can fix their own name but not their own email, type or mini
   assert.doesNotThrow(() => assertSelfChangeIsSafe({ uid: "boss" }, "me", current, { ...same, email: "new@uniquem.ca", type: "staff", miniApps: ["party"] }), "another super admin may change anything");
 });
 test("userView exposes the fields the Users screen shows (names, small avatar, email) and no secrets or full photo", () => {
-  const view = userView("u1", { email: "a@uniquem.ca", firstName: "Ann", lastName: "Lee", photoPath: "profile-photos/u1/avatar.jpg", thumbDataUrl: "data:image/jpeg;base64,AAAA", type: "staff", miniApps: ["party"], createdAt: { toDate: () => new Date("2026-10-28T12:00:00Z") }, createdBy: "boss@uniquem.ca" }, "2026-10-28T13:00:00.000Z");
-  assert.deepEqual(Object.keys(view).sort(), ["createdAt", "createdBy", "email", "firstName", "lastName", "lastSignInAt", "miniApps", "thumbDataUrl", "type", "uid", "updatedAt"]);
+  const view = userView("u1", { email: "a@uniquem.ca", firstName: "Ann", lastName: "Lee", photoPath: "profile-photos/u1/avatar.jpg", thumbDataUrl: "data:image/jpeg;base64,AAAA", type: "staff", miniApps: ["party"], createdAt: { toDate: () => new Date("2026-10-28T12:00:00Z") }, createdBy: "boss@uniquem.ca", invite: { status: "delivered", at: { toDate: () => new Date("2026-10-28T12:00:05Z") }, by: "boss@uniquem.ca", resendId: "re_secret", error: null, checkedAt: null } }, "2026-10-28T13:00:00.000Z");
+  assert.deepEqual(Object.keys(view).sort(), ["createdAt", "createdBy", "email", "firstName", "invite", "lastName", "lastSignInAt", "miniApps", "thumbDataUrl", "type", "uid", "updatedAt"]);
   assert.equal(view.createdAt, "2026-10-28T12:00:00.000Z");
   assert.equal(view.updatedAt, null);
+  assert.deepEqual(view.invite, { status: "delivered", at: "2026-10-28T12:00:05.000Z", by: "boss@uniquem.ca", error: null, checkedAt: null });
 });

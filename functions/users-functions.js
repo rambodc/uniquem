@@ -1,15 +1,17 @@
 // Users mini app (super admins only): create users, choose their type and mini apps, delete them, resend an invite.
-// Source of truth: Firestore users/{Firebase Auth uid} = { email, firstName, lastName, type, miniApps, photoPath, thumbDataUrl, createdAt, createdBy, updatedAt, updatedBy }.
+// Source of truth: Firestore users/{Firebase Auth uid} = { email, firstName, lastName, type, miniApps, photoPath, thumbDataUrl, invite, createdAt, createdBy, updatedAt, updatedBy }
+// (`invite` is described in invite.js).
 // Browsers never touch Firestore; these callables are the only way in. Passwords are never read, stored, logged or returned.
 // A super admin sets names, email and access. The password and the profile photo belong to the person alone (profile-functions.js and Firebase Auth in the browser):
 // nothing here can change either one, except that deleting a user also deletes their photo.
-import { randomBytes } from "node:crypto";
+import { randomBytes, randomUUID } from "node:crypto";
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { getAuth } from "firebase-admin/auth";
 import { FieldValue } from "firebase-admin/firestore";
 import { getStorage } from "firebase-admin/storage";
 import { db, callable, resendApiKey, requireSuperAdmin, text } from "./core.js";
-import { sendInviteEmail } from "./mailer.js";
+import { fetchDeliveryStatus, sendInviteEmail } from "./mailer.js";
+import { deliverInvite, deliveryUpdate, needsDeliveryCheck } from "./invite.js";
 import { fullName, photoPrefix } from "./profile.js";
 import { assertSelfChangeIsSafe, assertSuperAdminRemains, notYourself, userView, validateUserFields } from "./users.js";
 
@@ -26,11 +28,33 @@ function authError(error) {
   return error;
 }
 
-/** Emails the person a one-time link to choose their own password (Firebase expires it after about an hour).
+/** Emails the person (`record` is their stored user record) a one-time link to choose their own password (Firebase expires it after about an hour),
+ * retrying transient Resend failures, and saves the outcome on the record. Returns { sent: true, id } or { sent: false, reason }; never throws for an email problem.
  * The link goes only into that email: it is never returned to the browser or logged. */
-async function sendInvite({ email: address, firstName }, invitedBy) {
-  const link = await getAuth().generatePasswordResetLink(address, { url: SIGN_IN_URL });
-  await sendInviteEmail({ to: address, firstName, invitedBy, link }, resendApiKey.value());
+function sendInvite(uid, record, invitedBy) {
+  return deliverInvite({ uid, record, invitedBy }, {
+    makeLink: (address) => getAuth().generatePasswordResetLink(address, { url: SIGN_IN_URL }),
+    send: (invite, idempotencyKey) => sendInviteEmail(invite, resendApiKey.value(), { idempotencyKey }),
+    save: (invite) => users().doc(uid).update({ invite }),
+    newKey: randomUUID,
+    now: () => new Date(),
+    log: (message) => globalThis.console.error(message),
+  });
+}
+/** Asks Resend where recent invites got to (delivered, delayed, bounced, marked as spam) and saves any change. A failed check changes nothing. */
+async function refreshDeliveries(docs) {
+  const now = Date.now(), pending = docs.filter((doc) => { const invite = doc.data().invite; return needsDeliveryCheck(invite, invite?.at?.toMillis?.() ?? 0, now); }).slice(0, 10);
+  const fresh = new Map();
+  for (const doc of pending) {
+    const invite = doc.data().invite;
+    try {
+      const status = await fetchDeliveryStatus(invite.resendId, resendApiKey.value());
+      const next = deliveryUpdate(invite, status, new Date());
+      await doc.ref.update({ invite: next });
+      fresh.set(doc.id, next);
+    } catch (error) { globalThis.console.error(`Invite delivery check failed for ${doc.id}`, error instanceof Error ? error.message : error); }
+  }
+  return fresh;
 }
 async function lastSignIns(uids) {
   const result = new Map();
@@ -50,32 +74,31 @@ function changeRecord(uid, change) {
   });
 }
 
-export const listUsers = onCall(callable, async (request) => {
+export const listUsers = onCall(withEmail, async (request) => {
   const actor = await requireSuperAdmin(request);
-  const snapshot = await users().limit(500).get(), signedIn = await lastSignIns(snapshot.docs.map((doc) => doc.id));
-  const list = snapshot.docs.map((doc) => ({ ...userView(doc.id, doc.data(), signedIn.get(doc.id)), you: doc.id === actor.uid })).sort((a, b) => a.email.localeCompare(b.email));
+  const snapshot = await users().limit(500).get(), signedIn = await lastSignIns(snapshot.docs.map((doc) => doc.id)), fresh = await refreshDeliveries(snapshot.docs);
+  const list = snapshot.docs.map((doc) => ({ ...userView(doc.id, { ...doc.data(), invite: fresh.get(doc.id) ?? doc.data().invite }, signedIn.get(doc.id)), you: doc.id === actor.uid })).sort((a, b) => a.email.localeCompare(b.email));
   return { users: list };
 });
 
-/** Creates the sign-in account and the access record together, then emails the invite once.
- * If only the email fails, the user still exists and `emailSent` is false: use sendUserInvite to try again. */
+/** Creates the sign-in account and the access record together, then emails the invite and waits for Resend's answer.
+ * Returns `invite`: { sent: true, id } or { sent: false, reason }. If only the email fails, the user still exists, the record says
+ * invite.status "failed" with the reason, and sendUserInvite tries again. */
 export const createUser = onCall(withEmail, async (request) => {
   const actor = await requireSuperAdmin(request);
-  const { email: address, firstName, lastName, ...access } = validateUserFields(request.data);
+  const { email: address, firstName, lastName, ...access } = validateUserFields(request.data), record = { email: address, firstName, lastName };
   const existing = await getAuth().getUserByEmail(address).then(() => true, (error) => { if (isMissing(error)) return false; throw error; });
   if (existing) throw new HttpsError("already-exists", "A user with that email already exists.");
   // Nobody knows this password: the person sets their own through the invite link. emailVerified is true because a super admin vouches for the address.
   const account = await getAuth().createUser({ email: address, displayName: fullName({ firstName, lastName }), password: randomBytes(32).toString("base64url"), emailVerified: true, disabled: false });
   try {
     const now = FieldValue.serverTimestamp();
-    await users().doc(account.uid).create({ email: address, firstName, lastName, ...access, photoPath: null, thumbDataUrl: null, createdAt: now, createdBy: actor.email, updatedAt: now, updatedBy: actor.email });
+    await users().doc(account.uid).create({ ...record, ...access, photoPath: null, thumbDataUrl: null, invite: null, createdAt: now, createdBy: actor.email, updatedAt: now, updatedBy: actor.email });
   } catch (error) {
     await getAuth().deleteUser(account.uid); // never leave a sign-in account without an access record
     throw error;
   }
-  let emailSent = true;
-  try { await sendInvite(address, actor.email); } catch (error) { emailSent = false; globalThis.console.error("Invite email failed", error instanceof Error ? error.message : error); }
-  return { uid: account.uid, email: address, emailSent };
+  return { uid: account.uid, email: address, invite: await sendInvite(account.uid, record, actor.email) };
 });
 
 /** Changes a user's names, email, type and mini apps. Super admins can change each other; their own email, type and mini apps need another super admin.
@@ -112,11 +135,10 @@ export const deleteUser = onCall(callable, async (request) => {
   return { success: true };
 });
 
-/** Emails a fresh invite (a new one-time link to choose a password) to an existing user. */
+/** Emails a fresh invite (a new one-time link to choose a password) to an existing user. Returns `invite` exactly like createUser. */
 export const sendUserInvite = onCall(withEmail, async (request) => {
   const actor = await requireSuperAdmin(request);
-  const snapshot = await users().doc(text(request.data?.uid, "user", 128)).get();
+  const uid = text(request.data?.uid, "user", 128), snapshot = await users().doc(uid).get();
   if (!snapshot.exists) throw notFound();
-  try { await sendInvite(snapshot.data(), actor.email); } catch (error) { globalThis.console.error("Invite email failed", error instanceof Error ? error.message : error); throw new HttpsError("unavailable", "The invite email could not be sent. Try again."); }
-  return { success: true };
+  return { invite: await sendInvite(uid, snapshot.data(), actor.email) };
 });

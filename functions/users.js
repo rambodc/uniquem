@@ -3,6 +3,7 @@ import { HttpsError } from "firebase-functions/v2/https";
 import { ASSIGNABLE_MINI_APP_IDS, EVERYONE_MINI_APP_IDS, MINI_APP_IDS, STAFF, SUPER_ADMIN, USER_TYPES } from "./miniApps.js";
 import { email } from "./core.js";
 import { validateNames } from "./profile.js";
+import { inviteView } from "./invite.js";
 
 const invalid = (message) => new HttpsError("invalid-argument", message);
 
@@ -43,7 +44,7 @@ export function assertSuperAdminRemains(records, uid, after) {
   if (others + (after === SUPER_ADMIN ? 1 : 0) === 0) throw new HttpsError("failed-precondition", "There must always be at least one super admin.");
 }
 
-/** What the Users screen needs about one record: names, a small avatar and email, never a password or the full photo. */
+/** What the Users screen needs about one record: names, a small avatar, email and how the last invite went, never a password, the full photo or Resend's email id. */
 export function userView(uid, data, lastSignInAt) {
-  return { uid, firstName: data.firstName, lastName: data.lastName, thumbDataUrl: data.thumbDataUrl ?? null, email: data.email, type: data.type, miniApps: data.miniApps, createdAt: data.createdAt?.toDate?.().toISOString() ?? null, updatedAt: data.updatedAt?.toDate?.().toISOString() ?? null, createdBy: data.createdBy, lastSignInAt: lastSignInAt ?? null };
+  return { uid, firstName: data.firstName, lastName: data.lastName, thumbDataUrl: data.thumbDataUrl ?? null, email: data.email, type: data.type, miniApps: data.miniApps, createdAt: data.createdAt?.toDate?.().toISOString() ?? null, updatedAt: data.updatedAt?.toDate?.().toISOString() ?? null, createdBy: data.createdBy, invite: inviteView(data.invite), lastSignInAt: lastSignInAt ?? null };
 }

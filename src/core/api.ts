@@ -27,16 +27,22 @@ export type Access = { type: UserType | null; miniApps: MiniAppId[]; profile: Pr
 export const getAccess = () => invoke<undefined, Access>("getAccess");
 
 // ---- Users mini app (super admins only) ----
-export type UserRecord = { uid: string; firstName: string; lastName: string; thumbDataUrl: string | null; email: string; type: UserType; miniApps: MiniAppId[]; createdAt: string | null; updatedAt: string | null; createdBy: string; lastSignInAt: string | null; you: boolean };
+/** How the last invite went: "sent" (Resend accepted it), "delivered", "delayed", "bounced", "complained" (marked as spam) or "failed" (it never went out). */
+export type InviteStatus = "sent" | "delivered" | "delayed" | "bounced" | "complained" | "failed";
+/** The last invite emailed from the Users mini app, or null if none ever was. `error` says why it failed or bounced. */
+export type UserInvite = { status: InviteStatus; at: string | null; by: string; error: string | null; checkedAt: string | null };
+/** What the server says right after it tried to send an invite. */
+export type InviteResult = { sent: true; id: string } | { sent: false; reason: string };
+export type UserRecord = { uid: string; firstName: string; lastName: string; thumbDataUrl: string | null; email: string; type: UserType; miniApps: MiniAppId[]; createdAt: string | null; updatedAt: string | null; createdBy: string; invite: UserInvite | null; lastSignInAt: string | null; you: boolean };
 export type UserAccessInput = { type: UserType; miniApps: MiniAppId[] };
 /** Everything a super admin sets about a person. The password and the photo are never part of it: only the person changes those. */
 export type UserInput = UserAccessInput & { firstName: string; lastName: string; email: string };
 export const listUsers = () => invoke<undefined, { users: UserRecord[] }>("listUsers");
-/** Creates the user and emails them an invite (a one-time link to choose their own password). `emailSent` is false if only the email failed. */
-export const createUser = (data: UserInput) => invoke<typeof data, { uid: string; email: string; emailSent: boolean }>("createUser", data);
+/** Creates the user and emails them an invite (a one-time link to choose their own password). `invite.sent` is false, with the reason, if only the email failed. */
+export const createUser = (data: UserInput) => invoke<typeof data, { uid: string; email: string; invite: InviteResult }>("createUser", data);
 export const updateUser = (uid: string, data: UserInput) => invoke("updateUser", { uid, ...data });
 export const deleteUser = (uid: string) => invoke("deleteUser", { uid });
-export const sendUserInvite = (uid: string) => invoke("sendUserInvite", { uid });
+export const sendUserInvite = (uid: string) => invoke<{ uid: string }, { invite: InviteResult }>("sendUserInvite", { uid });
 
 // ---- Profile mini app (everyone, own photo only) ----
 /** `photo` is a 256px JPEG and `thumb` a 96px JPEG, both base64 and both made in the browser. */
