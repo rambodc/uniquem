@@ -180,4 +180,4 @@
 .ws-gender.male{background:#e3eff7;color:#1e5a7f}.ws-gender.female{background:#f3e6f1;color:#7d3570}
 .ws-guest-name .ws-gender{margin-left:8px}
 .ws-gender-field{display:grid;gap:6px;font-size:14px;font-weight:600;color:#2a4a47}.ws-gender-field .ws-seg{margin-top:0}.ws-gender-field .ws-seg button{min-height:46px}
-.ws-stat.gender{grid-column:span 2}
+.ws-stat.gender{grid-column:1/-1}.ws-stat.pair{grid-column:span 2}
