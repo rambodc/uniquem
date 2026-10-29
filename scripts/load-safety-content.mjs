@@ -1,7 +1,7 @@
-// Loads the Safety mini app's lessons from safety-content/ into production: Firestore (safetyCategories, safetyLessons)
+// Loads the Safety mini app's lessons from safety-content/ into production: Firestore (safety/content/categories, safety/content/lessons)
 // and Cloud Storage (safety/lessons/<lesson>/<file>). Safe to run again and again: documents are written whole,
 // media is uploaded only when it changed, and categories or lessons removed from content.json are removed from Firestore
-// (people's safetyProgress is never touched). Bump a lesson's "version" when its content changes so everyone retakes it.
+// (people's progress in safety/progress/records is never touched). Bump a lesson's "version" when its content changes so everyone retakes it.
 //
 // It runs by itself on GitHub (.github/workflows/safety-content.yml) whenever a change to safety-content/ is merged into production,
 // and can be run by hand from the workflow's "Run workflow" button or locally:
@@ -12,7 +12,7 @@ import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
-import { contentToDocs } from "../functions/safety.js";
+import { SAFETY_PATHS, contentToDocs } from "../functions/safety.js";
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), ".."), dir = path.join(root, "safety-content");
 const PROJECT = "uniquem-4366e", BUCKET = "uniquem-4366e.firebasestorage.app";
@@ -36,11 +36,13 @@ for (const file of files) {
   uploaded++;
 }
 const batch = db.batch(), keepCats = new Set(docs.categories.map((c) => c.id)), keepLessons = new Set(docs.lessons.map((l) => l.id));
-for (const { id, doc } of docs.categories) batch.set(db.collection("safetyCategories").doc(id), doc);
-for (const { id, doc } of docs.lessons) batch.set(db.collection("safetyLessons").doc(id), doc);
+batch.set(db.doc(SAFETY_PATHS.content), { kind: "content", note: "Safety lessons: categories/ and lessons/ below, loaded from safety-content/." });
+batch.set(db.doc(SAFETY_PATHS.progress), { kind: "progress", note: "Each person's lesson progress: records/{uid}_{lessonId} below." });
+for (const { id, doc } of docs.categories) batch.set(db.collection(SAFETY_PATHS.categories).doc(id), doc);
+for (const { id, doc } of docs.lessons) batch.set(db.collection(SAFETY_PATHS.lessons).doc(id), doc);
 let removed = 0;
-for (const doc of (await db.collection("safetyCategories").get()).docs) if (!keepCats.has(doc.id)) { batch.delete(doc.ref); removed++; }
-for (const doc of (await db.collection("safetyLessons").get()).docs) if (!keepLessons.has(doc.id)) { batch.delete(doc.ref); removed++; }
+for (const doc of (await db.collection(SAFETY_PATHS.categories).get()).docs) if (!keepCats.has(doc.id)) { batch.delete(doc.ref); removed++; }
+for (const doc of (await db.collection(SAFETY_PATHS.lessons).get()).docs) if (!keepLessons.has(doc.id)) { batch.delete(doc.ref); removed++; }
 await batch.commit();
 const used = new Set(files.map((f) => f.storagePath));
 const [existing] = await bucket.getFiles({ prefix: "safety/lessons/" });

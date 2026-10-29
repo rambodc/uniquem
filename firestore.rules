@@ -1,5 +1,6 @@
 rules_version = '2';
 // Closed to the browser. Every read and write goes through Cloud Functions, which check access first
-// (functions/core.js requireMiniApp / requireSuperAdmin). That includes the Safety mini app: safetyCategories,
-// safetyLessons (whose quiz answers must never reach the browser) and safetyProgress (each person's own record).
+// (functions/core.js requireMiniApp / requireSuperAdmin). That includes the Safety mini app's one collection, safety:
+// safety/content/categories, safety/content/lessons (whose quiz answers must never reach the browser) and
+// safety/progress/records (each person's own record).
 service cloud.firestore { match /databases/{database}/documents { match /{document=**} { allow read, write: if false; } } }

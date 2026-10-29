@@ -1,5 +1,5 @@
 // Safety mini app (assignable): lessons, pre-written quizzes graded on the server, and each person's progress.
-// Content is data (safetyCategories, safetyLessons, Storage safety/), loaded with scripts/load-safety-content.mjs. See safety.js for the shapes.
+// Content is data (Firestore safety/content/..., Storage safety/), loaded with scripts/load-safety-content.mjs. See safety.js for the shapes.
 // Every callable checks requireMiniApp(request, "safety") first. A person only ever reads or writes their own progress;
 // listSafetyProgress (everyone's progress) is for super admins only.
 import { onCall, HttpsError } from "firebase-functions/v2/https";
@@ -7,9 +7,9 @@ import { getStorage } from "firebase-admin/storage";
 import { FieldValue } from "firebase-admin/firestore";
 import { db, callable, isSuperAdmin, requireMiniApp, text } from "./core.js";
 import { miniAppsFor } from "./miniApps.js";
-import { MEDIA_PREFIX, currentProgress, gradeQuiz, nextProgress, progressId, progressView, publicLesson } from "./safety.js";
+import { MEDIA_PREFIX, SAFETY_PATHS, currentProgress, gradeQuiz, nextProgress, progressId, progressView, publicLesson } from "./safety.js";
 
-const categories = () => db.collection("safetyCategories"), lessons = () => db.collection("safetyLessons"), progress = () => db.collection("safetyProgress");
+const categories = () => db.collection(SAFETY_PATHS.categories), lessons = () => db.collection(SAFETY_PATHS.lessons), progress = () => db.collection(SAFETY_PATHS.records);
 /** Media URLs last an hour: long enough to finish a lesson, short enough that a copied link soon stops working. */
 const URL_LIFETIME_MS = 60 * 60 * 1000;
 function sign(path) {
