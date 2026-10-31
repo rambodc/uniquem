@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { RESET_CONTINUE_URL, RESET_SENT, resetOutcome, signInErrorMessage } from "./signInMessages";
+import { RESET_CONTINUE_URL, RESET_SENT, accessErrorMessage, resetOutcome, signInErrorMessage } from "./signInMessages";
 
 describe("password reset is neutral about whether an account exists", () => {
   it("says the same thing for a sent link and for an unknown account", () => {
@@ -21,4 +21,14 @@ describe("signInErrorMessage", () => {
     expect(signInErrorMessage({ code: "auth/too-many-requests" })).toMatch(/Too many/);
   });
   it("keeps the app's own messages", () => expect(signInErrorMessage(new Error("This account is not authorized for the Uniquem workspace."))).toMatch(/not authorized/));
+});
+
+describe("accessErrorMessage", () => {
+  it("never says 'not authorized' for a failed check", () => {
+    expect(accessErrorMessage({ code: "functions/unauthenticated" })).toMatch(/device could not be verified/);
+    expect(accessErrorMessage({ code: "functions/unavailable" })).toMatch(/No connection/);
+    expect(accessErrorMessage(new Error("App Check timed out"))).toMatch(/No connection/);
+    expect(accessErrorMessage({ code: "functions/internal" })).toMatch(/could not be checked/);
+    for (const code of ["functions/unauthenticated", "functions/unavailable", "functions/internal"]) expect(accessErrorMessage({ code })).not.toMatch(/not authorized/);
+  });
 });
