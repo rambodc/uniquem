@@ -23,7 +23,13 @@ const NO_ACCESS: Access = { type: null, miniApps: [], profile: null };
 const Context = createContext<AuthState | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null), [loading, setLoading] = useState(true), [access, setAccess] = useState<Access | null>(null), [accessLoading, setAccessLoading] = useState(false);
-  useEffect(() => { let active = true; void authReady.then(() => onAuthStateChanged(auth, (next) => { if (active) { setUser(next); setLoading(false); } })); return () => { active = false; }; }, []);
+  // The sign-in state normally arrives at once; if it hasn't after 8 s, stop waiting and treat the visitor as signed out (sign-in page).
+  useEffect(() => {
+    let active = true, stop: (() => void) | undefined;
+    const fallback = setTimeout(() => { if (active) setLoading(false); }, 8_000);
+    void authReady.then(() => { if (active) stop = onAuthStateChanged(auth, (next) => { if (active) { clearTimeout(fallback); setUser(next); setLoading(false); } }); });
+    return () => { active = false; clearTimeout(fallback); stop?.(); };
+  }, []);
   const uid = user?.uid, verified = user?.emailVerified === true;
   useEffect(() => {
     let active = true;
