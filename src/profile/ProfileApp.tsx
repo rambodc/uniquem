@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { EmailAuthProvider, reauthenticateWithCredential, updatePassword } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
-import { Camera, ChevronDown, KeyRound, Lock, LogOut, Trash2 } from "lucide-react";
-import { getMyPhoto, removeMyPhoto, setMyPhoto } from "../core/api";
+import { Bell, Camera, ChevronDown, KeyRound, Lock, LogOut, Trash2 } from "lucide-react";
+import { getMyPhoto, removeMyPhoto, sendTestPush, setMyPhoto } from "../core/api";
+import { isNativeApp } from "../native/platform";
 import { auth } from "../core/firebase";
 import { useAuth } from "../auth/AuthContext";
 import Avatar from "../auth/Avatar";
@@ -88,17 +89,39 @@ function PasswordCard() {
   </section>;
 }
 
+/** iOS app only: send yourself a test notification on every phone where you are signed in with notifications allowed. */
+function NotificationsCard() {
+  const [busy, setBusy] = useState(false), [notice, setNotice] = useState<Notice>(null);
+  async function send() {
+    setBusy(true); setNotice(null);
+    try {
+      await import("../native/push").then(({ registerThisDevice }) => registerThisDevice()).catch(() => false);
+      const { sent } = await sendTestPush();
+      setNotice(sent > 0 ? { kind: "ok", text: `Test notification sent to ${sent} device${sent === 1 ? "" : "s"}.` } : { kind: "error", text: "The notification could not be delivered. Check that notifications are allowed for Uniquem in iPhone Settings." });
+    } catch (cause) { setNotice({ kind: "error", text: messageOf(cause, "The test notification could not be sent. Try again.") }); } finally { setBusy(false); }
+  }
+  return <section className="ws-panel pf-card" aria-labelledby="pf-notifications">
+    <h2 id="pf-notifications">Notifications</h2>
+    <p className="pf-lock">Check that this iPhone gets Uniquem notifications.</p>
+    <div className="ws-row"><button type="button" className="ws-button" disabled={busy} onClick={() => void send()}><Bell size={17} /> {busy ? "Sending…" : "Send test notification"}</button></div>
+    <Note notice={notice} />
+  </section>;
+}
+
+/** In the iOS app, stop this phone getting the person's notifications before signing out. Never blocks the log out. */
+const forgetDevice = () => isNativeApp() ? import("../native/push").then(({ forgetThisDevice }) => forgetThisDevice()).catch(() => undefined) : Promise.resolve();
+
 /** Log out of the workspace on this device. This is the only Log out (it is not in the top bar). */
 function LogoutCard() {
   const { logout } = useAuth(), navigate = useNavigate(), [busy, setBusy] = useState(false);
   return <section className="pf-logout" aria-label="Log out">
-    <button type="button" className="ws-button ghost pf-logout-btn" disabled={busy} onClick={() => { setBusy(true); void logout().then(() => navigate("/signin", { replace: true }), () => setBusy(false)); }}><LogOut size={18} /> {busy ? "Logging out…" : "Log out"}</button>
+    <button type="button" className="ws-button ghost pf-logout-btn" disabled={busy} onClick={() => { setBusy(true); void forgetDevice().then(logout).then(() => navigate("/signin", { replace: true }), () => setBusy(false)); }}><LogOut size={18} /> {busy ? "Logging out…" : "Log out"}</button>
   </section>;
 }
 
 /** The Profile mini app: every signed-in person has it. */
 export default function ProfileApp() {
   return <Page narrow title="Profile" subtitle="Your photo, your details and your password." back={{ to: "/dashboard", label: "Dashboard" }}>
-    <div className="pf-stack"><PhotoCard /><DetailsCard /><PasswordCard /><LogoutCard /></div>
+    <div className="pf-stack"><PhotoCard /><DetailsCard /><PasswordCard />{isNativeApp() && <NotificationsCard />}<LogoutCard /></div>
   </Page>;
 }
