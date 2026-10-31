@@ -1,4 +1,4 @@
-import { getAuth, setPersistence, browserLocalPersistence, connectAuthEmulator } from "firebase/auth";
+import { getAuth, initializeAuth, setPersistence, browserLocalPersistence, indexedDBLocalPersistence, connectAuthEmulator } from "firebase/auth";
 import { getFunctions, connectFunctionsEmulator } from "firebase/functions";
 import { getStorage } from "firebase/storage";
 import { initializeApp } from "firebase/app";
@@ -19,8 +19,10 @@ export const appCheck = isNativeApp()
   : appCheckKey && typeof window !== "undefined"
     ? initializeAppCheck(app, { provider: new ReCaptchaEnterpriseProvider(appCheckKey), isTokenAutoRefreshEnabled: true })
     : undefined;
-export const auth = getAuth(app);
-export const authReady = setPersistence(auth, browserLocalPersistence).catch(() => undefined);
+// iOS app: getAuth() also loads the popup/redirect helper, which waits on an iframe from the auth domain that never answers inside
+// the capacitor:// web view, so the sign-in state never arrives. The app only uses email + password, so it starts Auth without it.
+export const auth = isNativeApp() ? initializeAuth(app, { persistence: indexedDBLocalPersistence }) : getAuth(app);
+export const authReady = isNativeApp() ? Promise.resolve() : setPersistence(auth, browserLocalPersistence).catch(() => undefined);
 export const functions = getFunctions(app, "us-central1");
 export const storage = getStorage(app);
 // Local testing only: `VITE_USE_EMULATORS=true npm run dev` talks to the Firebase emulators instead of production.
