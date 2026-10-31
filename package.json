@@ -12,9 +12,17 @@
     "preview": "vite preview",
     "lint": "eslint src --max-warnings=0",
     "test": "vitest run",
-    "check:seo": "node scripts/check-seo.mjs"
+    "check:seo": "node scripts/check-seo.mjs",
+    "ios:sync": "npm run build && cap sync ios",
+    "ios:open": "cap open ios"
   },
   "dependencies": {
+    "@capacitor-firebase/app-check": "^8.6.0",
+    "@capacitor-firebase/messaging": "^8.6.0",
+    "@capacitor/core": "^8.6.0",
+    "@capacitor/ios": "^8.6.0",
+    "@capacitor/splash-screen": "^8.0.2",
+    "@capacitor/status-bar": "^8.0.4",
     "@react-three/drei": "^10.7.8",
     "@react-three/fiber": "^9.7.0",
     "@react-three/postprocessing": "^3.2.1",
@@ -28,6 +36,7 @@
     "three": "^0.185.1"
   },
   "devDependencies": {
+    "@capacitor/cli": "^8.6.0",
     "@eslint/js": "^9.39.0",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",

@@ -7,9 +7,11 @@ import { fileURLToPath, URL } from "node:url";
 // The old roles/features system is gone. If any of its names, shapes or one-off scripts reappear anywhere in the repo, this fails.
 const root = fileURLToPath(new URL("../..", import.meta.url));
 const skipDirs = new Set(["node_modules", "dist", ".git", ".firebase", ".seo-build", "reports"]);
+// Written by `cap sync ios` (a copy of dist and links into node_modules); git-ignored.
+const generatedIos = [join("ios", "App", "App", "public"), join("ios", "App", "CapApp-SPM", "symlinks")];
 const files = (dir) => readdirSync(dir).flatMap((name) => {
-  if (skipDirs.has(name)) return [];
   const path = join(dir, name);
+  if (skipDirs.has(name) || generatedIos.some((generated) => path.endsWith(generated))) return [];
   return statSync(path).isDirectory() ? files(path) : /\.(js|mjs|ts|tsx|json|md|yml|rules|css|html)$/.test(name) && name !== "package-lock.json" ? [path] : [];
 });
 const THIS_FILE = fileURLToPath(import.meta.url);
