@@ -34,3 +34,5 @@ export * from "./profile-functions.js";
 export * from "./users-functions.js";
 // Safety mini app (lessons and quizzes): see safety-functions.js
 export * from "./safety-functions.js";
+// Push notifications for the iOS app (own devices, test notification): see push-functions.js
+export * from "./push-functions.js";
