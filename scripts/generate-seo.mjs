@@ -29,9 +29,6 @@ for (const route of PRIVATE_ROOTS) {
   await mkdir(`dist/${route}`, { recursive: true });
   await writeFile(`dist/${route}/index.html`, cleanShell.replace("</head>", '<title>Uniquem | Private page</title><meta name="robots" content="noindex, nofollow"></head>'));
 }
-// The party push test gets its own shell so iPhone's Add to Home Screen sees its web app manifest and icon in the HTML.
-await mkdir("dist/party/push-test", { recursive: true });
-await writeFile("dist/party/push-test/index.html", cleanShell.replace("</head>", '<title>Uniquem | Party push test</title><meta name="robots" content="noindex, nofollow"><link rel="manifest" href="/party-push-manifest.webmanifest"><link rel="apple-touch-icon" href="/brand/uniquem-mark-180.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Uniq Party"><meta name="apple-mobile-web-app-status-bar-style" content="default"></head>'));
 // Branded 404 page. Firebase Hosting serves dist/404.html with HTTP 404 for unknown URLs.
 await writeFile("dist/404.html", cleanShell
   .replace("</head>", '<title>Page not found | Uniquem</title><meta name="robots" content="noindex, follow"></head>')
