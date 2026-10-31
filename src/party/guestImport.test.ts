@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseGuestImport, parseStatus } from "./importGuests";
+import { parseGuestImport, parseStatus } from "./guestImport";
 
 /** A guest already on the list, with every field. */
 const onList = (over: { firstName: string; lastName: string } & Partial<{ company: string; invitedBy: string; notes: string; plusOnes: number }>) => ({ company: "", invitedBy: "", notes: "", plusOnes: 0, ...over });

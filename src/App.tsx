@@ -6,6 +6,7 @@ import AnalyticsTracker from "./core/AnalyticsTracker";
 import IdleScreensaver from "./public/screensaver/IdleScreensaver";
 import ErrorBoundary from "./core/ErrorBoundary";
 import { lazyWithReload as lazy } from "./core/resilience";
+import { isNativeApp } from "./native/platform";
 // Private pages (and Firebase Auth) load on demand, keeping them out of the public bundle. If a chunk is gone after a deploy, the page reloads once.
 const PrivateLayout = lazy(() => import("./auth/PrivateLayout"));
 const SignIn = lazy(() => import("./auth/SignIn"));
@@ -18,6 +19,7 @@ const PartyDetail = lazy(() => import("./party/PartyDetail"));
 const CheckIn = lazy(() => import("./party/CheckIn"));
 const UsersApp = lazy(() => import("./users/UsersApp"));
 const ProfileApp = lazy(() => import("./profile/ProfileApp"));
+const NativeApp = lazy(() => import("./native/NativeApp"));
 const SafetyHome = lazy(() => import("./safety/SafetyHome"));
 const SafetyLessonPage = lazy(() => import("./safety/SafetyLesson"));
 const SafetyProgressPage = lazy(() => import("./safety/SafetyProgress"));
@@ -41,4 +43,4 @@ export default function App() { const { pathname } = useLocation(); return <><Se
   </Route>
   <Route path="/" element={<PublicSite />} /><Route path="/about-us" element={<PublicSite />} /><Route path="/chemicals" element={<PublicSite />} /><Route path="/chemicals/*" element={<PublicSite />} /><Route path="/contact-us" element={<PublicSite />} /><Route path="/service-areas/alberta" element={<PublicSite />} />
   <Route path="*" element={<PublicSite notFound />} />
-</Routes></ErrorBoundary><IdleScreensaver /></>; }
+</Routes></ErrorBoundary><IdleScreensaver />{isNativeApp() && <Suspense fallback={null}><NativeApp /></Suspense>}</>; }
