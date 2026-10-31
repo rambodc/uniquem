@@ -4,7 +4,7 @@ import { sendPasswordResetEmail, signInWithEmailAndPassword } from "firebase/aut
 import { auth } from "../core/firebase";
 import { getAccess } from "../core/api";
 import { safeNext } from "./next";
-import { RESET_CONTINUE_URL, RESET_SENT, resetOutcome, signInErrorMessage } from "./signInMessages";
+import { NOT_AUTHORIZED, RESET_CONTINUE_URL, RESET_SENT, accessErrorMessage, resetOutcome, signInErrorMessage } from "./signInMessages";
 import { useAuth } from "./AuthContext";
 
 export default function SignIn() {
@@ -16,7 +16,9 @@ export default function SignIn() {
     event.preventDefault(); setBusy(true); setError("");
     try {
       const result = await signInWithEmailAndPassword(auth, email.trim().toLowerCase(), password);
-      if (!result.user.emailVerified || !(await getAccess().catch(() => null))?.type) { await auth.signOut(); throw new Error("This account is not authorized for the Uniquem workspace."); }
+      if (!result.user.emailVerified) { await auth.signOut(); throw new Error(NOT_AUTHORIZED); }
+      const access = await getAccess().catch(async (cause: unknown) => { await auth.signOut(); throw new Error(accessErrorMessage(cause)); });
+      if (!access.type) { await auth.signOut(); throw new Error(NOT_AUTHORIZED); }
     } catch (cause) { setError(signInErrorMessage(cause)); } finally { setBusy(false); }
   }
   async function reset(event: FormEvent) {
