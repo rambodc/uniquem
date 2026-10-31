@@ -1,5 +1,19 @@
 import UIKit
 import Capacitor
+import FirebaseCore
+import FirebaseAppCheck
+
+/// App Check for the iOS app: App Attest on a real iPhone, the debug provider on the simulator (its debug token is printed in the
+/// Xcode console; see ios/README.md). It must be chosen before Firebase starts, which is why it lives here and not in the web code.
+final class UniquemAppCheckProviderFactory: NSObject, AppCheckProviderFactory {
+    func createProvider(with app: FirebaseApp) -> AppCheckProvider? {
+        #if targetEnvironment(simulator)
+        return AppCheckDebugProvider(app: app)
+        #else
+        return AppAttestProvider(app: app)
+        #endif
+    }
+}
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -7,7 +21,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     var window: UIWindow?
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        // Override point for customization after application launch.
+        // Before any plugin starts Firebase: otherwise App Check has no provider and every callable is refused (401, app MISSING).
+        AppCheck.setAppCheckProviderFactory(UniquemAppCheckProviderFactory())
+        FirebaseApp.configure()
         return true
     }
 

@@ -23,9 +23,9 @@ with `App.entitlements`. The build number is the workflow run number. Cert and p
 - Sign-in, callables and Storage use the same Firebase web SDK as the website, inside the app's web view.
 - **App Check**: the website uses reCAPTCHA Enterprise, which can't run in the app. In the app (`src/native/appCheck.ts`) the native
   Firebase SDK attests with **App Attest** and hands the token to the web SDK, so every callable keeps passing App Check enforcement.
-  App Attest works on real devices (TestFlight and App Store builds). On a simulator, build with `VITE_APPCHECK_DEBUG=true npm run ios:sync`,
-  run once, copy the debug token printed in the Xcode console and add it under App Check → Apps → Uniquem (iOS) → Manage debug tokens.
-  Never ship a build with `VITE_APPCHECK_DEBUG=true`.
+  The provider is set in `AppDelegate.swift` before Firebase starts: App Attest on a real iPhone (TestFlight and App Store builds),
+  the debug provider on the simulator. On a simulator, run once, copy the debug token printed in the Xcode console and add it under
+  App Check → Apps → Uniquem (iOS) → Manage debug tokens.
 - **Push**: `@capacitor-firebase/messaging`. After sign-in the app asks for notification permission and registers with FCM.
   A notification with `data.path` (for example `/party/abc123`) opens that page when tapped. APNs needs the APNs auth key uploaded
   to Firebase (Project settings → Cloud Messaging → Apple app configuration).
