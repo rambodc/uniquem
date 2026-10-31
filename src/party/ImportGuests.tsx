@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { importGuests, type Guest } from "../core/api";
-import { IMPORT_LIMITS, parseGuestImport } from "./importGuests";
+import { IMPORT_LIMITS, parseGuestImport } from "./guestImport";
 import { STATUS_LABEL } from "./logic";
 import { messageOf } from "./Workspace";
 
