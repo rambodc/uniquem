@@ -11,7 +11,7 @@ export const sendPartyPushTest = onCall(callable, async (request) => {
   await db.runTransaction(async (tx) => {
     const [device, total] = await Promise.all([tx.get(deviceRef), tx.get(totalRef)]);
     const deviceTimes = allowSend(device.data()?.times, now, PUSH_LIMITS.perToken, PUSH_LIMITS.tokenWindowMs);
-    const totalTimes = allowSend(total.data()?.times, now, PUSH_LIMITS.total, PUSH_LIMITS.totalWindowMs);
+    const totalTimes = allowSend(total.data()?.times, now, PUSH_LIMITS.total, PUSH_LIMITS.totalWindowMs, "the whole site");
     tx.set(deviceRef, { times: deviceTimes, updatedAt: new Date(now) });
     tx.set(totalRef, { times: totalTimes, updatedAt: new Date(now) });
   });
