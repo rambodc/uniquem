@@ -18,7 +18,6 @@ const PartyDetail = lazy(() => import("./party/PartyDetail"));
 const CheckIn = lazy(() => import("./party/CheckIn"));
 const UsersApp = lazy(() => import("./users/UsersApp"));
 const ProfileApp = lazy(() => import("./profile/ProfileApp"));
-const PushTest = lazy(() => import("./party/push/PushTest"));
 const SafetyHome = lazy(() => import("./safety/SafetyHome"));
 const SafetyLessonPage = lazy(() => import("./safety/SafetyLesson"));
 const SafetyProgressPage = lazy(() => import("./safety/SafetyProgress"));
@@ -40,7 +39,6 @@ export default function App() { const { pathname } = useLocation(); return <><Se
     <Route element={<RequireMiniApp app="users" />}><Route path="/users" element={<UsersApp />} /></Route>
     <Route element={<RequireMiniApp app="profile" />}><Route path="/profile" element={<ProfileApp />} /></Route>
   </Route>
-  <Route path="/party/push-test" element={<Suspense fallback={<main className="center-state">Opening the push test…</main>}><PushTest /></Suspense>} />
   <Route path="/" element={<PublicSite />} /><Route path="/about-us" element={<PublicSite />} /><Route path="/chemicals" element={<PublicSite />} /><Route path="/chemicals/*" element={<PublicSite />} /><Route path="/contact-us" element={<PublicSite />} /><Route path="/service-areas/alberta" element={<PublicSite />} />
   <Route path="*" element={<PublicSite notFound />} />
 </Routes></ErrorBoundary><IdleScreensaver /></>; }

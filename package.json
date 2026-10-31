@@ -8,7 +8,7 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build && vite build --config vite.sw.config.ts && vite build --ssr src/entry-seo.tsx --outDir .seo-build && node scripts/generate-seo.mjs",
+    "build": "tsc -b && vite build && vite build --ssr src/entry-seo.tsx --outDir .seo-build && node scripts/generate-seo.mjs",
     "preview": "vite preview",
     "lint": "eslint src --max-warnings=0",
     "test": "vitest run",
