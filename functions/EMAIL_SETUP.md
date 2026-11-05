@@ -3,7 +3,7 @@
 The `submitContactInquiry` callable validates the inquiry, saves it to Firestore (`contactInquiries`) first, and then sends a notification email through the [Resend](https://resend.com) HTTP API (`POST https://api.resend.com/emails`).
 
 - From: `Uniquem Website <website@uniquem.ca>` (the `uniquem.ca` domain must stay verified in the Resend account that owns the API key; its DKIM `resend._domainkey` TXT and the `send`/`rsend` CNAMEs live in GoDaddy DNS next to the Google Workspace records, which they do not touch)
-- To: `rambodr@uniquem.ca`
+- To: `rambodr@uniquem.ca`, `hrad@uniquem.ca`
 - Subject: `New Uniquem website inquiry - <Mountain time>`, or `New Uniquem website inquiry (<product>) - <Mountain time>` for product inquiries, e.g. `New Uniquem website inquiry (SandWeb) - Oct 20, 2026, 1:48 PM MDT`. The timestamp keeps every subject unique.
 - Reply-To: the visitor's email when provided; otherwise `rambodr@uniquem.ca` (SandWeb "Call me" leads have a phone number and no email).
 - Body: one line per field (Product, Name, Email, Company, Phone, Submitted) followed by the visitor's message; SandWeb leads send a short message such as "Please call me about SandWeb."
