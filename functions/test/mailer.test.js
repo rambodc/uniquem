@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { EMAIL_FROM, EMAIL_REPLY_TO, EMAIL_TO, RESEND_ENDPOINT, ResendError, buildInviteEmail, deliveryStatus, fetchDeliveryStatus, formatMountainTimestamp, retryDelay, sendInquiryNotification, sendInviteEmail } from "../mailer.js";
+import { EMAIL_FROM, EMAIL_REPLY_TO, EMAIL_TO, EMAIL_TO_COPY, RESEND_ENDPOINT, ResendError, buildInviteEmail, deliveryStatus, fetchDeliveryStatus, formatMountainTimestamp, retryDelay, sendInquiryNotification, sendInviteEmail } from "../mailer.js";
 
 const okFetch = (calls) => async (url, init) => { calls.push({ url, init, body: JSON.parse(init.body) }); return { ok: true, status: 200, json: async () => ({ id: "email_123" }) }; };
 
@@ -29,8 +29,9 @@ test("sends a product inquiry through Resend from website@uniquem.ca to the Uniq
   assert.equal(EMAIL_FROM, "Uniquem Website <website@uniquem.ca>");
   assert.equal(EMAIL_REPLY_TO, "rambodr@uniquem.ca");
   assert.equal(body.from, EMAIL_FROM);
-  assert.deepEqual(body.to, [EMAIL_TO]);
+  assert.deepEqual(body.to, [EMAIL_TO, EMAIL_TO_COPY]);
   assert.equal(EMAIL_TO, "rambodr@uniquem.ca");
+  assert.equal(EMAIL_TO_COPY, "hrad@uniquem.ca");
   assert.equal(body.reply_to, "customer@example.com");
   assert.equal(body.subject, "New Uniquem website inquiry (Friction Reducer) - Sep 22, 2026, 11:00 AM MDT");
   assert.match(body.text, /Example Oilfield/);

@@ -4,6 +4,8 @@ export const RESEND_ENDPOINT = "https://api.resend.com/emails";
 // The one sender for every email the site sends.
 export const EMAIL_FROM = "Uniquem Website <website@uniquem.ca>";
 export const EMAIL_TO = "rambodr@uniquem.ca";
+// Every website inquiry is also copied to this address.
+export const EMAIL_TO_COPY = "hrad@uniquem.ca";
 // Replies to invites come to the Uniquem inbox; inquiry replies go to the visitor.
 export const EMAIL_REPLY_TO = EMAIL_TO;
 
@@ -42,7 +44,7 @@ export function buildInquiryEmail(inquiry) {
   const stamp = formatMountainTimestamp(inquiry.notificationTimestamp || new Date());
   const subject = `New Uniquem website inquiry${inquiry.productName ? ` (${inquiry.productName})` : ""} - ${stamp}`;
   // Reply goes straight to the visitor; phone-only leads reply to the inbox itself.
-  return { from: EMAIL_FROM, to: [EMAIL_TO], reply_to: inquiry.email || EMAIL_REPLY_TO, subject, text: formatInquiryEmail(inquiry) };
+  return { from: EMAIL_FROM, to: [EMAIL_TO, EMAIL_TO_COPY], reply_to: inquiry.email || EMAIL_REPLY_TO, subject, text: formatInquiryEmail(inquiry) };
 }
 
 /** A failed Resend call. `transient` is true when trying again can help (network trouble, a timeout, 409 concurrent request, 429 or 5xx). */
