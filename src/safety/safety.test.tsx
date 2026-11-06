@@ -26,22 +26,22 @@ describe("Safety", () => {
     expect(out).toContain("Uniquem Basics"); expect(out).toContain("1 of 1 passed"); expect(out).toContain("Passed · 100%");
     expect(out).toContain("Coming soon"); expect(out).toContain('href="/safety/lesson/welcome-to-uniquem"');
   });
-  it("image slides lazy-load; video has controls and a poster and never autoplays; 3D waits for its lazy viewer", () => {
-    const img = html(<SlideMedia slide={{ type: "image", title: "T", caption: "C", url: "https://x/a.svg", posterUrl: null, audioUrl: null }} />);
-    expect(img).toContain('loading="lazy"');
+  it("videos play silently on their own, looping and inline, with a poster; 3D waits for its lazy viewer", () => {
     const video = html(<SlideMedia slide={{ type: "video", title: "T", caption: "C", url: "https://x/v.mp4", posterUrl: "https://x/p.jpg", audioUrl: null }} />);
-    expect(video).toContain("controls"); expect(video).toContain('poster="https://x/p.jpg"'); expect(video).toContain('preload="metadata"'); expect(video).not.toContain("autoplay");
+    for (const attr of ["autoPlay", "muted", "loop", "playsInline", 'poster="https://x/p.jpg"']) expect(video).toContain(attr);
+    expect(video).not.toContain("controls");
     expect(html(<SlideMedia slide={{ type: "3d", title: "T", caption: "C", url: "https://x/m.glb", posterUrl: null, audioUrl: null }} />)).toContain("Loading the 3D model");
     const source = readFileSync("src/safety/SafetyLesson.tsx", "utf8");
     expect(source).not.toMatch(/from "@react-three|from "three/); expect(source).toContain('lazyWithReload(() => import("./ModelView"))');
   });
-  it("narration is a round play button on the media itself (centre on pictures, corner on video and 3D), never a text button", () => {
+  it("narration is a round play button in the middle of the media (corner on 3D), never a text button; progress shows the slide", () => {
     const slide = (type: "image" | "video" | "3d", audioUrl: string | null) => ({ type, title: "T", caption: "C", url: `https://x/m.${type}`, posterUrl: null, audioUrl });
     const view = (slides: ReturnType<typeof slide>[]) => html(<SlideView lesson={{ ...lesson, slides }} index={0} onBack={() => undefined} onNext={() => undefined} />);
     const image = view([slide("image", "https://x/a.mp3")]);
     expect(image).toMatch(/<div class="sf-stage image">.*<button type="button" class="sf-narrate center idle" aria-label="Play narration"/s);
     expect(image).toContain('src="https://x/a.mp3"'); expect(image).not.toContain("Play audio");
-    expect(view([slide("video", "https://x/a.mp3")])).toContain('class="sf-narrate corner idle"');
+    expect(view([slide("video", "https://x/a.mp3")])).toContain('class="sf-narrate center idle"');
+    expect(view([slide("video", null), slide("video", null)])).toMatch(/aria-valuenow="1".*1 \/ 2/s);
     expect(view([slide("3d", "https://x/a.mp3")])).toContain('class="sf-narrate corner idle"');
     expect(view([slide("image", null)])).not.toContain("sf-narrate");
     const source = readFileSync("src/safety/SafetyLesson.tsx", "utf8");

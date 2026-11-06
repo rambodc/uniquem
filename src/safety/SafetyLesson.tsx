@@ -9,15 +9,16 @@ import "./safety.css";
 // three.js only loads when a 3D slide is actually opened.
 const ModelView = lazyWithReload(() => import("./ModelView"));
 
-/** Narration for a slide: a big round play button over the picture (a smaller one in the corner on video and 3D slides, so it never
- * covers the video controls or blocks turning the model). Pause while playing, with a progress ring; replay when it has finished.
- * The audio stops when the slide changes (this component is remounted per slide and pauses on unmount). */
-export function NarrationButton({ url, corner }: { url: string; corner: boolean }) {
+/** Narration for a slide: a big round play button in the middle of the media. Once it starts it moves to the corner (with a progress
+ * ring) so the picture or video stays in view, and comes back to the middle as a replay button when it ends. On 3D slides it stays in the
+ * corner so it never blocks turning the model. The audio stops when the slide changes (remounted per slide, paused on unmount). */
+export function NarrationButton({ url, docked }: { url: string; docked: boolean }) {
   const audio = useRef<HTMLAudioElement>(null), [state, setState] = useState<"idle" | "playing" | "paused" | "ended">("idle"), [progress, setProgress] = useState(0);
   useEffect(() => { const el = audio.current; return () => { el?.pause(); }; }, []);
   const toggle = () => { const el = audio.current; if (!el) return; if (el.paused) { if (el.ended) el.currentTime = 0; void el.play().catch(() => setState("paused")); } else el.pause(); };
   const label = state === "playing" ? "Pause narration" : state === "ended" ? "Replay narration" : "Play narration";
   const Icon = state === "playing" ? Pause : state === "ended" ? RotateCcw : Play, R = 46, C = 2 * Math.PI * R;
+  const corner = docked || state === "playing" || state === "paused";
   return <>
     <audio ref={audio} src={url} preload="none" onPlay={() => setState("playing")} onPause={(e) => { if (!e.currentTarget.ended) setState("paused"); }} onEnded={() => { setState("ended"); setProgress(1); }}
       onTimeUpdate={(e) => { const el = e.currentTarget; if (el.duration) setProgress(el.currentTime / el.duration); }} />
@@ -28,23 +29,27 @@ export function NarrationButton({ url, corner }: { url: string; corner: boolean 
   </>;
 }
 
+/** Videos are short silent clips: they play on their own, muted and looping, inline on phones. The narration is the sound. */
 export function SlideMedia({ slide }: { slide: SafetySlide }) {
   const label = slide.title ?? slide.caption;
-  if (slide.type === "video") return <video className="sf-video" src={slide.url} poster={slide.posterUrl ?? undefined} controls preload="metadata" playsInline aria-label={label} />;
+  if (slide.type === "video") return <video className="sf-video" ref={(el) => { if (el) el.defaultMuted = true; }} src={slide.url} poster={slide.posterUrl ?? undefined} autoPlay muted loop playsInline preload="auto" aria-label={label} />;
   if (slide.type === "3d") return <Suspense fallback={<div className="sf-media-note">Loading the 3D model…</div>}><ModelView url={slide.url} label={label} /></Suspense>;
-  return <img className="sf-image" src={slide.url} alt={label} loading="lazy" decoding="async" />;
+  return <img className="sf-image" src={slide.url} alt={label} decoding="async" />;
 }
 
 export function SlideView({ lesson, index, onBack, onNext }: { lesson: Lesson; index: number; onBack: () => void; onNext: () => void }) {
-  const slide = lesson.slides[index], last = index === lesson.slides.length - 1;
-  return <section className="sf-player" aria-label={`Slide ${index + 1} of ${lesson.slides.length}`}>
-    <div className={`sf-stage ${slide.type}`}>
-      <SlideMedia key={slide.url} slide={slide} />{slide.type === "3d" && <span className="sf-hint">Drag to turn · pinch or scroll to zoom</span>}
-      {slide.audioUrl && <NarrationButton key={`${index}:${slide.audioUrl}`} url={slide.audioUrl} corner={slide.type !== "image"} />}
+  const slide = lesson.slides[index], total = lesson.slides.length, last = index === total - 1;
+  return <section className="sf-player" aria-label={`Slide ${index + 1} of ${total}`}>
+    <div className="sf-progress" role="progressbar" aria-label="Lesson progress" aria-valuemin={1} aria-valuemax={total} aria-valuenow={index + 1}>
+      {lesson.slides.map((_, i) => <span key={i} className={i < index ? "done" : i === index ? "on" : ""} />)}
     </div>
-    <div className="sf-copy">
-      <div className="sf-dots" aria-hidden>{lesson.slides.map((_, i) => <span key={i} className={i === index ? "on" : i < index ? "done" : ""} />)}</div>
-      <span className="sf-step">Slide {index + 1} of {lesson.slides.length}</span>
+    <div className={`sf-stage ${slide.type}`}>
+      <div key={slide.url} className="sf-media"><SlideMedia slide={slide} /></div>
+      <span className="sf-step">{index + 1} / {total}</span>
+      {slide.type === "3d" && <span className="sf-hint">Drag to turn · pinch or scroll to zoom</span>}
+      {slide.audioUrl && <NarrationButton key={`${index}:${slide.audioUrl}`} url={slide.audioUrl} docked={slide.type === "3d"} />}
+    </div>
+    <div key={index} className="sf-copy">
       {slide.title && <h2>{slide.title}</h2>}
       <p>{slide.caption}</p>
     </div>
