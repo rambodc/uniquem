@@ -3,7 +3,7 @@
     {
       "id": "uniquem-basics",
       "title": "Uniquem Basics",
-      "description": "Who we are and the first rules everyone follows on site.",
+      "description": "Welcome to Uniquem and the first safety rules everyone follows on site.",
       "order": 1
     },
     {
@@ -31,30 +31,32 @@
       "categoryId": "uniquem-basics",
       "title": "Welcome to Uniquem",
       "order": 1,
-      "version": 1,
+      "version": 2,
       "passMark": 80,
       "slides": [
         {
-          "type": "image",
-          "media": "welcome-1-company.svg",
+          "type": "video",
+          "media": "welcome-1-office.mp4",
+          "poster": "welcome-1-office-poster.jpg",
           "title": "Welcome to Uniquem",
-          "caption": "Uniquem is a Calgary oilfield chemical company. On site, always follow your manager's direction. If you are unsure about a task, stop and ask.",
-          "audio": "welcome-1-company.mp3"
-        },
-        {
-          "type": "image",
-          "media": "welcome-2-no-flames.svg",
-          "title": "No smoking, flames or sparks",
-          "caption": "No smoking, open flames or spark-producing tools anywhere on site. Many of our products and their vapours can catch fire.",
-          "audio": "welcome-2-no-flames.mp3"
+          "caption": "Welcome to Uniquem. Safety is everyone's job here. Follow your manager's direction, and if you're ever unsure about a task, stop and ask.",
+          "audio": "welcome-1-office.mp3"
         },
         {
           "type": "video",
-          "media": "welcome-3-forklifts.mp4",
-          "poster": "welcome-3-forklifts-poster.jpg",
-          "title": "Forklifts and heavy equipment",
-          "caption": "Watch for forklifts and heavy equipment. Make eye contact with the operator before you cross, and stay in the marked walkways.",
-          "audio": "welcome-3-forklifts.mp3"
+          "media": "welcome-2-no-smoking.mp4",
+          "poster": "welcome-2-no-smoking-poster.jpg",
+          "title": "No smoking anywhere on Uniquem property",
+          "caption": "There is no smoking anywhere on Uniquem property, inside or outside, including the doors, loading docks, trailers and parking lot. Our products and their vapours can catch fire. Put it out, and only smoke off the property.",
+          "audio": "welcome-2-no-smoking.mp3"
+        },
+        {
+          "type": "video",
+          "media": "welcome-3-forklift-eye-contact.mp4",
+          "poster": "welcome-3-forklift-eye-contact-poster.jpg",
+          "title": "Forklifts: make eye contact",
+          "caption": "When you see a forklift, stop and wait. Make eye contact with the driver before you move. Drivers stop and confirm they have seen you too.",
+          "audio": "welcome-3-forklift-eye-contact.mp3"
         }
       ],
       "quiz": [
@@ -69,24 +71,24 @@
           "explanation": "Always follow your manager's direction. When in doubt, stop and ask."
         },
         {
-          "q": "Where on site is smoking allowed?",
+          "q": "Where on Uniquem property is smoking allowed?",
           "options": [
-            "Nowhere on site",
-            "Outside the warehouse door",
-            "In the parking lot near the tanks"
+            "Nowhere on Uniquem property",
+            "Outside by the warehouse back door",
+            "By the trailers at the loading dock"
           ],
           "answerIndex": 0,
-          "explanation": "No smoking, flames or sparks anywhere on site. Product vapours can ignite."
+          "explanation": "No smoking anywhere on Uniquem property, inside or out. Put it out and only smoke off the property."
         },
         {
-          "q": "A forklift is coming toward the walkway you want to cross. What do you do?",
+          "q": "A forklift is coming toward you in the warehouse. What do you do?",
           "options": [
             "Cross quickly before it arrives",
             "Wave and keep walking",
-            "Wait, make eye contact with the operator and cross only in the walkway"
+            "Stop, wait and make eye contact with the driver before you move"
           ],
           "answerIndex": 2,
-          "explanation": "Make eye contact so the operator knows you are there, and stay in marked walkways."
+          "explanation": "Stop and make eye contact so the driver knows you are there. Only move once the driver has stopped and seen you."
         }
       ]
     },

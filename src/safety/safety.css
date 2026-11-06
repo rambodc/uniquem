@@ -21,17 +21,23 @@
 .sf-start{min-height:40px;padding:0 16px;font-size:14px}
 
 .sf-player,.sf-quiz{margin-top:26px}
-.sf-stage{position:relative;overflow:hidden;aspect-ratio:16/10;border-radius:22px;background:linear-gradient(160deg,#0f2f2b,#1a5348);box-shadow:0 18px 40px rgba(16,47,43,.18)}
-.sf-stage.video{aspect-ratio:16/9;background:#0b1f1c}
+/* Lesson player: progress bar, framed media with a slide counter, caption, Back / Next. Slides fade in when they change. */
+.sf-progress{display:flex;gap:6px;margin-bottom:14px}.sf-progress span{flex:1;height:6px;border-radius:9px;background:#d3e2de;overflow:hidden;position:relative}
+.sf-progress span:after{content:"";position:absolute;inset:0;border-radius:inherit;background:linear-gradient(90deg,#1f8f78,#0d8a8a);transform:scaleX(0);transform-origin:left;transition:transform .45s ease}
+.sf-progress span.done:after,.sf-progress span.on:after{transform:scaleX(1)}.sf-progress span.done:after{opacity:.55}
+.sf-stage{position:relative;overflow:hidden;aspect-ratio:16/9;border-radius:24px;background:linear-gradient(160deg,#0f2f2b,#1a5348);box-shadow:0 22px 50px rgba(16,47,43,.22),0 0 0 1px rgba(16,47,43,.08)}
+.sf-stage.video{background:#0b1f1c}
 .sf-stage[class~="3d"]{background:radial-gradient(circle at 50% 35%,#f4fbf8,#d7ece5 60%,#b9d9cf)}
-.sf-image,.sf-video{display:block;width:100%;height:100%;object-fit:contain}
+.sf-media{position:absolute;inset:0;animation:sf-in .5s ease both}
+.sf-image,.sf-video{display:block;width:100%;height:100%;object-fit:contain}.sf-video{object-fit:cover}
 .sf-canvas{width:100%!important;height:100%!important;touch-action:none;cursor:grab}
+.sf-step{position:absolute;z-index:2;left:14px;top:14px;padding:5px 11px;border-radius:99px;background:rgba(9,38,34,.66);color:#e7fff6;font-size:12.5px;font-weight:700;letter-spacing:.04em;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);pointer-events:none}
 .sf-hint{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);padding:6px 12px;border-radius:99px;background:rgba(16,47,43,.78);color:#e7fff6;font-size:12.5px;white-space:nowrap;pointer-events:none}
 .sf-media-note{display:grid;place-items:center;height:100%;padding:20px;text-align:center;color:#2a4a47;font-size:15px}
-.sf-copy{padding:20px 4px 4px}
-.sf-dots{display:flex;gap:6px;margin-bottom:12px}.sf-dots span{width:26px;height:6px;border-radius:9px;background:#d3e2de}.sf-dots span.done{background:#7cc9b2}.sf-dots span.on{background:#0d8a8a;width:40px}
-.sf-step{color:#0b6767;font-size:12px;font-weight:700;letter-spacing:.07em;text-transform:uppercase}
-.sf-copy h2{margin:6px 0 8px;font-size:26px;letter-spacing:-.03em}.sf-copy p{margin:0 0 14px;font-size:17px;line-height:1.55;color:#2a4a47}
+.sf-copy{padding:22px 4px 4px;animation:sf-up .45s ease both}
+.sf-copy h2{margin:0 0 8px;font-size:27px;line-height:1.2;letter-spacing:-.03em}.sf-copy p{margin:0;font-size:17.5px;line-height:1.6;color:#2a4a47}
+@keyframes sf-in{from{opacity:0;transform:scale(1.015)}to{opacity:1;transform:none}}
+@keyframes sf-up{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 .sf-nav{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:22px}.sf-nav .ws-button{flex:1 1 160px}
 
 .sf-quiz-intro{margin:0 0 6px;color:var(--mute)}
@@ -57,14 +63,14 @@ fieldset:disabled .sf-option{cursor:default}
 .sf-table thead th small{margin:0 0 2px;text-transform:uppercase;letter-spacing:.05em;font-size:10.5px}
 .sf-table tbody th{position:sticky;left:0;background:#fff;min-width:150px}.sf-table tbody th b{font-size:15px}
 .sf-table tbody tr:last-child>*{border-bottom:0}
-@media(max-width:560px){.sf-cat{padding:16px;border-radius:20px}.sf-stage{border-radius:16px}.sf-copy h2{font-size:22px}.sf-copy p{font-size:16px}.sf-score{font-size:38px}.sf-result{padding:16px}}
-/* Narration: a round play button on the slide's media. Centre on pictures; top-right corner on video and 3D. */
-.sf-narrate{position:absolute;z-index:3;display:grid;place-items:center;padding:0;border:0;border-radius:50%;background:rgba(9,38,34,.72);color:#fff;cursor:pointer;box-shadow:0 10px 30px rgba(0,0,0,.28);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);transition:transform .15s,background .15s;-webkit-tap-highlight-color:transparent}
-.sf-narrate:hover{background:rgba(13,138,138,.9)}.sf-narrate:active{transform:scale(.95)}
+@media(max-width:560px){.sf-cat{padding:16px;border-radius:20px}.sf-stage{border-radius:16px}.sf-player .sf-nav .ws-button{flex:1 1 0}.sf-copy h2{font-size:22px}.sf-copy p{font-size:16px}.sf-score{font-size:38px}.sf-result{padding:16px}}
+/* Narration: a round play button in the middle of the media; it moves to the top-right corner while playing (always there on 3D). */
+.sf-narrate{position:absolute;z-index:3;display:grid;place-items:center;padding:0;border:0;border-radius:50%;background:rgba(9,38,34,.72);color:#fff;cursor:pointer;box-shadow:0 10px 30px rgba(0,0,0,.28);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);transition:all .35s cubic-bezier(.2,.8,.2,1),background .15s;-webkit-tap-highlight-color:transparent}
+.sf-narrate:hover{background:rgba(13,138,138,.9)}.sf-narrate:active{scale:.95}
 .sf-narrate:focus-visible{outline:3px solid #7fe0bf;outline-offset:3px}
-.sf-narrate.center{left:50%;top:50%;width:96px;height:96px;margin:-48px 0 0 -48px}
-.sf-narrate.center.playing{opacity:.85}
-.sf-narrate.corner{right:14px;top:14px;width:60px;height:60px}
+.sf-narrate.center{left:calc(50% - 48px);top:calc(50% - 48px);width:96px;height:96px}
+.sf-narrate.center.idle{animation:sf-pulse 2.2s ease-out infinite}
+.sf-narrate.corner{left:calc(100% - 74px);top:14px;width:60px;height:60px}
 .sf-narrate-icon{position:relative;width:44%;height:44%;stroke-width:2.2}
 .sf-narrate.idle .sf-narrate-icon,.sf-narrate.paused .sf-narrate-icon{margin-left:6%;fill:currentColor}
 .sf-narrate.playing .sf-narrate-icon{fill:currentColor}
@@ -72,5 +78,6 @@ fieldset:disabled .sf-option{cursor:default}
 .sf-ring circle{fill:none;stroke:rgba(255,255,255,.22);stroke-width:5}
 .sf-ring .sf-ring-fill{stroke:#7fe0bf;stroke-linecap:round;transition:stroke-dashoffset .25s linear}
 .sf-narrate.idle .sf-ring-fill{stroke:transparent}
-@media(max-width:560px){.sf-narrate.center{width:76px;height:76px;margin:-38px 0 0 -38px}.sf-narrate.corner{width:52px;height:52px;right:10px;top:10px}}
-@media(prefers-reduced-motion:reduce){.sf-narrate,.sf-ring .sf-ring-fill{transition:none}}
+@keyframes sf-pulse{0%{box-shadow:0 10px 30px rgba(0,0,0,.28),0 0 0 0 rgba(127,224,191,.55)}70%,100%{box-shadow:0 10px 30px rgba(0,0,0,.28),0 0 0 22px rgba(127,224,191,0)}}
+@media(max-width:560px){.sf-narrate.center{left:calc(50% - 38px);top:calc(50% - 38px);width:76px;height:76px}.sf-narrate.corner{left:calc(100% - 58px);top:10px;width:48px;height:48px}.sf-step{left:10px;top:10px}}
+@media(prefers-reduced-motion:reduce){.sf-narrate,.sf-ring .sf-ring-fill,.sf-progress span:after{transition:none}.sf-media,.sf-copy,.sf-narrate.center.idle{animation:none}}

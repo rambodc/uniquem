@@ -19,7 +19,7 @@ test("the sample content is valid: 4 categories, 2 lessons, and together they sh
   for (const { doc } of docs.lessons) { assert.equal(doc.slides.length, 3); assert.equal(doc.quiz.length, 3); assert.equal(doc.passMark, 80); }
   assert.ok(docs.uploads.every((u) => u.storagePath.startsWith("safety/lessons/")));
   assert.ok(lesson.slides.find((s) => s.type === "video").posterPath.endsWith(".jpg"), "the video has a poster");
-  for (const { file } of docs.uploads) assert.ok(readFileSync(new URL(`../../safety-content/media/${file}`, import.meta.url)).length < 200_000, `${file} stays small`);
+  for (const { file } of docs.uploads) assert.ok(readFileSync(new URL(`../../safety-content/media/${file}`, import.meta.url)).length < (file.endsWith(".mp4") ? 3_000_000 : 200_000), `${file} stays small`);
 });
 test("bad content is refused with the field that is wrong", () => {
   const base = content.lessons[0];
@@ -39,7 +39,7 @@ test("the browser never gets answers or explanations before submitting; media co
   assert.equal(view.slides[2].type, "video");
   assert.match(view.slides[2].url, /^https:\/\/signed\.example\/safety\/lessons\/welcome-to-uniquem\/.+\.mp4$/);
   assert.match(view.slides[2].posterUrl, /poster\.jpg$/);
-  assert.match(view.slides[0].audioUrl, /^https:\/\/signed\.example\/safety\/lessons\/welcome-to-uniquem\/welcome-1-company\.mp3$/, "narration comes from Storage like the other media");
+  assert.match(view.slides[0].audioUrl, /^https:\/\/signed\.example\/safety\/lessons\/welcome-to-uniquem\/welcome-1-office\.mp3$/, "narration comes from Storage like the other media");
 });
 test("grading happens on the server: score in percent, pass at the pass mark, explanations only after", () => {
   const right = lesson.quiz.map((q) => q.answerIndex), wrongOne = right.map((a, i) => i === 0 ? (a + 1) % lesson.quiz[0].options.length : a);
