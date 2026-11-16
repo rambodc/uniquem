@@ -46,7 +46,7 @@ test("the sample content is valid: Uniquem Basics stays, Loading and Unloading i
   const equipment = docs.lessons.find((l) => l.id === "forklift-and-power-jack-safety").doc;
   assert.equal(equipment.slides.length, 19);
   assert.equal(equipment.quiz.length, 10);
-  assert.ok(equipment.slides.every((s) => s.type === "image" && s.audioPath === null && s.posterPath === null));
+  assert.ok(equipment.slides.every((s) => s.type === "image" && s.posterPath === null && s.audioPath.endsWith(".mp3")));
   assert.deepEqual(equipment.slides.map((s) => s.title).slice(0, 2), ["Pre-Shift Check", "Seatbelt On, Every Time"]);
   assert.equal(equipment.slides.at(-1).title, "Park It Right");
   assert.deepEqual(equipment.quiz.map((q) => q.answerIndex), [1, 0, 2, 1, 3, 1, 2, 0, 3, 1]);
@@ -125,11 +125,8 @@ test("Firestore and Storage stay closed to the browser: Safety data and media go
   const firestore = readFileSync(new URL("../../firestore.rules", import.meta.url), "utf8"), storage = readFileSync(new URL("../../storage.rules", import.meta.url), "utf8");
   for (const rules of [firestore, storage]) { assert.match(rules, /allow read, write: if false;/); assert.doesNotMatch(rules, /if true|request\.auth != null/); }
 });
-test("narration: video slides have a small MP3 from Storage; image slides do not", () => {
-  for (const { id, doc } of docs.lessons) for (const slide of doc.slides) {
-    if (slide.type === "video") assert.match(slide.audioPath, new RegExp(`^safety/lessons/${id}/.+\\.mp3$`));
-    else assert.equal(slide.audioPath, null);
-  }
+test("narration: every slide has a small MP3 from Storage", () => {
+  for (const { id, doc } of docs.lessons) for (const slide of doc.slides) assert.match(slide.audioPath, new RegExp(`^safety/lessons/${id}/.+\\.mp3$`));
 });
 test("Firestore layout: one top-level collection, safety, with everything in subcollections under it", () => {
   assert.deepEqual(SAFETY_PATHS, { content: "safety/content", categories: "safety/content/categories", lessons: "safety/content/lessons", progress: "safety/progress", records: "safety/progress/records" });
