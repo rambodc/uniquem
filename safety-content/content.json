@@ -7,22 +7,10 @@
       "order": 1
     },
     {
-      "id": "ppe-and-safety",
-      "title": "PPE & Safety",
-      "description": "The protective equipment you wear and why.",
+      "id": "loading-and-unloading",
+      "title": "Loading and Unloading",
+      "description": "The docks, the trucks, and how we load and unload.",
       "order": 2
-    },
-    {
-      "id": "loading-products",
-      "title": "Loading Products",
-      "description": "Loading and securing product for shipping.",
-      "order": 3
-    },
-    {
-      "id": "production",
-      "title": "Production",
-      "description": "Safe work in blending and production areas.",
-      "order": 4
     }
   ],
   "lessons": [
@@ -101,62 +89,32 @@
       ]
     },
     {
-      "id": "ppe-basics",
-      "categoryId": "ppe-and-safety",
-      "title": "PPE Basics",
+      "id": "our-docks-and-trucks",
+      "categoryId": "loading-and-unloading",
+      "title": "Our Docks and Trucks",
       "order": 1,
       "version": 1,
       "passMark": 80,
       "slides": [
         {
-          "type": "image",
-          "media": "ppe-1-coveralls.svg",
-          "title": "Coveralls",
-          "caption": "Wear your coveralls, fully done up, in every work area. They keep chemicals off your skin and your own clothes."
-        },
-        {
-          "type": "3d",
-          "media": "ppe-2-drum.glb",
-          "title": "Masks, respirators and ventilation",
-          "caption": "Open drums and blending can release dust and vapours. Wear the mask or respirator the task calls for, and keep the area ventilated. Drag to turn the drum."
-        },
-        {
-          "type": "image",
-          "media": "ppe-3-hearing.svg",
-          "title": "Ear protection",
-          "caption": "Pumps, compressors and mixers are loud. Wear ear plugs or ear muffs wherever hearing protection signs are posted."
+          "type": "video",
+          "media": "docks-1-docks-and-trucks.mp4",
+          "poster": "docks-1-docks-and-trucks-poster.jpg",
+          "title": "Our Docks and Trucks",
+          "caption": "We have 3 docks and two kinds of trucks: containers and trailers.",
+          "audio": "docks-1-docks-and-trucks.mp3"
         }
       ],
       "quiz": [
         {
-          "q": "When should your coveralls be worn?",
+          "q": "How many docks do we have?",
           "options": [
-            "Only when it is cold",
-            "In every work area, fully done up",
-            "Only when handling drums"
-          ],
-          "answerIndex": 1,
-          "explanation": "Coveralls are worn in every work area so chemicals stay off your skin and clothes."
-        },
-        {
-          "q": "You are opening a drum and notice strong vapours. What helps protect you?",
-          "options": [
-            "Your mask or respirator and good ventilation",
-            "Holding your breath",
-            "Working faster"
-          ],
-          "answerIndex": 0,
-          "explanation": "Use the mask or respirator the task calls for and keep the area ventilated."
-        },
-        {
-          "q": "Where do you need ear protection?",
-          "options": [
-            "Only in the office",
-            "Nowhere, it is optional",
-            "Wherever hearing protection signs are posted, near pumps and mixers"
+            "1",
+            "2",
+            "3"
           ],
           "answerIndex": 2,
-          "explanation": "Loud equipment damages hearing over time. Wear plugs or muffs where signs are posted."
+          "explanation": "We have 3 docks."
         }
       ]
     }
