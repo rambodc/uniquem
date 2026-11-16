@@ -93,7 +93,7 @@
       "categoryId": "loading-and-unloading",
       "title": "Loading and Unloading",
       "order": 1,
-      "version": 3,
+      "version": 4,
       "passMark": 80,
       "slides": [
         {
@@ -127,6 +127,14 @@
           "title": "Light On, Dock Plate Set",
           "caption": "Trailers have no lights inside. Before you go in, swing the dock light into the trailer and turn it on so you can see everything. Then set the dock plate so it sits flat and secure on the trailer floor.",
           "audio": "light-1-dock-light.mp3"
+        },
+        {
+          "type": "video",
+          "media": "seatbelt-1-entering.mp4",
+          "poster": "seatbelt-1-entering-poster.jpg",
+          "title": "Entering with Equipment",
+          "caption": "Before you drive a forklift into a trailer, double check that your seatbelt is buckled. If you're using a power jack, only one power jack goes into the trailer at a time.",
+          "audio": "seatbelt-1-entering.mp3"
         }
       ],
       "quiz": [
@@ -170,6 +178,17 @@
           ],
           "answerIndex": 0,
           "explanation": "Trailers have no lights inside. Swing the dock light into the trailer and turn it on before you go in."
+        },
+        {
+          "q": "What must a forklift operator do before driving into a trailer?",
+          "options": [
+            "Double check the seatbelt is buckled",
+            "Honk the horn twice",
+            "Raise the forks all the way up",
+            "Drive in fast to save time"
+          ],
+          "answerIndex": 0,
+          "explanation": "Double check the seatbelt is buckled before driving a forklift into a trailer."
         }
       ]
     }
