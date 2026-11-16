@@ -11,14 +11,19 @@ const content = JSON.parse(readFileSync(new URL("../../safety-content/content.js
 const docs = contentToDocs(content);
 const lesson = docs.lessons.find((l) => l.id === "welcome-to-uniquem").doc;
 
-test("the sample content is valid: 4 categories, 2 lessons, and together they show an image, a video and a 3D slide", () => {
-  assert.deepEqual(docs.categories.map((c) => c.doc.title), ["Uniquem Basics", "PPE & Safety", "Loading Products", "Production"]);
-  assert.deepEqual(docs.lessons.map((l) => l.id), ["welcome-to-uniquem", "ppe-basics"]);
-  const types = new Set(docs.lessons.flatMap((l) => l.doc.slides.map((s) => s.type)));
-  assert.deepEqual([...types].sort(), ["3d", "image", "video"]);
+test("the sample content is valid: Uniquem Basics stays, Loading and Unloading is the other category", () => {
+  assert.deepEqual(docs.categories.map((c) => c.doc.title), ["Uniquem Basics", "Loading and Unloading"]);
+  assert.deepEqual(docs.lessons.map((l) => l.id), ["welcome-to-uniquem", "our-docks-and-trucks"]);
+  const docks = docs.lessons.find((l) => l.id === "our-docks-and-trucks").doc;
   assert.equal(lesson.slides.length, 4);
-  assert.equal(docs.lessons.find((l) => l.id === "ppe-basics").doc.slides.length, 3);
-  for (const { doc } of docs.lessons) { assert.equal(doc.quiz.length, 3); assert.equal(doc.passMark, 80); }
+  assert.equal(lesson.quiz.length, 3);
+  assert.equal(docks.slides.length, 1);
+  assert.equal(docks.quiz.length, 1);
+  assert.equal(docks.quiz[0].answerIndex, 2);
+  assert.equal(docks.slides[0].title, "Our Docks and Trucks");
+  assert.match(docks.slides[0].mediaPath, /docks-1-docks-and-trucks\.mp4$/);
+  assert.match(docks.slides[0].audioPath, /docks-1-docks-and-trucks\.mp3$/);
+  for (const { doc } of docs.lessons) assert.equal(doc.passMark, 80);
   assert.equal(lesson.slides[3].title, "Steel-Toe Boots Required");
   assert.match(lesson.slides[3].mediaPath, /welcome-4-steel-toe-boots\.mp4$/);
   assert.match(lesson.slides[3].posterPath, /welcome-4-steel-toe-boots-poster\.jpg$/);
@@ -88,9 +93,8 @@ test("Firestore and Storage stay closed to the browser: Safety data and media go
   const firestore = readFileSync(new URL("../../firestore.rules", import.meta.url), "utf8"), storage = readFileSync(new URL("../../storage.rules", import.meta.url), "utf8");
   for (const rules of [firestore, storage]) { assert.match(rules, /allow read, write: if false;/); assert.doesNotMatch(rules, /if true|request\.auth != null/); }
 });
-test("narration: every Welcome to Uniquem slide has a small MP3 from Storage; PPE Basics has none yet", () => {
-  for (const slide of lesson.slides) assert.match(slide.audioPath, /^safety\/lessons\/welcome-to-uniquem\/.+\.mp3$/);
-  assert.ok(docs.lessons.find((l) => l.id === "ppe-basics").doc.slides.every((s) => s.audioPath === null));
+test("narration: every slide has a small MP3 from Storage", () => {
+  for (const { id, doc } of docs.lessons) for (const slide of doc.slides) assert.match(slide.audioPath, new RegExp(`^safety/lessons/${id}/.+\\.mp3$`));
 });
 test("Firestore layout: one top-level collection, safety, with everything in subcollections under it", () => {
   assert.deepEqual(SAFETY_PATHS, { content: "safety/content", categories: "safety/content/categories", lessons: "safety/content/lessons", progress: "safety/progress", records: "safety/progress/records" });
