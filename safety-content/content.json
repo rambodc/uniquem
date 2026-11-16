@@ -93,7 +93,7 @@
       "categoryId": "loading-and-unloading",
       "title": "Loading and Unloading",
       "order": 1,
-      "version": 2,
+      "version": 3,
       "passMark": 80,
       "slides": [
         {
@@ -119,6 +119,14 @@
           "title": "Check the Trailer Is Stable",
           "caption": "Check if the truck is still hooked to the trailer. If the trailer stands alone, make sure its jacks are far enough to the front. If not, place our own jacks under the trailer before going in.",
           "audio": "trailer-1-trailer-stable.mp3"
+        },
+        {
+          "type": "video",
+          "media": "light-1-dock-light.mp4",
+          "poster": "light-1-dock-light-poster.jpg",
+          "title": "Light On, Dock Plate Set",
+          "caption": "Trailers have no lights inside. Before you go in, swing the dock light into the trailer and turn it on so you can see everything. Then set the dock plate so it sits flat and secure on the trailer floor.",
+          "audio": "light-1-dock-light.mp3"
         }
       ],
       "quiz": [
@@ -151,6 +159,17 @@
           ],
           "answerIndex": 1,
           "explanation": "If the trailer stands alone and its jacks aren't far enough forward, place our own jacks under the trailer before going in."
+        },
+        {
+          "q": "What should you do before going into a dark trailer?",
+          "options": [
+            "Turn on the dock light and point it into the trailer",
+            "Use your phone flashlight",
+            "Go in slowly without a light",
+            "Ask the driver to turn on the trailer lights"
+          ],
+          "answerIndex": 0,
+          "explanation": "Trailers have no lights inside. Swing the dock light into the trailer and turn it on before you go in."
         }
       ]
     }
