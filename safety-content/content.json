@@ -89,9 +89,9 @@
       ]
     },
     {
-      "id": "our-docks-and-trucks",
+      "id": "loading-and-unloading",
       "categoryId": "loading-and-unloading",
-      "title": "Our Docks and Trucks",
+      "title": "Loading and Unloading",
       "order": 1,
       "version": 1,
       "passMark": 80,
@@ -103,6 +103,14 @@
           "title": "Our Docks and Trucks",
           "caption": "We have 3 docks and two kinds of trucks: containers and trailers.",
           "audio": "docks-1-docks-and-trucks.mp3"
+        },
+        {
+          "type": "video",
+          "media": "driver-1-talk-to-the-driver.mp4",
+          "poster": "driver-1-talk-to-the-driver-poster.jpg",
+          "title": "Talk to the Driver First",
+          "caption": "Before anyone goes into a trailer, talk to the driver and make sure the truck is stopped and parked.",
+          "audio": "driver-1-talk-to-the-driver.mp3"
         }
       ],
       "quiz": [
@@ -115,27 +123,7 @@
           ],
           "answerIndex": 2,
           "explanation": "We have 3 docks."
-        }
-      ]
-    },
-    {
-      "id": "talk-to-the-driver-first",
-      "categoryId": "loading-and-unloading",
-      "title": "Talk to the Driver First",
-      "order": 2,
-      "version": 1,
-      "passMark": 80,
-      "slides": [
-        {
-          "type": "video",
-          "media": "driver-1-talk-to-the-driver.mp4",
-          "poster": "driver-1-talk-to-the-driver-poster.jpg",
-          "title": "Talk to the Driver First",
-          "caption": "Before anyone goes into a trailer, talk to the driver and make sure the truck is stopped and parked.",
-          "audio": "driver-1-talk-to-the-driver.mp3"
-        }
-      ],
-      "quiz": [
+        },
         {
           "q": "What must you do before entering a trailer?",
           "options": [
