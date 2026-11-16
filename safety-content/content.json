@@ -11,6 +11,12 @@
       "title": "Loading and Unloading",
       "description": "The docks, the trucks, and how we load and unload.",
       "order": 2
+    },
+    {
+      "id": "forklift-and-power-jack",
+      "title": "Forklift and Power Jack",
+      "description": "How to check, drive and park forklifts and power jacks.",
+      "order": 3
     }
   ],
   "lessons": [
@@ -227,6 +233,97 @@
           ],
           "answerIndex": 0,
           "explanation": "Hand over the shipping paperwork and the placards required for the load."
+        }
+      ]
+    },
+    {
+      "id": "forklift-and-power-jack-safety",
+      "categoryId": "forklift-and-power-jack",
+      "title": "Forklift and Power Jack Safety",
+      "order": 1,
+      "version": 1,
+      "passMark": 80,
+      "slides": [
+        { "type": "image", "media": "fl-01-preshift.jpg", "title": "Pre-Shift Check", "caption": "Before every shift, check the forks, tires, horn, lights, brakes and battery charge, and make sure there are no leaks." },
+        { "type": "image", "media": "fl-02-seatbelt.jpg", "title": "Seatbelt On, Every Time", "caption": "Put your seatbelt on every time, even for short trips." },
+        { "type": "image", "media": "fl-03-horn.jpg", "title": "Corners and Blind Spots", "caption": "Slow down and sound the horn at corners, doorways and blind spots." },
+        { "type": "image", "media": "fl-04-speed.jpg", "title": "Slow and Steady", "caption": "Keep to a slow, steady speed, and no sharp turns." },
+        { "type": "image", "media": "fl-05-low.jpg", "title": "Carry Loads Low", "caption": "Carry loads low, about 10 to 15 cm off the floor, with the mast tilted back." },
+        { "type": "image", "media": "fl-06-backward.jpg", "title": "Can't See? Drive Backwards", "caption": "If the load blocks your view, drive backwards and look in the direction of travel." },
+        { "type": "image", "media": "fl-07-capacity.jpg", "title": "Know Your Capacity", "caption": "Never go over the rated capacity, and keep the load centered on both forks." },
+        { "type": "image", "media": "fl-08-eyecontact.jpg", "title": "Make Eye Contact", "caption": "Make eye contact with people walking before moving near them." },
+        { "type": "image", "media": "fl-09-noriders.jpg", "title": "No Riders, Ever", "caption": "Forklifts are for one person only. Never let anyone ride along, not even for a short trip." },
+        { "type": "image", "media": "fl-10-inside.jpg", "title": "Stay Inside the Cab", "caption": "Keep your arms, hands and feet inside the cab at all times." },
+        { "type": "image", "media": "fl-11-ramp.jpg", "title": "Ramps: Load Uphill", "caption": "Go up and down ramps with the load facing uphill." },
+        { "type": "image", "media": "fl-12-park.jpg", "title": "Park It Right", "caption": "When parking, lower the forks flat on the floor and set the brake." },
+        { "type": "image", "media": "pj-01-preuse.jpg", "title": "Pre-Use Check", "caption": "Before using the power jack, check the handle, brakes, horn, battery and forks." },
+        { "type": "image", "media": "pj-02-beside.jpg", "title": "Walk Beside or Behind", "caption": "Walk beside or behind the power jack, never in front of it when pulling a load." },
+        { "type": "image", "media": "pj-03-pinned.jpg", "title": "Don't Get Pinned", "caption": "When pulling the power jack, never trap yourself between the jack and a wall or object behind you. Keep at least 3 feet of space behind you." },
+        { "type": "image", "media": "pj-04-corners.jpg", "title": "Corners: Slow and Horn", "caption": "Go slowly around corners and sound the horn so others know you're coming." },
+        { "type": "image", "media": "pj-05-onejack.jpg", "title": "One Jack in the Trailer", "caption": "Only one power jack in a trailer at a time. Wait on the dock until the trailer is clear." },
+        { "type": "image", "media": "pj-06-noride.jpg", "title": "No Riding", "caption": "Never ride on the power jack, and don't let anyone else ride on it either." },
+        { "type": "image", "media": "pj-07-park.jpg", "title": "Park It Right", "caption": "When you're done, lower the forks fully to the floor and turn the power jack off." }
+      ],
+      "quiz": [
+        {
+          "q": "How high off the floor do you carry a forklift load?",
+          "options": ["At eye level", "About 10 to 15 cm", "As high as the mast goes", "Dragging on the floor"],
+          "answerIndex": 1,
+          "explanation": "Carry loads low, about 10 to 15 cm off the floor, with the mast tilted back."
+        },
+        {
+          "q": "The load blocks your view. What do you do?",
+          "options": ["Drive backwards and look in the direction of travel", "Drive forward slowly", "Lean out and drive forward", "Raise the load so you can see under it"],
+          "answerIndex": 0,
+          "explanation": "If the load blocks your view, drive backwards and look in the direction of travel."
+        },
+        {
+          "q": "Who can ride on a forklift?",
+          "options": ["The operator and one helper", "Anyone for a short trip", "Only the operator", "Anyone who holds on"],
+          "answerIndex": 2,
+          "explanation": "Forklifts are for one person only. Never let anyone ride along."
+        },
+        {
+          "q": "How do you travel on a ramp with a load?",
+          "options": ["Load facing downhill", "Load facing uphill", "Sideways", "As fast as the ramp allows"],
+          "answerIndex": 1,
+          "explanation": "Go up and down ramps with the load facing uphill."
+        },
+        {
+          "q": "How do you park a forklift?",
+          "options": ["Leave the forks raised", "Leave it running in the aisle", "Park with the brake off", "Lower the forks flat on the floor and set the brake"],
+          "answerIndex": 3,
+          "explanation": "When parking, lower the forks flat on the floor and set the brake."
+        },
+        {
+          "q": "Where do you walk when pulling a load with a power jack?",
+          "options": ["In front of the power jack", "Beside or behind the power jack", "On the forks", "Wherever is closest"],
+          "answerIndex": 1,
+          "explanation": "Walk beside or behind the power jack, never in front of it when pulling a load."
+        },
+        {
+          "q": "How much space do you keep behind you when pulling a power jack?",
+          "options": ["No space is needed", "One foot", "At least 3 feet", "Only at corners"],
+          "answerIndex": 2,
+          "explanation": "Never trap yourself between the jack and a wall. Keep at least 3 feet of space behind you."
+        },
+        {
+          "q": "How many power jacks can be in a trailer at one time?",
+          "options": ["One", "Two", "As many as will fit", "None"],
+          "answerIndex": 0,
+          "explanation": "Only one power jack in a trailer at a time. Wait on the dock until the trailer is clear."
+        },
+        {
+          "q": "Can you ride on a power jack?",
+          "options": ["Yes, if you stand on the forks", "Yes, for a short distance", "Only the operator can ride", "No. Never ride on it, and don't let anyone else ride on it"],
+          "answerIndex": 3,
+          "explanation": "Never ride on the power jack, and don't let anyone else ride on it either."
+        },
+        {
+          "q": "What do you do when you are done with the power jack?",
+          "options": ["Leave the forks raised", "Lower the forks fully to the floor and turn it off", "Leave it on in the aisle", "Park it inside a trailer"],
+          "answerIndex": 1,
+          "explanation": "When you're done, lower the forks fully to the floor and turn the power jack off."
         }
       ]
     }

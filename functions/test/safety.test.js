@@ -12,8 +12,8 @@ const docs = contentToDocs(content);
 const lesson = docs.lessons.find((l) => l.id === "welcome-to-uniquem").doc;
 
 test("the sample content is valid: Uniquem Basics stays, Loading and Unloading is the other category", () => {
-  assert.deepEqual(docs.categories.map((c) => c.doc.title), ["Uniquem Basics", "Loading and Unloading"]);
-  assert.deepEqual(docs.lessons.map((l) => l.id), ["welcome-to-uniquem", "loading-and-unloading"]);
+  assert.deepEqual(docs.categories.map((c) => c.doc.title), ["Uniquem Basics", "Loading and Unloading", "Forklift and Power Jack"]);
+  assert.deepEqual(docs.lessons.map((l) => l.id), ["welcome-to-uniquem", "loading-and-unloading", "forklift-and-power-jack-safety"]);
   const loading = docs.lessons.find((l) => l.id === "loading-and-unloading").doc;
   assert.equal(lesson.slides.length, 4);
   assert.equal(lesson.quiz.length, 3);
@@ -43,6 +43,14 @@ test("the sample content is valid: Uniquem Basics stays, Loading and Unloading i
   assert.equal(loading.quiz[5].answerIndex, 0);
   assert.match(loading.slides[5].mediaPath, /backward-1-drive-backwards\.mp4$/);
   assert.match(loading.slides[5].audioPath, /backward-1-drive-backwards\.mp3$/);
+  const equipment = docs.lessons.find((l) => l.id === "forklift-and-power-jack-safety").doc;
+  assert.equal(equipment.slides.length, 19);
+  assert.equal(equipment.quiz.length, 10);
+  assert.ok(equipment.slides.every((s) => s.type === "image" && s.audioPath === null && s.posterPath === null));
+  assert.deepEqual(equipment.slides.map((s) => s.title).slice(0, 2), ["Pre-Shift Check", "Seatbelt On, Every Time"]);
+  assert.equal(equipment.slides.at(-1).title, "Park It Right");
+  assert.deepEqual(equipment.quiz.map((q) => q.answerIndex), [1, 0, 2, 1, 3, 1, 2, 0, 3, 1]);
+  assert.doesNotMatch(JSON.stringify(equipment.quiz), /key/i);
   assert.equal(loading.slides[6].title, "Wrap Up with the Driver");
   assert.equal(loading.quiz[6].answerIndex, 0);
   assert.match(loading.slides[6].mediaPath, /paperwork-1-wrap-up\.mp4$/);
@@ -117,8 +125,11 @@ test("Firestore and Storage stay closed to the browser: Safety data and media go
   const firestore = readFileSync(new URL("../../firestore.rules", import.meta.url), "utf8"), storage = readFileSync(new URL("../../storage.rules", import.meta.url), "utf8");
   for (const rules of [firestore, storage]) { assert.match(rules, /allow read, write: if false;/); assert.doesNotMatch(rules, /if true|request\.auth != null/); }
 });
-test("narration: every slide has a small MP3 from Storage", () => {
-  for (const { id, doc } of docs.lessons) for (const slide of doc.slides) assert.match(slide.audioPath, new RegExp(`^safety/lessons/${id}/.+\\.mp3$`));
+test("narration: video slides have a small MP3 from Storage; image slides do not", () => {
+  for (const { id, doc } of docs.lessons) for (const slide of doc.slides) {
+    if (slide.type === "video") assert.match(slide.audioPath, new RegExp(`^safety/lessons/${id}/.+\\.mp3$`));
+    else assert.equal(slide.audioPath, null);
+  }
 });
 test("Firestore layout: one top-level collection, safety, with everything in subcollections under it", () => {
   assert.deepEqual(SAFETY_PATHS, { content: "safety/content", categories: "safety/content/categories", lessons: "safety/content/lessons", progress: "safety/progress", records: "safety/progress/records" });
