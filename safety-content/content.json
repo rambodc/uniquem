@@ -93,7 +93,7 @@
       "categoryId": "loading-and-unloading",
       "title": "Loading and Unloading",
       "order": 1,
-      "version": 5,
+      "version": 6,
       "passMark": 80,
       "slides": [
         {
@@ -143,6 +143,14 @@
           "title": "Can't See? Drive Backwards",
           "caption": "If you're carrying two stacked totes or pallets and can't see in front of you, never drive forward. Always drive backwards and look in the direction you're travelling.",
           "audio": "backward-1-drive-backwards.mp3"
+        },
+        {
+          "type": "video",
+          "media": "paperwork-1-wrap-up.mp4",
+          "poster": "paperwork-1-wrap-up-poster.jpg",
+          "title": "Wrap Up with the Driver",
+          "caption": "When loading is done, remove the dock plate from the trailer. Then go talk to the driver, hand over the proper shipping paperwork, and give them the placards required for the load.",
+          "audio": "paperwork-1-wrap-up.mp3"
         }
       ],
       "quiz": [
@@ -208,6 +216,17 @@
           ],
           "answerIndex": 0,
           "explanation": "If you can't see in front of you, drive backwards and look in the direction you're travelling."
+        },
+        {
+          "q": "What do you give the driver when loading is done?",
+          "options": [
+            "The shipping paperwork and the required placards",
+            "Just the keys to the dock door",
+            "Nothing, the driver handles the paperwork",
+            "Only a verbal OK to leave"
+          ],
+          "answerIndex": 0,
+          "explanation": "Hand over the shipping paperwork and the placards required for the load."
         }
       ]
     }
