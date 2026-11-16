@@ -31,7 +31,7 @@
       "categoryId": "uniquem-basics",
       "title": "Welcome to Uniquem",
       "order": 1,
-      "version": 2,
+      "version": 3,
       "passMark": 80,
       "slides": [
         {
@@ -57,6 +57,14 @@
           "title": "Forklifts: make eye contact",
           "caption": "When you see a forklift, stop and wait. Make eye contact with the driver before you move. Drivers stop and confirm they have seen you too.",
           "audio": "welcome-3-forklift-eye-contact.mp3"
+        },
+        {
+          "type": "video",
+          "media": "welcome-4-steel-toe-boots.mp4",
+          "poster": "welcome-4-steel-toe-boots-poster.jpg",
+          "title": "Steel-Toe Boots Required",
+          "caption": "Our warehouse runs forklifts and power jacks every day. Steel-toe boots are required at all times when you are in the warehouse.",
+          "audio": "welcome-4-steel-toe-boots.mp3"
         }
       ],
       "quiz": [

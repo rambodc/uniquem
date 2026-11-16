@@ -16,7 +16,13 @@ test("the sample content is valid: 4 categories, 2 lessons, and together they sh
   assert.deepEqual(docs.lessons.map((l) => l.id), ["welcome-to-uniquem", "ppe-basics"]);
   const types = new Set(docs.lessons.flatMap((l) => l.doc.slides.map((s) => s.type)));
   assert.deepEqual([...types].sort(), ["3d", "image", "video"]);
-  for (const { doc } of docs.lessons) { assert.equal(doc.slides.length, 3); assert.equal(doc.quiz.length, 3); assert.equal(doc.passMark, 80); }
+  assert.equal(lesson.slides.length, 4);
+  assert.equal(docs.lessons.find((l) => l.id === "ppe-basics").doc.slides.length, 3);
+  for (const { doc } of docs.lessons) { assert.equal(doc.quiz.length, 3); assert.equal(doc.passMark, 80); }
+  assert.equal(lesson.slides[3].title, "Steel-Toe Boots Required");
+  assert.match(lesson.slides[3].mediaPath, /welcome-4-steel-toe-boots\.mp4$/);
+  assert.match(lesson.slides[3].posterPath, /welcome-4-steel-toe-boots-poster\.jpg$/);
+  assert.match(lesson.slides[3].audioPath, /welcome-4-steel-toe-boots\.mp3$/);
   assert.ok(docs.uploads.every((u) => u.storagePath.startsWith("safety/lessons/")));
   assert.ok(lesson.slides.find((s) => s.type === "video").posterPath.endsWith(".jpg"), "the video has a poster");
   for (const { file } of docs.uploads) assert.ok(readFileSync(new URL(`../../safety-content/media/${file}`, import.meta.url)).length < (file.endsWith(".mp4") ? 3_000_000 : 200_000), `${file} stays small`);
