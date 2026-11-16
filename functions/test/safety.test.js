@@ -17,8 +17,9 @@ test("the sample content is valid: Uniquem Basics stays, Loading and Unloading i
   const loading = docs.lessons.find((l) => l.id === "loading-and-unloading").doc;
   assert.equal(lesson.slides.length, 4);
   assert.equal(lesson.quiz.length, 3);
-  assert.equal(loading.slides.length, 2);
-  assert.equal(loading.quiz.length, 2);
+  assert.equal(loading.version, 2);
+  assert.equal(loading.slides.length, 3);
+  assert.equal(loading.quiz.length, 3);
   assert.equal(loading.slides[0].title, "Our Docks and Trucks");
   assert.equal(loading.quiz[0].answerIndex, 2);
   assert.match(loading.slides[0].mediaPath, /safety\/lessons\/loading-and-unloading\/docks-1-docks-and-trucks\.mp4$/);
@@ -26,6 +27,10 @@ test("the sample content is valid: Uniquem Basics stays, Loading and Unloading i
   assert.equal(loading.quiz[1].answerIndex, 1);
   assert.match(loading.slides[1].mediaPath, /safety\/lessons\/loading-and-unloading\/driver-1-talk-to-the-driver\.mp4$/);
   assert.match(loading.slides[1].audioPath, /driver-1-talk-to-the-driver\.mp3$/);
+  assert.equal(loading.slides[2].title, "Check the Trailer Is Stable");
+  assert.equal(loading.quiz[2].answerIndex, 1);
+  assert.match(loading.slides[2].mediaPath, /trailer-1-trailer-stable\.mp4$/);
+  assert.match(loading.slides[2].audioPath, /trailer-1-trailer-stable\.mp3$/);
   for (const { doc } of docs.lessons) assert.equal(doc.passMark, 80);
   assert.equal(lesson.slides[3].title, "Steel-Toe Boots Required");
   assert.match(lesson.slides[3].mediaPath, /welcome-4-steel-toe-boots\.mp4$/);
