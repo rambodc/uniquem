@@ -93,7 +93,7 @@
       "categoryId": "loading-and-unloading",
       "title": "Loading and Unloading",
       "order": 1,
-      "version": 1,
+      "version": 2,
       "passMark": 80,
       "slides": [
         {
@@ -111,6 +111,14 @@
           "title": "Talk to the Driver First",
           "caption": "Before anyone goes into a trailer, talk to the driver and make sure the truck is stopped and parked.",
           "audio": "driver-1-talk-to-the-driver.mp3"
+        },
+        {
+          "type": "video",
+          "media": "trailer-1-trailer-stable.mp4",
+          "poster": "trailer-1-trailer-stable-poster.jpg",
+          "title": "Check the Trailer Is Stable",
+          "caption": "Check if the truck is still hooked to the trailer. If the trailer stands alone, make sure its jacks are far enough to the front. If not, place our own jacks under the trailer before going in.",
+          "audio": "trailer-1-trailer-stable.mp3"
         }
       ],
       "quiz": [
@@ -133,6 +141,16 @@
           ],
           "answerIndex": 1,
           "explanation": "Talk to the driver and make sure the truck is stopped and parked before anyone goes into the trailer."
+        },
+        {
+          "q": "The trailer is not hooked to a truck and its jacks aren't far enough forward. What do you do?",
+          "options": [
+            "Go in carefully",
+            "Place our own jacks under the trailer before going in",
+            "Ask the driver to hold it"
+          ],
+          "answerIndex": 1,
+          "explanation": "If the trailer stands alone and its jacks aren't far enough forward, place our own jacks under the trailer before going in."
         }
       ]
     }
