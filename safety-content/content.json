@@ -93,7 +93,7 @@
       "categoryId": "loading-and-unloading",
       "title": "Loading and Unloading",
       "order": 1,
-      "version": 4,
+      "version": 5,
       "passMark": 80,
       "slides": [
         {
@@ -135,6 +135,14 @@
           "title": "Entering with Equipment",
           "caption": "Before you drive a forklift into a trailer, double check that your seatbelt is buckled. If you're using a power jack, only one power jack goes into the trailer at a time.",
           "audio": "seatbelt-1-entering.mp3"
+        },
+        {
+          "type": "video",
+          "media": "backward-1-drive-backwards.mp4",
+          "poster": "backward-1-drive-backwards-poster.jpg",
+          "title": "Can't See? Drive Backwards",
+          "caption": "If you're carrying two stacked totes or pallets and can't see in front of you, never drive forward. Always drive backwards and look in the direction you're travelling.",
+          "audio": "backward-1-drive-backwards.mp3"
         }
       ],
       "quiz": [
@@ -189,6 +197,17 @@
           ],
           "answerIndex": 0,
           "explanation": "Double check the seatbelt is buckled before driving a forklift into a trailer."
+        },
+        {
+          "q": "You're carrying two stacked totes and can't see in front of you. What do you do?",
+          "options": [
+            "Drive backwards, looking where you're going",
+            "Drive forward slowly",
+            "Lean out to the side and drive forward",
+            "Ask someone to walk in front of you"
+          ],
+          "answerIndex": 0,
+          "explanation": "If you can't see in front of you, drive backwards and look in the direction you're travelling."
         }
       ]
     }

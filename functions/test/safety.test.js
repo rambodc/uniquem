@@ -17,9 +17,9 @@ test("the sample content is valid: Uniquem Basics stays, Loading and Unloading i
   const loading = docs.lessons.find((l) => l.id === "loading-and-unloading").doc;
   assert.equal(lesson.slides.length, 4);
   assert.equal(lesson.quiz.length, 3);
-  assert.equal(loading.version, 4);
-  assert.equal(loading.slides.length, 5);
-  assert.equal(loading.quiz.length, 5);
+  assert.equal(loading.version, 5);
+  assert.equal(loading.slides.length, 6);
+  assert.equal(loading.quiz.length, 6);
   assert.equal(loading.slides[0].title, "Our Docks and Trucks");
   assert.equal(loading.quiz[0].answerIndex, 2);
   assert.match(loading.slides[0].mediaPath, /safety\/lessons\/loading-and-unloading\/docks-1-docks-and-trucks\.mp4$/);
@@ -39,6 +39,10 @@ test("the sample content is valid: Uniquem Basics stays, Loading and Unloading i
   assert.equal(loading.quiz[4].answerIndex, 0);
   assert.match(loading.slides[4].mediaPath, /seatbelt-1-entering\.mp4$/);
   assert.match(loading.slides[4].audioPath, /seatbelt-1-entering\.mp3$/);
+  assert.equal(loading.slides[5].title, "Can't See? Drive Backwards");
+  assert.equal(loading.quiz[5].answerIndex, 0);
+  assert.match(loading.slides[5].mediaPath, /backward-1-drive-backwards\.mp4$/);
+  assert.match(loading.slides[5].audioPath, /backward-1-drive-backwards\.mp3$/);
   for (const { doc } of docs.lessons) assert.equal(doc.passMark, 80);
   assert.equal(lesson.slides[3].title, "Steel-Toe Boots Required");
   assert.match(lesson.slides[3].mediaPath, /welcome-4-steel-toe-boots\.mp4$/);
