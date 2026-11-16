@@ -13,8 +13,9 @@ const lesson = docs.lessons.find((l) => l.id === "welcome-to-uniquem").doc;
 
 test("the sample content is valid: Uniquem Basics stays, Loading and Unloading is the other category", () => {
   assert.deepEqual(docs.categories.map((c) => c.doc.title), ["Uniquem Basics", "Loading and Unloading"]);
-  assert.deepEqual(docs.lessons.map((l) => l.id), ["welcome-to-uniquem", "our-docks-and-trucks"]);
+  assert.deepEqual(docs.lessons.map((l) => l.id), ["welcome-to-uniquem", "our-docks-and-trucks", "talk-to-the-driver-first"]);
   const docks = docs.lessons.find((l) => l.id === "our-docks-and-trucks").doc;
+  const driver = docs.lessons.find((l) => l.id === "talk-to-the-driver-first").doc;
   assert.equal(lesson.slides.length, 4);
   assert.equal(lesson.quiz.length, 3);
   assert.equal(docks.slides.length, 1);
@@ -23,6 +24,11 @@ test("the sample content is valid: Uniquem Basics stays, Loading and Unloading i
   assert.equal(docks.slides[0].title, "Our Docks and Trucks");
   assert.match(docks.slides[0].mediaPath, /docks-1-docks-and-trucks\.mp4$/);
   assert.match(docks.slides[0].audioPath, /docks-1-docks-and-trucks\.mp3$/);
+  assert.equal(driver.order, 2);
+  assert.equal(driver.slides.length, 1);
+  assert.equal(driver.quiz[0].answerIndex, 1);
+  assert.match(driver.slides[0].mediaPath, /driver-1-talk-to-the-driver\.mp4$/);
+  assert.match(driver.slides[0].audioPath, /driver-1-talk-to-the-driver\.mp3$/);
   for (const { doc } of docs.lessons) assert.equal(doc.passMark, 80);
   assert.equal(lesson.slides[3].title, "Steel-Toe Boots Required");
   assert.match(lesson.slides[3].mediaPath, /welcome-4-steel-toe-boots\.mp4$/);

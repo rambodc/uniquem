@@ -117,6 +117,36 @@
           "explanation": "We have 3 docks."
         }
       ]
+    },
+    {
+      "id": "talk-to-the-driver-first",
+      "categoryId": "loading-and-unloading",
+      "title": "Talk to the Driver First",
+      "order": 2,
+      "version": 1,
+      "passMark": 80,
+      "slides": [
+        {
+          "type": "video",
+          "media": "driver-1-talk-to-the-driver.mp4",
+          "poster": "driver-1-talk-to-the-driver-poster.jpg",
+          "title": "Talk to the Driver First",
+          "caption": "Before anyone goes into a trailer, talk to the driver and make sure the truck is stopped and parked.",
+          "audio": "driver-1-talk-to-the-driver.mp3"
+        }
+      ],
+      "quiz": [
+        {
+          "q": "What must you do before entering a trailer?",
+          "options": [
+            "Start loading right away",
+            "Talk to the driver and make sure the truck is stopped and parked",
+            "Honk the horn"
+          ],
+          "answerIndex": 1,
+          "explanation": "Talk to the driver and make sure the truck is stopped and parked before anyone goes into the trailer."
+        }
+      ]
     }
   ]
 }
