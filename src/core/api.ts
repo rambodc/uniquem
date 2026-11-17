@@ -86,7 +86,8 @@ export const setGuestStatus = (partyId: string, guestId: string, status: GuestSt
 export type SafetyStatus = "not_started" | "passed" | "failed";
 export type SafetySlideType = "image" | "video" | "3d";
 /** The signed-in person's own progress on one lesson (its current version). */
-export type SafetyProgress = { status: SafetyStatus; attempts: number; lastScore: number | null; bestScore: number | null; completedAt: string | null; viewedAt: string | null };
+/** `review` is true once they have passed, including a pass a super admin later reset. */
+export type SafetyProgress = { status: SafetyStatus; attempts: number; lastScore: number | null; bestScore: number | null; completedAt: string | null; viewedAt: string | null; review: boolean };
 export type SafetyCategory = { id: string; title: string; description: string; order: number };
 export type SafetyLessonSummary = { id: string; categoryId: string; title: string; order: number; version: number; passMark: number; slideCount: number; questionCount: number; kinds: SafetySlideType[]; progress: SafetyProgress };
 /** Media URLs are short-lived signed links. `audioUrl` is optional narration. */
@@ -100,6 +101,7 @@ export const getSafetyLesson = (lessonId: string) => invoke<{ lessonId: string }
 export const submitSafetyQuiz = (lessonId: string, answers: number[]) => invoke<{ lessonId: string; answers: number[] }, SafetyResult>("submitSafetyQuiz", { lessonId, answers });
 export const listSafetyProgress = () => invoke<undefined, SafetyProgressBoard>("listSafetyProgress");
 export const getSafetyReport = (uid: string) => invoke<{ uid: string }, { filename: string; pdf: string }>("getSafetyReport", { uid });
+export const resetSafetyProgress = (uid: string, lessonId?: string) => invoke<{ uid: string; lessonId?: string }, { lessons: string[] }>("resetSafetyProgress", lessonId ? { uid, lessonId } : { uid });
 
 // ---- Push notifications (iOS app; each person's own devices) ----
 export const registerPushDevice = (token: string) => invoke("registerPushDevice", { token, platform: "ios" });

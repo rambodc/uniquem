@@ -1,13 +1,13 @@
 // Safety mini app (assignable): lessons, pre-written quizzes graded on the server, and each person's progress.
 // Content is data (Firestore safety/content/..., Storage safety/), loaded with scripts/load-safety-content.mjs. See safety.js for the shapes.
 // Every callable checks requireMiniApp(request, "safety") first. A person only ever reads or writes their own progress;
-// listSafetyProgress and getSafetyReport are for super admins only.
+// listSafetyProgress, getSafetyReport and resetSafetyProgress are for super admins only.
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { getStorage } from "firebase-admin/storage";
 import { FieldValue } from "firebase-admin/firestore";
 import { db, callable, isSuperAdmin, requireMiniApp, text } from "./core.js";
 import { miniAppsFor } from "./miniApps.js";
-import { MEDIA_PREFIX, SAFETY_PATHS, currentProgress, gradeQuiz, nextProgress, progressId, progressView, publicLesson, safetyReport } from "./safety.js";
+import { MEDIA_PREFIX, SAFETY_PATHS, currentProgress, gradeQuiz, nextProgress, progressId, progressView, publicLesson, resetProgress, safetyReport } from "./safety.js";
 import { safetyReportPdf } from "./safety-report-pdf.js";
 
 const categories = () => db.collection(SAFETY_PATHS.categories), lessons = () => db.collection(SAFETY_PATHS.lessons), progress = () => db.collection(SAFETY_PATHS.records);
@@ -80,4 +80,30 @@ export const getSafetyReport = onCall(callable, async (request) => {
   const pdf = await safetyReportPdf(report);
   const file = `${report.name.replace(/[^\w]+/g, "-").replace(/^-|-$/g, "") || "employee"}-safety-record.pdf`;
   return { filename: file, pdf: pdf.toString("base64") };
+});
+
+/** Super admins only: reopen one passed lesson, or every passed lesson, for one employee. Passes are marked reset and kept. */
+export const resetSafetyProgress = onCall(callable, async (request) => {
+  const access = await requireMiniApp(request, "safety");
+  if (!isSuperAdmin(access)) throw new HttpsError("permission-denied", "This account is not authorized.");
+  const uid = text(request.data?.uid, "person", 128);
+  const one = request.data?.lessonId == null || request.data?.lessonId === "" ? null : lessonId(request.data.lessonId);
+  const person = await db.collection("users").doc(uid).get();
+  if (!person.exists || !miniAppsFor(person.data().type, person.data().miniApps).includes("safety")) throw new HttpsError("not-found", "That person does not have Safety.");
+  const less = await lessons().get();
+  const versions = new Map(less.docs.map((doc) => [doc.id, doc.data().version]));
+  if (one && !versions.has(one)) throw new HttpsError("not-found", "That lesson no longer exists.");
+  const now = new Date(), reset = [];
+  for (const id of one ? [one] : [...versions.keys()]) {
+    const ref = progress().doc(progressId(uid, id));
+    const did = await db.runTransaction(async (tx) => {
+      const next = resetProgress((await tx.get(ref)).data(), { version: versions.get(id), by: access.uid, now });
+      if (!next) return false;
+      tx.set(ref, next);
+      return true;
+    });
+    if (did) reset.push(id);
+  }
+  if (!reset.length) throw new HttpsError("failed-precondition", one ? "That lesson is not passed." : "No passed lessons to reset.");
+  return { lessons: reset };
 });

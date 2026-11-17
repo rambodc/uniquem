@@ -42,14 +42,19 @@ export async function safetyReportPdf(report) {
   text(`Report generated ${when(report.generatedAt)} (America/Edmonton)`, { size: 9, color: MUTED });
   y -= 6;
   for (const lesson of report.lessons) {
-    const topics = lesson.passed && lesson.topics?.length ? lesson.topics.join(" · ") : lesson.passed ? "Topics were not recorded for this completion." : "";
-    const topicLines = topics ? wrap(topics, font, 9, PAGE.w - M * 2) : [];
-    need(36 + topicLines.length * 12);
+    need(32);
     text(`${lesson.category}  ·  ${lesson.title}`, { size: 11, face: bold });
-    if (!lesson.passed) { text(`Version ${lesson.version}  ·  Not completed`, { size: 9, color: MUTED }); y -= 4; continue; }
-    const count = lesson.correct != null && lesson.total ? `${lesson.correct}/${lesson.total}, ${lesson.score}%` : lesson.score != null ? `${lesson.score}% (question count was not recorded)` : "score was not recorded";
-    text(`Version ${lesson.version}  ·  Completed ${when(lesson.completedAt)}  ·  ${count}  ·  PASS`, { size: 9 });
-    for (const line of topicLines) text(line, { size: 9, color: MUTED });
+    if (!lesson.passes.length) { text(`Version ${lesson.version}  ·  Not completed`, { size: 9, color: MUTED }); y -= 4; continue; }
+    for (const pass of lesson.passes) {
+      const topics = pass.topics?.length ? pass.topics.join(" · ") : "Topics were not recorded for this completion.";
+      const topicLines = wrap(topics, font, 9, PAGE.w - M * 2);
+      need(24 + topicLines.length * 13);
+      const count = pass.correct != null && pass.total ? `${pass.correct}/${pass.total}, ${pass.score}%` : pass.score != null ? `${pass.score}% (question count was not recorded)` : "score was not recorded";
+      const reset = pass.resetAt ? `  ·  Reset ${when(pass.resetAt)}` : "";
+      text(`Version ${lesson.version}  ·  Completed ${when(pass.completedAt)}  ·  ${count}  ·  PASS${reset}`, { size: 9 });
+      for (const line of topicLines) text(line, { size: 9, color: MUTED });
+      y -= 2;
+    }
     y -= 4;
   }
   need(88);
