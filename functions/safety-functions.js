@@ -1,13 +1,14 @@
 // Safety mini app (assignable): lessons, pre-written quizzes graded on the server, and each person's progress.
 // Content is data (Firestore safety/content/..., Storage safety/), loaded with scripts/load-safety-content.mjs. See safety.js for the shapes.
 // Every callable checks requireMiniApp(request, "safety") first. A person only ever reads or writes their own progress;
-// listSafetyProgress (everyone's progress) is for super admins only.
+// listSafetyProgress and getSafetyReport are for super admins only.
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { getStorage } from "firebase-admin/storage";
 import { FieldValue } from "firebase-admin/firestore";
 import { db, callable, isSuperAdmin, requireMiniApp, text } from "./core.js";
 import { miniAppsFor } from "./miniApps.js";
-import { MEDIA_PREFIX, SAFETY_PATHS, currentProgress, gradeQuiz, nextProgress, progressId, progressView, publicLesson } from "./safety.js";
+import { MEDIA_PREFIX, SAFETY_PATHS, currentProgress, gradeQuiz, nextProgress, progressId, progressView, publicLesson, safetyReport } from "./safety.js";
+import { safetyReportPdf } from "./safety-report-pdf.js";
 
 const categories = () => db.collection(SAFETY_PATHS.categories), lessons = () => db.collection(SAFETY_PATHS.lessons), progress = () => db.collection(SAFETY_PATHS.records);
 /** Media URLs last an hour: long enough to finish a lesson, short enough that a copied link soon stops working. */
@@ -44,7 +45,7 @@ export const submitSafetyQuiz = onCall(callable, async (request) => {
   const access = await requireMiniApp(request, "safety");
   const id = lessonId(request.data?.lessonId), lesson = await loadLesson(id), grade = gradeQuiz(lesson, request.data?.answers), ref = progress().doc(progressId(access.uid, id));
   const saved = await db.runTransaction(async (tx) => {
-    const next = nextProgress((await tx.get(ref)).data(), { uid: access.uid, lessonId: id, version: lesson.version }, grade, new Date());
+    const next = nextProgress((await tx.get(ref)).data(), { uid: access.uid, lessonId: id, version: lesson.version, topics: lesson.slides.map((slide) => slide.title) }, grade, new Date());
     tx.set(ref, next);
     return next;
   });
@@ -62,4 +63,21 @@ export const listSafetyProgress = onCall(callable, async (request) => {
   const records = new Map(all.docs.map((doc) => [doc.id, doc.data()]));
   const cells = Object.fromEntries(users.flatMap((user) => lessonList.map((lesson) => [progressId(user.uid, lesson.id), progressView(records.get(progressId(user.uid, lesson.id)), lesson.version)])));
   return { users, lessons: lessonList, cells };
+});
+
+/** Super admins only: one employee's Safety record as a PDF. Failed attempts are not included. */
+export const getSafetyReport = onCall(callable, async (request) => {
+  const access = await requireMiniApp(request, "safety");
+  if (!isSuperAdmin(access)) throw new HttpsError("permission-denied", "This account is not authorized.");
+  const uid = text(request.data?.uid, "person", 128);
+  const person = await db.collection("users").doc(uid).get();
+  if (!person.exists || !miniAppsFor(person.data().type, person.data().miniApps).includes("safety")) throw new HttpsError("not-found", "That person does not have Safety.");
+  const [less, cats, records] = await Promise.all([lessons().get(), categories().get(), progress().where("uid", "==", uid).get()]);
+  const catTitle = new Map(cats.docs.map((doc) => [doc.id, doc.data().title]));
+  const lessonList = less.docs.map((doc) => ({ id: doc.id, ...summary(doc), category: catTitle.get(doc.data().categoryId) ?? "" })).sort(byOrder);
+  const progressByLesson = Object.fromEntries(records.docs.map((doc) => [doc.data().lessonId, doc.data()]));
+  const report = safetyReport({ person: { firstName: person.data().firstName, lastName: person.data().lastName, email: person.data().email }, lessons: lessonList, progressByLesson, now: new Date() });
+  const pdf = await safetyReportPdf(report);
+  const file = `${report.name.replace(/[^\w]+/g, "-").replace(/^-|-$/g, "") || "employee"}-safety-record.pdf`;
+  return { filename: file, pdf: pdf.toString("base64") };
 });

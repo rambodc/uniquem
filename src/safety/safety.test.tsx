@@ -58,5 +58,8 @@ describe("Safety", () => {
   it("progress board: people × lessons", () => {
     const out = html(<ProgressTable board={{ users: [{ uid: "u1", firstName: "Sam", lastName: "Lee", email: "sam@uniquem.ca" }], lessons: [{ id: "l1", title: "PPE Basics", category: "PPE & Safety", version: 1 }], cells: { u1_l1: progress({ status: "failed", attempts: 2, lastScore: 67 }) } }} />);
     expect(out).toContain("Sam Lee"); expect(out).toContain("Failed · 67%"); expect(out).toContain("2 attempts");
+    expect(out).not.toContain("Download PDF");
+    const printable = html(<ProgressTable board={{ users: [{ uid: "u1", firstName: "Sam", lastName: "Lee", email: "sam@uniquem.ca" }], lessons: [{ id: "l1", title: "PPE Basics", category: "PPE & Safety", version: 1 }], cells: { u1_l1: progress({ status: "passed", attempts: 1, bestScore: 100, lastScore: 100 }) } }} onDownload={() => undefined} />);
+    expect(printable).toContain("Download PDF");
   });
 });
