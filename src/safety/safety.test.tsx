@@ -6,11 +6,11 @@ import type { ReactNode } from "react";
 import type { SafetyLesson, SafetyLessonSummary, SafetyProgress, SafetyResult } from "../core/api";
 import { CategoryList } from "./SafetyHome";
 import { QuizView, SlideMedia, SlideView } from "./SafetyLesson";
-import { ProgressTable } from "./SafetyProgress";
+import { ProgressTable, ResetConfirm } from "./SafetyProgress";
 import { startLabel, statusText } from "./safety";
 
 const html = (node: ReactNode) => renderToStaticMarkup(<MemoryRouter>{node}</MemoryRouter>);
-const progress = (over: Partial<SafetyProgress> = {}): SafetyProgress => ({ status: "not_started", attempts: 0, lastScore: null, bestScore: null, completedAt: null, viewedAt: null, ...over });
+const progress = (over: Partial<SafetyProgress> = {}): SafetyProgress => ({ status: "not_started", attempts: 0, lastScore: null, bestScore: null, completedAt: null, viewedAt: null, review: false, ...over });
 const summary = (over: Partial<SafetyLessonSummary>): SafetyLessonSummary => ({ id: "welcome-to-uniquem", categoryId: "basics", title: "Welcome to Uniquem", order: 1, version: 1, passMark: 80, slideCount: 3, questionCount: 3, kinds: ["image", "video"], progress: progress(), ...over });
 const lesson: SafetyLesson = { id: "l", categoryId: "c", title: "L", version: 1, passMark: 80, slides: [], quiz: [{ q: "Smoking?", options: ["Nowhere", "Outside"] }, { q: "Forklift?", options: ["Run", "Eye contact"] }] };
 
@@ -24,7 +24,9 @@ describe("Safety", () => {
   it("lists categories in order; an empty one says Coming soon", () => {
     const out = html(<CategoryList categories={[{ id: "basics", title: "Uniquem Basics", description: "", order: 1 }, { id: "loading", title: "Loading Products", description: "", order: 3 }]} lessons={[summary({ progress: progress({ status: "passed", attempts: 1, bestScore: 100, lastScore: 100 }) })]} />);
     expect(out).toContain("Uniquem Basics"); expect(out).toContain("1 of 1 passed"); expect(out).toContain("Passed · 100%");
-    expect(out).toContain("Coming soon"); expect(out).toContain('href="/safety/lesson/welcome-to-uniquem"');
+    expect(out).toContain("Coming soon"); expect(out).toContain('href="/safety/lesson/welcome-to-uniquem"'); expect(out).toContain("Review");
+    const reopened = html(<CategoryList categories={[{ id: "basics", title: "Uniquem Basics", description: "", order: 1 }]} lessons={[summary({ progress: progress({ status: "not_started", review: true }) })]} />);
+    expect(reopened).toContain("Start lesson"); expect(reopened).toContain(">Review<");
   });
   it("videos play silently on their own, looping and inline, with a poster; 3D waits for its lazy viewer", () => {
     const video = html(<SlideMedia slide={{ type: "video", title: "T", caption: "C", url: "https://x/v.mp4", posterUrl: "https://x/p.jpg", audioUrl: null }} />);
@@ -60,6 +62,20 @@ describe("Safety", () => {
     expect(out).toContain("Sam Lee"); expect(out).toContain("Failed · 67%"); expect(out).toContain("2 attempts");
     expect(out).not.toContain("Download PDF");
     const printable = html(<ProgressTable board={{ users: [{ uid: "u1", firstName: "Sam", lastName: "Lee", email: "sam@uniquem.ca" }], lessons: [{ id: "l1", title: "PPE Basics", category: "PPE & Safety", version: 1 }], cells: { u1_l1: progress({ status: "passed", attempts: 1, bestScore: 100, lastScore: 100 }) } }} onDownload={() => undefined} />);
-    expect(printable).toContain("Download PDF");
+    expect(printable).toContain("Download PDF"); expect(printable).not.toContain(">Reset<");
+    const board = { users: [{ uid: "u1", firstName: "Sam", lastName: "Lee", email: "sam@uniquem.ca" }], lessons: [{ id: "l1", title: "Welcome to Uniquem", category: "Uniquem Basics", version: 4 }], cells: { u1_l1: progress({ status: "passed", attempts: 1, bestScore: 100, lastScore: 100, review: true }) } };
+    const resetting = html(<ProgressTable board={board} onReset={() => undefined} />);
+    expect(resetting).toContain(">Reset<"); expect(resetting).toContain("Reset all lessons");
+  });
+  it("reset asks twice, and the red Reset button stays off until RESET or the name is typed", () => {
+    const ask = { uid: "u1", name: "Sam Lee", lessonId: "l1", lesson: "Welcome to Uniquem", step: 1 as const, typed: "" };
+    const first = html(<ResetConfirm ask={ask} busy={false} onCancel={() => undefined} onContinue={() => undefined} onTyped={() => undefined} onReset={() => undefined} />);
+    expect(first).toContain("Reset Welcome to Uniquem for Sam Lee?"); expect(first).toContain("They will need to take the lesson and quiz again.");
+    expect(first).toContain(">Continue<"); expect(first).not.toContain("ws-button danger");
+    const second = (typed: string) => html(<ResetConfirm ask={{ ...ask, step: 2, typed }} busy={false} onCancel={() => undefined} onContinue={() => undefined} onTyped={() => undefined} onReset={() => undefined} />);
+    expect(second("")).toMatch(/class="ws-button danger" disabled="">Reset/);
+    expect(second("reset")).toMatch(/class="ws-button danger" disabled="">Reset/);
+    expect(second("RESET")).toMatch(/class="ws-button danger">Reset/);
+    expect(second("Sam Lee")).toMatch(/class="ws-button danger">Reset/);
   });
 });

@@ -8,7 +8,7 @@ import { test } from "node:test";
 import { URL } from "node:url";
 import { requireMiniApp } from "../core.js";
 import { PDFDocument } from "pdf-lib";
-import { SAFETY_PATHS, contentToDocs, gradeQuiz, nextProgress, progressStatus, progressView, publicLesson, safetyReport, validateLesson } from "../safety.js";
+import { SAFETY_PATHS, contentToDocs, gradeQuiz, nextProgress, progressStatus, progressView, publicLesson, resetProgress, safetyReport, validateLesson } from "../safety.js";
 import { safetyReportPdf } from "../safety-report-pdf.js";
 
 const content = JSON.parse(readFileSync(new URL("../../safety-content/content.json", import.meta.url), "utf8"));
@@ -121,7 +121,7 @@ test("progress: attempts are kept, a pass stays a pass, and a new lesson version
   assert.equal(passed.attempts[0].topics, undefined, "a failed attempt keeps no topic list");
   const retake = nextProgress(passed, key, { score: 67, passed: false }, new Date());
   assert.equal(progressStatus(retake, 1), "passed", "a lower retake doesn't undo a pass");
-  assert.deepEqual(progressView(retake, 1), { status: "passed", attempts: 3, lastScore: 67, bestScore: 100, completedAt: t2.toISOString(), viewedAt: t1.toISOString() });
+  assert.deepEqual(progressView(retake, 1), { status: "passed", attempts: 3, lastScore: 67, bestScore: 100, completedAt: t2.toISOString(), viewedAt: t1.toISOString(), review: true });
   assert.equal(progressStatus(retake, 2), "not_started", "lesson updated: everyone retakes it");
   assert.equal(nextProgress(retake, { ...key, version: 2 }, { score: 33, passed: false }, t1).attempts.length, 1);
 });
@@ -141,28 +141,54 @@ test("access: only people with the Safety mini app (assigned staff and super adm
   const reportFn = source.split("export const getSafetyReport")[1];
   assert.match(reportFn, /requireMiniApp\(request, "safety"\)/);
   assert.match(reportFn, /if \(!isSuperAdmin\(access\)\) throw new HttpsError\("permission-denied"/);
+  const resetFn = source.split("export const resetSafetyProgress")[1];
+  assert.match(resetFn, /requireMiniApp\(request, "safety"\)/);
+  assert.match(resetFn, /if \(!isSuperAdmin\(access\)\) throw new HttpsError\("permission-denied"/);
   assert.match(source, /progressId\(access\.uid, id\)/, "own progress is always keyed by the caller's uid");
 });
-test("a safety record lists only the passing attempt on the current lesson version", () => {
+test("reset keeps every attempt, marks the open pass, and the lesson shows as not started until they pass again", () => {
+  const key = { uid: "ann", lessonId: "welcome-to-uniquem", version: 1 }, t1 = new Date("2026-10-29T16:00:00Z"), t2 = new Date("2026-10-29T16:05:00Z"), t3 = new Date("2026-11-17T18:00:00Z"), t4 = new Date("2026-11-17T18:20:00Z");
+  const failed = nextProgress(undefined, key, { score: 33, passed: false, correct: 1, total: 4 }, t1);
+  const passed = nextProgress(failed, { ...key, topics: ["Welcome"] }, { score: 100, passed: true, correct: 4, total: 4 }, t2);
+  assert.equal(resetProgress(failed, { version: 1, by: "boss", now: t3 }), null);
+  const reset = resetProgress(passed, { version: 1, by: "boss", now: t3 });
+  assert.equal(reset.passed, false); assert.equal(reset.completedAt, null); assert.equal(reset.attempts.length, 2);
+  assert.equal(reset.attempts[0].resetAt, undefined, "a failed attempt is not marked reset");
+  assert.equal(reset.attempts[1].resetBy, "boss"); assert.equal(reset.attempts[1].resetAt, t3); assert.deepEqual(reset.attempts[1].topics, ["Welcome"]);
+  assert.equal(progressStatus(reset, 1), "not_started"); assert.equal(progressView(reset, 1).review, true);
+  const again = nextProgress(reset, { ...key, topics: ["Welcome"] }, { score: 100, passed: true, correct: 4, total: 4 }, t4);
+  assert.equal(again.passed, true); assert.equal(again.attempts[1].resetAt, t3, "the old pass is still there"); assert.equal(again.attempts.length, 3);
+  assert.equal(progressStatus(again, 1), "passed");
+});
+test("a safety record lists every passing attempt, newest first, including ones that were reset", () => {
   const lessons = [
     { id: "welcome", title: "Welcome to Uniquem", category: "Uniquem Basics", version: 4 },
     { id: "chem", title: "Chemical Production Safety", category: "Chemical Production", version: 2 },
   ];
-  const welcome = { lessonVersion: 4, passed: true, completedAt: new Date("2026-11-01T18:00:00Z"), attempts: [{ at: new Date("2026-11-01T18:00:00Z"), score: 100, passed: true }, { at: new Date("2026-11-02T18:00:00Z"), score: 50, passed: false }] };
-  const oldChem = { lessonVersion: 1, passed: true, attempts: [{ at: new Date("2026-11-01T18:00:00Z"), score: 90, passed: true, correct: 9, total: 10, topics: ["Coverall"] }] };
+  const welcome = { lessonVersion: 4, passed: true, completedAt: new Date("2026-11-10T18:00:00Z"), attempts: [
+    { at: new Date("2026-11-01T18:00:00Z"), score: 100, passed: true, resetAt: new Date("2026-11-05T18:00:00Z"), resetBy: "boss" },
+    { at: new Date("2026-11-02T18:00:00Z"), score: 50, passed: false },
+    { at: new Date("2026-11-10T18:00:00Z"), score: 90, passed: true, correct: 9, total: 10, topics: ["Welcome"] },
+  ] };
+  const oldChem = { lessonVersion: 1, passed: true, attempts: [{ at: new Date("2026-11-01T18:00:00Z"), score: 80, passed: true, correct: 8, total: 10, topics: ["Coverall"] }] };
   const report = safetyReport({ person: { firstName: "Sam", lastName: "Lee", email: "sam@uniquem.ca" }, lessons, progressByLesson: { welcome, chem: oldChem }, now: new Date("2026-11-16T20:04:00Z") });
   assert.equal(report.company, "Uniquem");
   assert.equal(report.generatedAt, "2026-11-16T20:04:00.000Z");
-  assert.equal(report.lessons[0].completedAt, "2026-11-01T18:00:00.000Z");
-  assert.equal(report.lessons[0].score, 100);
-  assert.equal(report.lessons[0].correct, null, "passes saved before this change have a percent only");
-  assert.equal(report.lessons[0].topics, null);
-  assert.equal(report.lessons[1].passed, false, "a pass on an older lesson version does not count");
+  assert.deepEqual(report.lessons[0].passes.map((pass) => pass.score), [90, 100]);
+  assert.equal(report.lessons[0].passes[0].correct, 9);
+  assert.equal(report.lessons[0].passes[1].resetAt, "2026-11-05T18:00:00.000Z");
+  assert.equal(report.lessons[0].passes[1].correct, null, "passes saved before this change have a percent only");
+  assert.equal(report.lessons[0].passes[1].topics, null);
+  assert.deepEqual(report.lessons[1].passes, [], "a pass on an older lesson version does not count");
+  assert.ok(report.lessons[0].passes.every((pass) => pass.score !== 50));
 });
-test("the record PDF is letter size and does not list a failed attempt", async () => {
+test("the record PDF is letter size, lists a reset pass, and does not list a failed attempt", async () => {
   const pdf = await safetyReportPdf({ name: "Sam Lee", email: "sam@uniquem.ca", company: "Uniquem", generatedAt: "2026-11-16T20:04:00.000Z", lessons: [
-    { title: "Welcome to Uniquem", category: "Uniquem Basics", version: 4, passed: true, completedAt: "2026-11-01T18:00:00.000Z", score: 90, correct: 9, total: 10, topics: ["Welcome", "No smoking", "Eye contact", "Steel-toe boots", "Fire exits"] },
-    { title: "Chemical Production Safety", category: "Chemical Production", version: 2, passed: false },
+    { title: "Welcome to Uniquem", category: "Uniquem Basics", version: 4, passes: [
+      { completedAt: "2026-11-10T18:00:00.000Z", score: 100, correct: 4, total: 4, topics: ["Welcome"], resetAt: null },
+      { completedAt: "2026-11-01T18:00:00.000Z", score: 90, correct: 9, total: 10, topics: ["No smoking"], resetAt: "2026-11-05T18:00:00.000Z" },
+    ] },
+    { title: "Chemical Production Safety", category: "Chemical Production", version: 2, passes: [] },
   ] });
   const raw = Buffer.from(pdf).toString("latin1");
   const text = [...raw.matchAll(/stream\r?\n([\s\S]*?)endstream/g)].flatMap((match) => {
@@ -172,7 +198,9 @@ test("the record PDF is letter size and does not list a failed attempt", async (
     return [...source.matchAll(/<([0-9A-Fa-f]+)> Tj/g)].map((hit) => Buffer.from(hit[1], "hex").toString("latin1"));
   }).join("\n");
   assert.match(text, /Sam Lee/);
+  assert.match(text, /4\/4, 100%/);
   assert.match(text, /9\/10, 90%/);
+  assert.ok(text.indexOf("4/4, 100%") < text.indexOf("Reset "), "the newest pass is listed before the reset one");
   assert.match(text, /Not completed/);
   assert.match(text, /I confirm I have reviewed/);
   assert.match(text, /Employee signature/);

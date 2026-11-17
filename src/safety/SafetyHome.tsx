@@ -20,7 +20,8 @@ export function LessonCard({ lesson }: { lesson: SafetyLessonSummary }) {
     </div>
     <div className="sf-lesson-side">
       <span className={`sf-badge ${lesson.progress.status}`}><StatusIcon size={14} aria-hidden /> {statusText(lesson.progress)}</span>
-      <Link className={lesson.progress.status === "passed" ? "ws-chip" : "ws-button sf-start"} to={`/safety/lesson/${lesson.id}`}>{startLabel(lesson.progress)}</Link>
+      {lesson.progress.status !== "passed" && <Link className="ws-button sf-start" to={`/safety/lesson/${lesson.id}`}>{startLabel(lesson.progress)}</Link>}
+      {(lesson.progress.status === "passed" || lesson.progress.review) && <Link className="ws-chip" to={`/safety/lesson/${lesson.id}`}>{lesson.progress.status === "passed" ? startLabel(lesson.progress) : "Review"}</Link>}
     </div>
   </article>;
 }

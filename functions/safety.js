@@ -8,7 +8,7 @@
 //                                   slides: [{ type: "image" | "video" | "3d", mediaPath, title?, caption, posterPath?, audioPath? }],
 //                                   quiz:   [{ q, options[], answerIndex, explanation }] }
 //   safety/progress                        { kind: "progress" }                     (parent document)
-//   safety/progress/records/{uid}_{lesson} { uid, lessonId, lessonVersion, viewedAt, attempts: [{ at, score, passed }], passed, completedAt }
+//   safety/progress/records/{uid}_{lesson} { uid, lessonId, lessonVersion, viewedAt, attempts: [{ at, score, passed, correct?, total?, topics?, resetAt?, resetBy? }], passed, completedAt }
 //
 // Media lives in Storage under safety/ and is only reached through short-lived signed URLs from getSafetyLesson.
 // The browser never receives answerIndex or explanation before the quiz is submitted; grading happens on the server.
@@ -82,18 +82,21 @@ export const progressId = (uid, lessonId) => `${uid}_${lessonId}`;
 export const SAFETY_PATHS = { content: "safety/content", categories: "safety/content/categories", lessons: "safety/content/lessons", progress: "safety/progress", records: "safety/progress/records" };
 /** Progress only counts for the lesson's current version: when a lesson is updated (version goes up) everyone starts it again. */
 export const currentProgress = (progress, version) => progress && progress.lessonVersion === version ? progress : null;
-/** "not_started" | "passed" | "failed" for the lesson's current version. */
+/** "not_started" | "passed" | "failed" for the lesson's current version. A reset pass does not count as passed, and it is not a failed quiz. */
 export function progressStatus(progress, version) {
-  const current = currentProgress(progress, version);
-  if (!current?.attempts?.length) return "not_started";
-  return current.passed ? "passed" : "failed";
+  const current = currentProgress(progress, version), attempts = current?.attempts ?? [];
+  if (!attempts.length) return "not_started";
+  if (attempts.some((attempt) => attempt.passed && !attempt.resetAt)) return "passed";
+  const sinceReset = attempts.slice(attempts.findLastIndex((attempt) => attempt.resetAt) + 1);
+  if (!sinceReset.length) return "not_started";
+  return sinceReset.at(-1).passed ? "passed" : "failed";
 }
-/** What the person sees about their own progress on a lesson. Dates come back as ISO strings. */
+/** What the person sees about their own progress on a lesson. Dates come back as ISO strings. `review` is true once they have ever passed, including a pass that was later reset. */
 export function progressView(progress, version) {
   const current = currentProgress(progress, version), attempts = current?.attempts ?? [], iso = (value) => value?.toDate?.().toISOString() ?? (value instanceof Date ? value.toISOString() : value ?? null);
-  return { status: progressStatus(progress, version), attempts: attempts.length, lastScore: attempts.at(-1)?.score ?? null, bestScore: attempts.length ? Math.max(...attempts.map((a) => a.score)) : null, completedAt: iso(current?.completedAt), viewedAt: iso(current?.viewedAt) };
+  return { status: progressStatus(progress, version), attempts: attempts.length, lastScore: attempts.at(-1)?.score ?? null, bestScore: attempts.length ? Math.max(...attempts.map((a) => a.score)) : null, completedAt: iso(current?.completedAt), viewedAt: iso(current?.viewedAt), review: attempts.some((attempt) => attempt.passed) };
 }
-/** The progress record after one graded attempt. A pass stays a pass (a later lower score does not undo it) until the lesson's version changes. */
+/** The progress record after one graded attempt. A pass stays a pass (a later lower score does not undo it) until the lesson's version changes or a super admin resets it. */
 export function nextProgress(previous, { uid, lessonId, version, topics }, grade, now) {
   const current = currentProgress(previous, version);
   const attempt = { at: now, score: grade.score, passed: grade.passed };
@@ -105,7 +108,16 @@ export function nextProgress(previous, { uid, lessonId, version, topics }, grade
   return { uid, lessonId, lessonVersion: version, viewedAt: current?.viewedAt ?? now, attempts, passed, completedAt: current?.completedAt ?? (grade.passed ? now : null) };
 }
 const isoDate = (value) => value?.toDate?.().toISOString() ?? (value instanceof Date ? value.toISOString() : typeof value === "string" ? value : null);
-/** Printable record for one person. Only the first passing attempt on the lesson's current version is included; failed attempts are left out. */
+/** Reopens the current pass. Every attempt stays; each open pass is marked reset so the lesson is no longer complete. Returns null when there is nothing to reset. */
+export function resetProgress(previous, { version, by, now }) {
+  const current = currentProgress(previous, version);
+  const open = current?.attempts?.some((attempt) => attempt.passed && !attempt.resetAt);
+  if (!current || (!current.passed && !open)) return null;
+  const attempts = current.attempts.map((attempt) => attempt.passed && !attempt.resetAt ? { ...attempt, resetAt: now, resetBy: by } : attempt);
+  return { ...current, attempts, passed: false, completedAt: null };
+}
+const passView = (attempt) => ({ completedAt: isoDate(attempt.at), score: attempt.score ?? null, correct: Number.isInteger(attempt.correct) ? attempt.correct : null, total: Number.isInteger(attempt.total) ? attempt.total : null, topics: Array.isArray(attempt.topics) ? attempt.topics : null, resetAt: attempt.resetAt ? isoDate(attempt.resetAt) : null });
+/** Printable record for one person. Every passing attempt on the lesson's current version is included, newest first. Failed attempts are left out. A reset pass stays on the record. */
 export function safetyReport({ person, lessons, progressByLesson, now }) {
   return {
     name: `${person.firstName} ${person.lastName}`.trim(),
@@ -113,11 +125,8 @@ export function safetyReport({ person, lessons, progressByLesson, now }) {
     company: "Uniquem",
     generatedAt: isoDate(now),
     lessons: lessons.map((lesson) => {
-      const current = currentProgress(progressByLesson[lesson.id], lesson.version);
-      const pass = current?.attempts?.find((attempt) => attempt.passed);
-      const base = { title: lesson.title, category: lesson.category, version: lesson.version };
-      if (!pass) return current?.passed ? { ...base, passed: true, completedAt: isoDate(current.completedAt), score: null, correct: null, total: null, topics: null } : { ...base, passed: false };
-      return { ...base, passed: true, completedAt: isoDate(pass.at), score: pass.score, correct: Number.isInteger(pass.correct) ? pass.correct : null, total: Number.isInteger(pass.total) ? pass.total : null, topics: Array.isArray(pass.topics) ? pass.topics : null };
+      const attempts = currentProgress(progressByLesson[lesson.id], lesson.version)?.attempts ?? [];
+      return { title: lesson.title, category: lesson.category, version: lesson.version, passes: attempts.filter((attempt) => attempt.passed).map(passView).reverse() };
     }),
   };
 }

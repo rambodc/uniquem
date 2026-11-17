@@ -63,7 +63,8 @@ fieldset:disabled .sf-option{cursor:default}
 .sf-table thead th small{margin:0 0 2px;text-transform:uppercase;letter-spacing:.05em;font-size:10.5px}
 .sf-table tbody th{position:sticky;left:0;background:#fff;min-width:150px}.sf-table tbody th b{font-size:15px}
 .sf-table tbody tr:last-child>*{border-bottom:0}
-.sf-pdf{display:inline-block;margin-top:8px;border:1px solid #b7d9d0;background:#fff;color:#0d6b5c;border-radius:999px;padding:4px 10px;font:inherit;font-size:12px;font-weight:650;cursor:pointer}.sf-pdf:disabled{opacity:.55;cursor:default}
+.sf-pdf,.sf-reset{display:inline-block;margin-top:8px;margin-right:6px;border:1px solid #b7d9d0;background:#fff;color:#0d6b5c;border-radius:999px;padding:4px 10px;font:inherit;font-size:12px;font-weight:650;cursor:pointer}.sf-pdf:disabled,.sf-reset:disabled{opacity:.55;cursor:default}
+.sf-reset-type{display:grid;gap:8px;margin:0 0 18px;font-size:14px;font-weight:650;color:#2a4a47}
 @media(max-width:560px){.sf-cat{padding:16px;border-radius:20px}.sf-stage{border-radius:16px}.sf-player .sf-nav .ws-button{flex:1 1 0}.sf-copy h2{font-size:22px}.sf-copy p{font-size:16px}.sf-score{font-size:38px}.sf-result{padding:16px}}
 /* Narration: a round play button in the middle of the media; it moves to the top-right corner while playing (always there on 3D). */
 .sf-narrate{position:absolute;z-index:3;display:grid;place-items:center;padding:0;border:0;border-radius:50%;background:rgba(9,38,34,.72);color:#fff;cursor:pointer;box-shadow:0 10px 30px rgba(0,0,0,.28);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);transition:all .35s cubic-bezier(.2,.8,.2,1),background .15s;-webkit-tap-highlight-color:transparent}
