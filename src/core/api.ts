@@ -99,6 +99,7 @@ export const listSafety = () => invoke<undefined, { categories: SafetyCategory[]
 export const getSafetyLesson = (lessonId: string) => invoke<{ lessonId: string }, { lesson: SafetyLesson; progress: SafetyProgress }>("getSafetyLesson", { lessonId });
 export const submitSafetyQuiz = (lessonId: string, answers: number[]) => invoke<{ lessonId: string; answers: number[] }, SafetyResult>("submitSafetyQuiz", { lessonId, answers });
 export const listSafetyProgress = () => invoke<undefined, SafetyProgressBoard>("listSafetyProgress");
+export const getSafetyReport = (uid: string) => invoke<{ uid: string }, { filename: string; pdf: string }>("getSafetyReport", { uid });
 
 // ---- Push notifications (iOS app; each person's own devices) ----
 export const registerPushDevice = (token: string) => invoke("registerPushDevice", { token, platform: "ios" });

@@ -1,11 +1,15 @@
 import assert from "node:assert/strict";
+import { Buffer } from "node:buffer";
+import { inflateSync } from "node:zlib";
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { test } from "node:test";
 import { URL } from "node:url";
 import { requireMiniApp } from "../core.js";
-import { SAFETY_PATHS, contentToDocs, gradeQuiz, nextProgress, progressStatus, progressView, publicLesson, validateLesson } from "../safety.js";
+import { PDFDocument } from "pdf-lib";
+import { SAFETY_PATHS, contentToDocs, gradeQuiz, nextProgress, progressStatus, progressView, publicLesson, safetyReport, validateLesson } from "../safety.js";
+import { safetyReportPdf } from "../safety-report-pdf.js";
 
 const content = JSON.parse(readFileSync(new URL("../../safety-content/content.json", import.meta.url), "utf8"));
 const docs = contentToDocs(content);
@@ -111,8 +115,10 @@ test("progress: attempts are kept, a pass stays a pass, and a new lesson version
   assert.equal(progressStatus({ lessonVersion: 1, attempts: [], passed: false }, 1), "not_started", "viewed only");
   const failed = nextProgress(undefined, key, { score: 33, passed: false }, t1);
   assert.equal(progressStatus(failed, 1), "failed"); assert.equal(failed.completedAt, null);
-  const passed = nextProgress(failed, key, { score: 100, passed: true }, t2);
+  const passed = nextProgress(failed, { ...key, topics: ["Welcome", "Steel-toe boots"] }, { score: 100, passed: true, correct: 4, total: 4 }, t2);
   assert.deepEqual([passed.attempts.length, passed.passed, passed.completedAt], [2, true, t2]);
+  assert.deepEqual(passed.attempts[1].topics, ["Welcome", "Steel-toe boots"]);
+  assert.equal(passed.attempts[0].topics, undefined, "a failed attempt keeps no topic list");
   const retake = nextProgress(passed, key, { score: 67, passed: false }, new Date());
   assert.equal(progressStatus(retake, 1), "passed", "a lower retake doesn't undo a pass");
   assert.deepEqual(progressView(retake, 1), { status: "passed", attempts: 3, lastScore: 67, bestScore: 100, completedAt: t2.toISOString(), viewedAt: t1.toISOString() });
@@ -129,10 +135,52 @@ test("access: only people with the Safety mini app (assigned staff and super adm
   await assert.rejects(() => requireMiniApp(request("pat"), "safety", database), /not authorized/);
   await assert.rejects(() => requireMiniApp({}, "safety", database), /not authorized/);
   const source = readFileSync(new URL("../safety-functions.js", import.meta.url), "utf8");
-  const body = source.split("export const listSafetyProgress")[1];
-  assert.match(body, /if \(!isSuperAdmin\(access\)\) throw new HttpsError\("permission-denied"/);
-  assert.doesNotMatch(source, /request\.data\??\.uid/, "nobody can ask for another person's progress");
+  const beforeReport = source.split("export const getSafetyReport")[0];
+  assert.match(beforeReport.split("export const listSafetyProgress")[1], /if \(!isSuperAdmin\(access\)\) throw new HttpsError\("permission-denied"/);
+  assert.doesNotMatch(beforeReport, /request\.data\??\.uid/, "a person can only read and write their own progress");
+  const reportFn = source.split("export const getSafetyReport")[1];
+  assert.match(reportFn, /requireMiniApp\(request, "safety"\)/);
+  assert.match(reportFn, /if \(!isSuperAdmin\(access\)\) throw new HttpsError\("permission-denied"/);
   assert.match(source, /progressId\(access\.uid, id\)/, "own progress is always keyed by the caller's uid");
+});
+test("a safety record lists only the passing attempt on the current lesson version", () => {
+  const lessons = [
+    { id: "welcome", title: "Welcome to Uniquem", category: "Uniquem Basics", version: 4 },
+    { id: "chem", title: "Chemical Production Safety", category: "Chemical Production", version: 2 },
+  ];
+  const welcome = { lessonVersion: 4, passed: true, completedAt: new Date("2026-11-01T18:00:00Z"), attempts: [{ at: new Date("2026-11-01T18:00:00Z"), score: 100, passed: true }, { at: new Date("2026-11-02T18:00:00Z"), score: 50, passed: false }] };
+  const oldChem = { lessonVersion: 1, passed: true, attempts: [{ at: new Date("2026-11-01T18:00:00Z"), score: 90, passed: true, correct: 9, total: 10, topics: ["Coverall"] }] };
+  const report = safetyReport({ person: { firstName: "Sam", lastName: "Lee", email: "sam@uniquem.ca" }, lessons, progressByLesson: { welcome, chem: oldChem }, now: new Date("2026-11-16T20:04:00Z") });
+  assert.equal(report.company, "Uniquem");
+  assert.equal(report.generatedAt, "2026-11-16T20:04:00.000Z");
+  assert.equal(report.lessons[0].completedAt, "2026-11-01T18:00:00.000Z");
+  assert.equal(report.lessons[0].score, 100);
+  assert.equal(report.lessons[0].correct, null, "passes saved before this change have a percent only");
+  assert.equal(report.lessons[0].topics, null);
+  assert.equal(report.lessons[1].passed, false, "a pass on an older lesson version does not count");
+});
+test("the record PDF is letter size and does not list a failed attempt", async () => {
+  const pdf = await safetyReportPdf({ name: "Sam Lee", email: "sam@uniquem.ca", company: "Uniquem", generatedAt: "2026-11-16T20:04:00.000Z", lessons: [
+    { title: "Welcome to Uniquem", category: "Uniquem Basics", version: 4, passed: true, completedAt: "2026-11-01T18:00:00.000Z", score: 90, correct: 9, total: 10, topics: ["Welcome", "No smoking", "Eye contact", "Steel-toe boots", "Fire exits"] },
+    { title: "Chemical Production Safety", category: "Chemical Production", version: 2, passed: false },
+  ] });
+  const raw = Buffer.from(pdf).toString("latin1");
+  const text = [...raw.matchAll(/stream\r?\n([\s\S]*?)endstream/g)].flatMap((match) => {
+    let body = Buffer.from(match[1].replace(/\r?\n$/, ""), "latin1");
+    try { body = inflateSync(body); } catch { /* already plain */ }
+    const source = body.toString("latin1");
+    return [...source.matchAll(/<([0-9A-Fa-f]+)> Tj/g)].map((hit) => Buffer.from(hit[1], "hex").toString("latin1"));
+  }).join("\n");
+  assert.match(text, /Sam Lee/);
+  assert.match(text, /9\/10, 90%/);
+  assert.match(text, /Not completed/);
+  assert.match(text, /I confirm I have reviewed/);
+  assert.match(text, /Employee signature/);
+  assert.match(text, /Supervisor signature/);
+  assert.doesNotMatch(text, /50%/);
+  const doc = await PDFDocument.load(pdf);
+  assert.equal(doc.getPageCount(), 1);
+  assert.deepEqual(doc.getPage(0).getSize(), { width: 612, height: 792 });
 });
 test("Firestore and Storage stay closed to the browser: Safety data and media go only through the guarded callables", () => {
   const firestore = readFileSync(new URL("../../firestore.rules", import.meta.url), "utf8"), storage = readFileSync(new URL("../../storage.rules", import.meta.url), "utf8");
@@ -145,7 +193,7 @@ test("Firestore layout: one top-level collection, safety, with everything in sub
   assert.deepEqual(SAFETY_PATHS, { content: "safety/content", categories: "safety/content/categories", lessons: "safety/content/lessons", progress: "safety/progress", records: "safety/progress/records" });
   for (const [name, path] of Object.entries(SAFETY_PATHS)) assert.equal(path.split("/").length % 2 === 0 ? "doc" : "collection", ["content", "progress"].includes(name) ? "doc" : "collection", name);
   const source = readFileSync(new URL("../safety-functions.js", import.meta.url), "utf8");
-  assert.doesNotMatch(source.replace('db.collection("users")', ""), /db\.collection\("/, "safety callables only use SAFETY_PATHS");
+  assert.doesNotMatch(source.replaceAll('db.collection("users")', ""), /db\.collection\("/, "safety callables only use SAFETY_PATHS");
 });
 test("the old top-level safetyCategories / safetyLessons / safetyProgress collections never come back", () => {
   const root = fileURLToPath(new URL("../..", import.meta.url)), self = fileURLToPath(import.meta.url), skip = new Set(["node_modules", "dist", ".git", ".firebase", ".seo-build", "reports"]);

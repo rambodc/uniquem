@@ -94,11 +94,32 @@ export function progressView(progress, version) {
   return { status: progressStatus(progress, version), attempts: attempts.length, lastScore: attempts.at(-1)?.score ?? null, bestScore: attempts.length ? Math.max(...attempts.map((a) => a.score)) : null, completedAt: iso(current?.completedAt), viewedAt: iso(current?.viewedAt) };
 }
 /** The progress record after one graded attempt. A pass stays a pass (a later lower score does not undo it) until the lesson's version changes. */
-export function nextProgress(previous, { uid, lessonId, version }, grade, now) {
+export function nextProgress(previous, { uid, lessonId, version, topics }, grade, now) {
   const current = currentProgress(previous, version);
-  const attempts = [...(current?.attempts ?? []), { at: now, score: grade.score, passed: grade.passed }].slice(-MAX_ATTEMPTS);
+  const attempt = { at: now, score: grade.score, passed: grade.passed };
+  if (Number.isInteger(grade.correct)) attempt.correct = grade.correct;
+  if (Number.isInteger(grade.total)) attempt.total = grade.total;
+  if (grade.passed && topics?.length) attempt.topics = topics;
+  const attempts = [...(current?.attempts ?? []), attempt].slice(-MAX_ATTEMPTS);
   const passed = Boolean(current?.passed) || grade.passed;
   return { uid, lessonId, lessonVersion: version, viewedAt: current?.viewedAt ?? now, attempts, passed, completedAt: current?.completedAt ?? (grade.passed ? now : null) };
+}
+const isoDate = (value) => value?.toDate?.().toISOString() ?? (value instanceof Date ? value.toISOString() : typeof value === "string" ? value : null);
+/** Printable record for one person. Only the first passing attempt on the lesson's current version is included; failed attempts are left out. */
+export function safetyReport({ person, lessons, progressByLesson, now }) {
+  return {
+    name: `${person.firstName} ${person.lastName}`.trim(),
+    email: person.email,
+    company: "Uniquem",
+    generatedAt: isoDate(now),
+    lessons: lessons.map((lesson) => {
+      const current = currentProgress(progressByLesson[lesson.id], lesson.version);
+      const pass = current?.attempts?.find((attempt) => attempt.passed);
+      const base = { title: lesson.title, category: lesson.category, version: lesson.version };
+      if (!pass) return current?.passed ? { ...base, passed: true, completedAt: isoDate(current.completedAt), score: null, correct: null, total: null, topics: null } : { ...base, passed: false };
+      return { ...base, passed: true, completedAt: isoDate(pass.at), score: pass.score, correct: Number.isInteger(pass.correct) ? pass.correct : null, total: Number.isInteger(pass.total) ? pass.total : null, topics: Array.isArray(pass.topics) ? pass.topics : null };
+    }),
+  };
 }
 
 /** Turns safety-content/content.json (media given as file names in safety-content/media/) into the Firestore documents and the Storage uploads.
