@@ -357,7 +357,7 @@
       "categoryId": "chemical-production",
       "title": "Chemical Production Safety",
       "order": 1,
-      "version": 1,
+      "version": 2,
       "passMark": 80,
       "slides": [
         { "type": "image", "media": "cp-01-coverall.jpg", "title": "Coverall On, Every Time", "caption": "Wear your coverall every time, because chemicals can spill or splash.", "audio": "cp-01-coverall.mp3" },
@@ -370,7 +370,8 @@
         { "type": "image", "media": "cp-08-spill.jpg", "title": "Spill? Clean It and Report It", "caption": "If something spills, grab the spill kit, soak it up with absorbent pads, and tell your supervisor right away.", "audio": "cp-08-spill.mp3" },
         { "type": "image", "media": "cp-09-clean.jpg", "title": "Keep It Clean and Clear", "caption": "Keep your area clean. Coil and hang up hoses and cords so nothing is left across the walkway.", "audio": "cp-09-clean.mp3" },
         { "type": "image", "media": "cp-10-wash.jpg", "title": "Wash Up, No Food or Drink", "caption": "Wash your hands after handling chemicals and before breaks, and never bring food or drink into the production area.", "audio": "cp-10-wash.mp3" },
-        { "type": "image", "media": "cp-11-lift.jpg", "title": "Lift Smart", "caption": "Lift pails by the handle using your legs, not your back. Never lift drums or totes by hand; use the power jack or forklift.", "audio": "cp-11-lift.mp3" }
+        { "type": "image", "media": "cp-11-lift.jpg", "title": "Lift Smart", "caption": "Lift pails by the handle using your legs, not your back. Never lift drums or totes by hand; use the power jack or forklift.", "audio": "cp-11-lift.mp3" },
+        { "type": "image", "media": "cp-12-nodrips.jpg", "title": "Not Even One Drip", "caption": "Fill drums, totes and pails carefully with no spills at all. If anything spills or drips, even a single drop, clean it up right away, not later. We keep our work area spotless.", "audio": "cp-12-nodrips.mp3" }
       ],
       "quiz": [
         {
@@ -422,10 +423,10 @@
           "explanation": "Grab the spill kit, soak it up with absorbent pads, and tell your supervisor right away."
         },
         {
-          "q": "Can you bring a coffee into the production area?",
-          "options": ["Yes, if the lid is on", "No. Never bring food or drink into the production area", "Only water", "Only at the mixer"],
+          "q": "A single drop spills while you fill a pail. What do you do?",
+          "options": ["Leave it until the end of the shift", "Clean it up right away", "Wipe it only if it is a big spill", "Cover it and keep filling"],
           "answerIndex": 1,
-          "explanation": "Never bring food or drink into the production area, and wash your hands after handling chemicals."
+          "explanation": "If anything spills or drips, even a single drop, clean it up right away. We keep our work area spotless."
         },
         {
           "q": "How do you move a drum?",

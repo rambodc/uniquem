@@ -65,11 +65,14 @@ test("the sample content is valid: Uniquem Basics stays, Loading and Unloading i
   assert.equal(lesson.quiz[3].answerIndex, 0);
   assert.match(lesson.slides[4].audioPath, /welcome-5-fire-exits\.mp3$/);
   const chemical = docs.lessons.find((l) => l.id === "chemical-production-safety").doc;
-  assert.equal(chemical.slides.length, 11);
+  assert.equal(chemical.version, 2);
+  assert.equal(chemical.slides.length, 12);
   assert.equal(chemical.quiz.length, 10);
   assert.ok(chemical.slides.every((s) => s.type === "image" && s.audioPath.endsWith(".mp3")));
   assert.equal(chemical.slides[0].title, "Coverall On, Every Time");
-  assert.equal(chemical.slides.at(-1).title, "Lift Smart");
+  assert.equal(chemical.slides.at(-1).title, "Not Even One Drip");
+  const drip = chemical.quiz.find((q) => q.q.startsWith("A single drop"));
+  assert.equal(drip.options[drip.answerIndex], "Clean it up right away");
   assert.ok(docs.uploads.every((u) => u.storagePath.startsWith("safety/lessons/")));
   assert.ok(lesson.slides.find((s) => s.type === "video").posterPath.endsWith(".jpg"), "the video has a poster");
   for (const { file } of docs.uploads) assert.ok(readFileSync(new URL(`../../safety-content/media/${file}`, import.meta.url)).length < (file.endsWith(".mp4") ? 3_000_000 : 200_000), `${file} stays small`);
