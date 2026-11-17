@@ -12,11 +12,12 @@ const docs = contentToDocs(content);
 const lesson = docs.lessons.find((l) => l.id === "welcome-to-uniquem").doc;
 
 test("the sample content is valid: Uniquem Basics stays, Loading and Unloading is the other category", () => {
-  assert.deepEqual(docs.categories.map((c) => c.doc.title), ["Uniquem Basics", "Loading and Unloading", "Forklift and Power Jack"]);
-  assert.deepEqual(docs.lessons.map((l) => l.id), ["welcome-to-uniquem", "loading-and-unloading", "forklift-and-power-jack-safety"]);
+  assert.deepEqual(docs.categories.map((c) => c.doc.title), ["Uniquem Basics", "Loading and Unloading", "Forklift and Power Jack", "Chemical Production"]);
+  assert.deepEqual(docs.lessons.map((l) => l.id), ["welcome-to-uniquem", "loading-and-unloading", "forklift-and-power-jack-safety", "chemical-production-safety"]);
   const loading = docs.lessons.find((l) => l.id === "loading-and-unloading").doc;
-  assert.equal(lesson.slides.length, 4);
-  assert.equal(lesson.quiz.length, 3);
+  assert.equal(lesson.version, 4);
+  assert.equal(lesson.slides.length, 5);
+  assert.equal(lesson.quiz.length, 4);
   assert.equal(loading.version, 6);
   assert.equal(loading.slides.length, 7);
   assert.equal(loading.quiz.length, 7);
@@ -60,6 +61,15 @@ test("the sample content is valid: Uniquem Basics stays, Loading and Unloading i
   assert.match(lesson.slides[3].mediaPath, /welcome-4-steel-toe-boots\.mp4$/);
   assert.match(lesson.slides[3].posterPath, /welcome-4-steel-toe-boots-poster\.jpg$/);
   assert.match(lesson.slides[3].audioPath, /welcome-4-steel-toe-boots\.mp3$/);
+  assert.equal(lesson.slides[4].title, "Know Your Fire Extinguishers and Exits");
+  assert.equal(lesson.quiz[3].answerIndex, 0);
+  assert.match(lesson.slides[4].audioPath, /welcome-5-fire-exits\.mp3$/);
+  const chemical = docs.lessons.find((l) => l.id === "chemical-production-safety").doc;
+  assert.equal(chemical.slides.length, 11);
+  assert.equal(chemical.quiz.length, 10);
+  assert.ok(chemical.slides.every((s) => s.type === "image" && s.audioPath.endsWith(".mp3")));
+  assert.equal(chemical.slides[0].title, "Coverall On, Every Time");
+  assert.equal(chemical.slides.at(-1).title, "Lift Smart");
   assert.ok(docs.uploads.every((u) => u.storagePath.startsWith("safety/lessons/")));
   assert.ok(lesson.slides.find((s) => s.type === "video").posterPath.endsWith(".jpg"), "the video has a poster");
   for (const { file } of docs.uploads) assert.ok(readFileSync(new URL(`../../safety-content/media/${file}`, import.meta.url)).length < (file.endsWith(".mp4") ? 3_000_000 : 200_000), `${file} stays small`);
@@ -86,9 +96,9 @@ test("the browser never gets answers or explanations before submitting; media co
 });
 test("grading happens on the server: score in percent, pass at the pass mark, explanations only after", () => {
   const right = lesson.quiz.map((q) => q.answerIndex), wrongOne = right.map((a, i) => i === 0 ? (a + 1) % lesson.quiz[0].options.length : a);
-  assert.deepEqual({ ...gradeQuiz(lesson, right), results: undefined }, { score: 100, passed: true, correct: 3, total: 3, passMark: 80, results: undefined });
+  assert.deepEqual({ ...gradeQuiz(lesson, right), results: undefined }, { score: 100, passed: true, correct: lesson.quiz.length, total: lesson.quiz.length, passMark: 80, results: undefined });
   const two = gradeQuiz(lesson, wrongOne);
-  assert.equal(two.score, 67); assert.equal(two.passed, false, "2 of 3 is below 80");
+  assert.equal(two.score, 75); assert.equal(two.passed, false, "3 of 4 is below 80");
   assert.equal(two.results[0].correct, false); assert.ok(two.results[0].explanation);
   for (const answers of [undefined, [], [0, 0], [0, 0, 9], [0, 0, "1"], [0, 0, 1.5]]) assert.throws(() => gradeQuiz(lesson, answers), /Answer every question/);
 });

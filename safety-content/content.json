@@ -17,6 +17,12 @@
       "title": "Forklift and Power Jack",
       "description": "How to check, drive and park forklifts and power jacks.",
       "order": 3
+    },
+    {
+      "id": "chemical-production",
+      "title": "Chemical Production",
+      "description": "Safe work when mixing and handling chemicals.",
+      "order": 4
     }
   ],
   "lessons": [
@@ -25,7 +31,7 @@
       "categoryId": "uniquem-basics",
       "title": "Welcome to Uniquem",
       "order": 1,
-      "version": 3,
+      "version": 4,
       "passMark": 80,
       "slides": [
         {
@@ -59,6 +65,14 @@
           "title": "Steel-Toe Boots Required",
           "caption": "Our warehouse runs forklifts and power jacks every day. Steel-toe boots are required at all times when you are in the warehouse.",
           "audio": "welcome-4-steel-toe-boots.mp3"
+        },
+        {
+          "type": "video",
+          "media": "welcome-5-fire-exits.mp4",
+          "poster": "welcome-5-fire-exits-poster.jpg",
+          "title": "Know Your Fire Extinguishers and Exits",
+          "caption": "Know where the nearest fire extinguisher, fire alarm and exits are, and keep them clear. Never block them with pallets, totes or drums.",
+          "audio": "welcome-5-fire-exits.mp3"
         }
       ],
       "quiz": [
@@ -91,6 +105,17 @@
           ],
           "answerIndex": 2,
           "explanation": "Stop and make eye contact so the driver knows you are there. Only move once the driver has stopped and seen you."
+        },
+        {
+          "q": "What do you keep clear of pallets, totes and drums?",
+          "options": [
+            "The nearest fire extinguisher, fire alarm and exits",
+            "Only the lunch room",
+            "The parking lot lines",
+            "Nothing, they can be blocked"
+          ],
+          "answerIndex": 0,
+          "explanation": "Know where the nearest fire extinguisher, fire alarm and exits are, and keep them clear."
         }
       ]
     },
@@ -324,6 +349,89 @@
           "options": ["Leave the forks raised", "Lower the forks fully to the floor and turn it off", "Leave it on in the aisle", "Park it inside a trailer"],
           "answerIndex": 1,
           "explanation": "When you're done, lower the forks fully to the floor and turn the power jack off."
+        }
+      ]
+    },
+    {
+      "id": "chemical-production-safety",
+      "categoryId": "chemical-production",
+      "title": "Chemical Production Safety",
+      "order": 1,
+      "version": 1,
+      "passMark": 80,
+      "slides": [
+        { "type": "image", "media": "cp-01-coverall.jpg", "title": "Coverall On, Every Time", "caption": "Wear your coverall every time, because chemicals can spill or splash.", "audio": "cp-01-coverall.mp3" },
+        { "type": "image", "media": "cp-02-mask.jpg", "title": "Strong Odour? Mask On", "caption": "Wear a mask or respirator when a product has a strong odour or gives off fumes.", "audio": "cp-02-mask.mp3" },
+        { "type": "image", "media": "cp-03-suction.jpg", "title": "Use the Suction Arm", "caption": "Pull the suction arm over the opening of the drum, tote or pail so fumes are drawn away before they reach you.", "audio": "cp-03-suction.mp3" },
+        { "type": "image", "media": "cp-04-mixers.jpg", "title": "Never Leave a Mixer Running", "caption": "Watch high-speed mixers and low-speed blenders at all times, and never leave one running unattended.", "audio": "cp-04-mixers.mp3" },
+        { "type": "image", "media": "cp-05-eyewash.jpg", "title": "Know Your Eyewash Station", "caption": "Know where the nearest eyewash station is before you start work.", "audio": "cp-05-eyewash.mp3" },
+        { "type": "image", "media": "cp-06-batchsheet.jpg", "title": "Follow the Batch Sheet", "caption": "Never mix chemicals that weren't meant to go together. Follow the batch sheet exactly.", "audio": "cp-06-batchsheet.mp3" },
+        { "type": "image", "media": "cp-07-mixerclear.jpg", "title": "Hands Clear of the Mixer", "caption": "Keep hands, tools and loose clothing away from a running mixer, and stop it fully before adding anything or reaching in.", "audio": "cp-07-mixerclear.mp3" },
+        { "type": "image", "media": "cp-08-spill.jpg", "title": "Spill? Clean It and Report It", "caption": "If something spills, grab the spill kit, soak it up with absorbent pads, and tell your supervisor right away.", "audio": "cp-08-spill.mp3" },
+        { "type": "image", "media": "cp-09-clean.jpg", "title": "Keep It Clean and Clear", "caption": "Keep your area clean. Coil and hang up hoses and cords so nothing is left across the walkway.", "audio": "cp-09-clean.mp3" },
+        { "type": "image", "media": "cp-10-wash.jpg", "title": "Wash Up, No Food or Drink", "caption": "Wash your hands after handling chemicals and before breaks, and never bring food or drink into the production area.", "audio": "cp-10-wash.mp3" },
+        { "type": "image", "media": "cp-11-lift.jpg", "title": "Lift Smart", "caption": "Lift pails by the handle using your legs, not your back. Never lift drums or totes by hand; use the power jack or forklift.", "audio": "cp-11-lift.mp3" }
+      ],
+      "quiz": [
+        {
+          "q": "When do you wear your coverall?",
+          "options": ["Only when mixing drums", "Every time, because chemicals can spill or splash", "Only if your supervisor is watching", "Only in cold weather"],
+          "answerIndex": 1,
+          "explanation": "Wear your coverall every time, because chemicals can spill or splash."
+        },
+        {
+          "q": "A product has a strong odour or gives off fumes. What do you wear?",
+          "options": ["A mask or respirator", "Just safety glasses", "Nothing extra", "Ear plugs"],
+          "answerIndex": 0,
+          "explanation": "Wear a mask or respirator when a product has a strong odour or gives off fumes."
+        },
+        {
+          "q": "Where do you put the suction arm?",
+          "options": ["Behind you", "Over the opening of the drum, tote or pail", "At the doorway", "On the floor"],
+          "answerIndex": 1,
+          "explanation": "Pull the suction arm over the opening so fumes are drawn away before they reach you."
+        },
+        {
+          "q": "Can you leave a mixer running while you step away?",
+          "options": ["Yes, if it is almost done", "Yes, for a minute", "No. Never leave a mixer or blender running unattended", "Only a low-speed blender"],
+          "answerIndex": 2,
+          "explanation": "Watch mixers and blenders at all times, and never leave one running unattended."
+        },
+        {
+          "q": "When do you need to know where the eyewash station is?",
+          "options": ["Only after a splash", "Before you start work", "At the end of the shift", "Only if you wear a mask"],
+          "answerIndex": 1,
+          "explanation": "Know where the nearest eyewash station is before you start work."
+        },
+        {
+          "q": "Two chemicals are not on the batch sheet. What do you do?",
+          "options": ["Mix a small amount to test", "Follow the batch sheet and do not mix them", "Ask a coworker to mix them", "Add them if the colour looks right"],
+          "answerIndex": 1,
+          "explanation": "Never mix chemicals that weren't meant to go together. Follow the batch sheet exactly."
+        },
+        {
+          "q": "You need to add something to a running mixer. What do you do first?",
+          "options": ["Reach in carefully", "Stop it fully before adding anything or reaching in", "Toss it in from a distance", "Speed it up"],
+          "answerIndex": 1,
+          "explanation": "Stop the mixer fully before adding anything or reaching in."
+        },
+        {
+          "q": "Something spills. What do you do?",
+          "options": ["Leave it to dry", "Wipe it with your coverall", "Grab the spill kit, soak it up, and tell your supervisor", "Rinse it into the drain"],
+          "answerIndex": 2,
+          "explanation": "Grab the spill kit, soak it up with absorbent pads, and tell your supervisor right away."
+        },
+        {
+          "q": "Can you bring a coffee into the production area?",
+          "options": ["Yes, if the lid is on", "No. Never bring food or drink into the production area", "Only water", "Only at the mixer"],
+          "answerIndex": 1,
+          "explanation": "Never bring food or drink into the production area, and wash your hands after handling chemicals."
+        },
+        {
+          "q": "How do you move a drum?",
+          "options": ["Lift it by hand with a coworker", "Use the power jack or forklift", "Tip it and roll it by yourself", "Drag it by the rim"],
+          "answerIndex": 1,
+          "explanation": "Never lift drums or totes by hand. Use the power jack or forklift."
         }
       ]
     }
